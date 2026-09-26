@@ -1,0 +1,14 @@
+# Netlify reads this file when you connect the GitHub repo.
+[build]
+  publish = "public"
+  # copies the barcode-reading library into the app so scanning also works offline
+  command = "mkdir -p public/vendor && (cp node_modules/@zxing/library/umd/index.min.js public/vendor/zxing.min.js || echo 'zxing copy skipped: app will load it from the CDN')"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
