@@ -1,6 +1,6 @@
 // Offline support: every app file is cached on install; the cache name changes
 // whenever any file changes, so re-deploying pushes the update to the phone.
-const CACHE = 'seventy-hard-a121257d8d';
+const CACHE = 'seventy-hard-c554f32b33';
 const FILES = [
   "./",
   "app-frame.js",
@@ -49,6 +49,7 @@ const FILES = [
   "manifest.webmanifest",
   "push-client.js",
   "scanner.js",
+  "screens.js",
   "vendor/dc-runtime.js",
   "vendor/react-dom.production.min.js",
   "vendor/react.production.min.js"
