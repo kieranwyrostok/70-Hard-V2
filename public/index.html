@@ -19,8 +19,9 @@ a{color:#4d7cff;text-decoration:none}
 ::-webkit-scrollbar{width:0;height:0}
 input,textarea{font-size:16px!important}
 .screen{display:none;height:100vh;height:100dvh}
-html[data-screen="s01"] #s01{display:block}html[data-screen="s02"] #s02{display:block}html[data-screen="s03"] #s03{display:block}html[data-screen="s04"] #s04{display:block}html[data-screen="s05"] #s05{display:block}html[data-screen="s06"] #s06{display:block}html[data-screen="s07"] #s07{display:block}html[data-screen="s08"] #s08{display:block}html[data-screen="s09"] #s09{display:block}html[data-screen="s10"] #s10{display:block}html[data-screen="s11"] #s11{display:block}
+html[data-screen="s01"] #s01{display:block}html[data-screen="s02"] #s02{display:block}html[data-screen="s03"] #s03{display:block}html[data-screen="s04"] #s04{display:block}html[data-screen="s05"] #s05{display:block}html[data-screen="s06"] #s06{display:block}html[data-screen="s07"] #s07{display:block}html[data-screen="s08"] #s08{display:block}html[data-screen="s09"] #s09{display:block}html[data-screen="s10"] #s10{display:block}html[data-screen="s11"] #s11{display:block}html[data-screen="s12"] #s12{display:block}
 .app-frame{height:100%}
+.tabbar span{letter-spacing:.03em!important}
 .app-frame [style*="overflow:auto"]{-webkit-overflow-scrolling:touch}
 #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;background:#101109;z-index:5}
 </style>
@@ -32,7 +33,7 @@ window.__resources = {
 (function () {
   function apply() {
     var id = (location.hash || '').slice(1);
-    if (!/^s(0[1-9]|1[01])$/.test(id)) id = 's02';
+    if (!/^s(0[1-9]|1[0-2])$/.test(id)) id = 's02';
     document.documentElement.setAttribute('data-screen', id);
     var el = document.getElementById(id);
     if (el) el.querySelectorAll('[style*="overflow:auto"]').forEach(function (x) { x.scrollTop = 0; });
@@ -79,7 +80,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div sc-camel-on-click="{{ obStart }}" style="background:#e8e9e0;color:#101109;text-align:center;padding:17px;cursor:pointer;font:700 16px/1 'Saira Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase">Get started</div>
 </div>
 <label style="display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:8px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8b8f7e;text-decoration:none">HAVE A BACKUP? <span style="color:#4d7cff;margin-left:6px">RESTORE ›</span><input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
-<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5c6150;text-align:center;margin-top:4px">SETUP TAKES ~2 MIN · SAVED ON THIS PHONE · EVERYTHING BUT THE RULES STAYS EDITABLE<br>APP VERSION 2026-09-26 11:34</div>
+<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5c6150;text-align:center;margin-top:4px">SETUP TAKES ~2 MIN · SAVED ON THIS PHONE · EVERYTHING BUT THE RULES STAYS EDITABLE<br>APP VERSION 2026-09-26 15:40</div>
 </div>
 <div style="display:{{ ob1 }};flex-direction:column;padding:18px 22px 24px">
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#e8e9e0">Who's running it?</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#8b8f7e;margin:8px 0 20px;text-wrap:pretty">Used for calorie and water estimates. Change any of it later in settings.</div>
@@ -268,276 +269,36 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </div>
 </div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#4d7cff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4d7cff">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
 <div id="s03" class="screen"><x-import component-from-global-scope="IOSDevice" from="app-frame.js">
 <div style="height:100%;display:flex;flex-direction:column;background:#101109;font-family:Barlow,system-ui,sans-serif">
-<div style="flex:1;overflow:auto">
-<div style="padding:60px 22px 18px;border-bottom:1px solid #262a1b">
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#6f7a4b;margin-bottom:4px">DAY {{ dayNum }} · INTAKE</div>
-<div style="display:flex;align-items:baseline;gap:8px">
-<span style="font:800 58px/0.85 'Saira Condensed',sans-serif;color:#d9a02b">{{ kcal }}</span>
-<span style="font:600 16px/1 'Saira Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6f7a4b">/ {{ kcalTarget }} kcal</span>
-<span sc-camel-on-click="{{ toggleTargets }}" style="margin-left:auto;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b;cursor:pointer;border:1px solid #3a4029;padding:5px 7px">{{ targetsLabel }}</span>
-</div>
-<div style="display:{{ targetsVis }};margin-top:12px;background:#191b12;border:1px solid #d9a02b;padding:12px">
-<div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:9px">DAILY TARGETS</div>
-<div style="display:flex;flex-direction:column;gap:7px">
-<sc-for list="{{ targetRows }}" as="t" hint-placeholder-count="4">
-<div style="display:flex;align-items:center;gap:10px">
-<span style="flex:1;font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8f7e">{{ t.label }}</span>
-<div style="display:flex;align-items:stretch;border:1px solid #3a4029">
-<div sc-camel-on-click="{{ t.dec }}" style="width:32px;text-align:center;padding:7px 0;cursor:pointer;font:600 15px/1 'IBM Plex Mono',monospace;color:#6f7a4b;border-right:1px solid #3a4029" style-hover="color:#d9a02b">−</div>
-<div style="width:64px;text-align:center;padding:7px 0;font:700 17px/1 'Saira Condensed',sans-serif;color:#e8e9e0;font-variant-numeric:tabular-nums">{{ t.value }}</div>
-<div sc-camel-on-click="{{ t.inc }}" style="width:32px;text-align:center;padding:7px 0;cursor:pointer;font:600 15px/1 'IBM Plex Mono',monospace;color:#6f7a4b;border-left:1px solid #3a4029" style-hover="color:#d9a02b">+</div>
-</div>
-</div>
-</sc-for>
-</div>
-</div>
-<div style="height:9px;background:#23271a;margin-top:12px;overflow:hidden"><div style="height:100%;background:#d9a02b;width:{{ kcalPct }}"></div></div>
-<div style="display:flex;gap:9px;margin-top:14px">
-<sc-for list="{{ macros }}" as="m" hint-placeholder-count="3">
-<div style="flex:1;background:#191b12;border:1px solid #262a1b;padding:10px 11px">
-<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b">{{ m.label }}</div>
-<div style="font:700 23px/1.1 'Saira Condensed',sans-serif;color:#e8e9e0;margin-top:3px">{{ m.value }}<span style="font-size:13px;color:#6f7a4b">/{{ m.target }}g</span></div>
-<div style="height:4px;background:#23271a;margin-top:7px"><div style="height:100%;background:{{ m.tone }};width:{{ m.pct }}"></div></div>
-</div>
-</sc-for>
-</div>
-</div>
-<div style="padding:16px 22px 0">
-<div style="background:#191b12;border:1px solid #d9a02b">
-<div style="display:flex;align-items:center;gap:6px;padding-left:14px;height:54px">
-<span style="font:700 20px/1 'IBM Plex Mono',monospace;color:#d9a02b">+</span>
-<input value="{{ foodQuery }}" sc-camel-on-change="{{ setFoodQuery }}" placeholder="Search foods, or scan a barcode →" style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:#e8e9e0;font:500 16px/1.2 Barlow,sans-serif">
-<div sc-camel-on-click="{{ clearQuery }}" style="display:{{ clearVis }};width:44px;height:44px;align-items:center;justify-content:center;cursor:pointer;font:500 18px/1 'IBM Plex Mono',monospace;color:#8b8f7e">×</div>
-<div style="height:54px;display:flex;align-items:center;padding:0 14px;border-left:1px solid #262a1b;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#d9a02b;cursor:pointer" sc-camel-on-click="{{ scanFood }}">SCAN</div>
-</div>
-<div style="border-top:1px solid #262a1b;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
-<div style="display:flex;gap:5px"><sc-for list="{{ addSlots }}" as="a" hint-placeholder-count="4"><div sc-camel-on-click="{{ a.pick }}" style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ a.bg }};border:1px solid {{ a.border }};font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:{{ a.fg }}">{{ a.label }}</div></sc-for></div>
-<div style="display:flex;align-items:center;gap:5px"><span style="width:62px;flex:none;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b">PORTION</span><sc-for list="{{ portions }}" as="o" hint-placeholder-count="4"><div sc-camel-on-click="{{ o.pick }}" style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ o.bg }};border:1px solid {{ o.border }};font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:{{ o.fg }}">{{ o.label }}</div></sc-for></div>
-</div>
-<div style="display:{{ regVis }};border-top:1px solid #262a1b;padding:12px 14px">
-<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b">REGULAR MEALS · ONE TAP LOGS ALL</span><span sc-camel-on-click="{{ newReg }}" style="min-height:36px;display:flex;align-items:center;padding:0 4px;cursor:pointer;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b">+ NEW</span></div>
-<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
-<sc-for list="{{ regMeals }}" as="r" hint-placeholder-count="3">
-<div style="display:flex;align-items:stretch;border:1px solid {{ r.border }};background:#151810">
-<div sc-camel-on-click="{{ r.log }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:9px 12px;min-height:54px;box-sizing:border-box;cursor:pointer" style-hover="background:#1c2014">
-<div style="flex:1;min-width:0"><div style="font:600 15px/1.2 Barlow,sans-serif;color:#e8e9e0">{{ r.name }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#6f7a4b;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</div></div>
-<div style="font:700 19px/1 'Saira Condensed',sans-serif;color:#d9a02b">{{ r.kcal }}</div>
-</div>
-<div sc-camel-on-click="{{ r.edit }}" style="width:52px;flex:none;display:flex;align-items:center;justify-content:center;border-left:1px solid #262a1b;cursor:pointer;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8b8f7e" style-hover="color:#d9a02b">EDIT</div>
-</div>
-</sc-for>
-</div>
-<div style="display:{{ regEditVis }};margin-top:10px;background:#12160c;border:1px solid #d9a02b;padding:14px">
-<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">{{ regEditTitle }}</div><input value="{{ regName }}" sc-camel-on-change="{{ setRegName }}" placeholder="e.g. Usual breakfast" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:600 15px/1.35 Barlow,sans-serif;padding:12px;outline:none">
-<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">LOGS INTO</div><div style="display:flex;gap:5px"><sc-for list="{{ regSlots }}" as="a" hint-placeholder-count="4"><div sc-camel-on-click="{{ a.pick }}" style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ a.bg }};border:1px solid {{ a.border }};font:600 11px/1 'IBM Plex Mono',monospace;color:{{ a.fg }}">{{ a.label }}</div></sc-for></div></div>
-<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">ITEMS · TAP TO INCLUDE — FROM TODAY + RECENT</div>
-<div style="display:flex;flex-direction:column;gap:1px;background:#262a1b;border:1px solid #262a1b">
-<sc-for list="{{ regPool }}" as="p" hint-placeholder-count="5">
-<div sc-camel-on-click="{{ p.toggle }}" style="display:flex;align-items:center;gap:11px;padding:0 12px;min-height:48px;background:#151810;cursor:pointer" style-hover="background:#1c2014">
-<div style="width:20px;height:20px;flex:none;border:1.5px solid {{ p.box }};background:{{ p.boxBg }};display:flex;align-items:center;justify-content:center;font:700 12px/1 'IBM Plex Mono',monospace;color:#1a1500">{{ p.check }}</div>
-<span style="flex:1;min-width:0;font:500 14px/1.25 Barlow,sans-serif;color:{{ p.fg }}">{{ p.name }}</span>
-<span style="font:600 12px/1 'IBM Plex Mono',monospace;color:#6f7a4b">{{ p.kcal }}</span>
-</div>
-</sc-for>
-</div></div>
-<div style="font:600 11px/1.4 'IBM Plex Mono',monospace;color:#d9a02b;margin-top:10px">{{ regTotal }}</div>
-<div style="display:flex;gap:7px;margin-top:12px">
-<div sc-camel-on-click="{{ regDelete }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid {{ regDelBorder }};color:{{ regDelFg }};font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">{{ regDelLabel }}</div>
-<div sc-camel-on-click="{{ regSave }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#d9a02b;color:#1a1500;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Save meal</div>
-</div>
-</div>
-</div>
-<div style="border-top:1px solid #262a1b;padding:10px 14px 6px;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b">{{ resultsLabel }}</div>
-<sc-for list="{{ foodResults }}" as="f" hint-placeholder-count="5">
-<div sc-camel-on-click="{{ f.add }}" style="display:flex;align-items:center;gap:12px;padding:8px 6px 8px 14px;min-height:52px;box-sizing:border-box;border-top:1px solid #1f2216;cursor:pointer" style-hover="background:#1c2014">
-<div style="flex:1;min-width:0"><div style="font:600 15px/1.2 Barlow,sans-serif;color:#e8e9e0">{{ f.name }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#6f7a4b;margin-top:3px">{{ f.sub }}</div></div>
-<div style="font:700 19px/1 'Saira Condensed',sans-serif;color:#d9a02b">{{ f.kcal }}</div>
-<div style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid #3a4029;font:600 18px/1 'IBM Plex Mono',monospace;color:#d9a02b">+</div>
-</div>
-</sc-for>
-<div sc-camel-on-click="{{ addCustom }}" style="display:{{ customVis }};align-items:center;gap:12px;padding:8px 6px 8px 14px;min-height:56px;box-sizing:border-box;border-top:1px solid #1f2216;cursor:pointer;font:600 13px/1.3 'IBM Plex Mono',monospace;color:#d9a02b" style-hover="background:#1c2014"><div style="flex:1;min-width:0"><div style="font:600 15px/1.2 Barlow,sans-serif;color:#e8e9e0">“{{ foodQuery }}”</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#d9a02b;margin-top:3px">{{ estSub }}</div></div><div style="font:700 19px/1 'Saira Condensed',sans-serif;color:#d9a02b">~{{ estKcal }}</div><div style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid #d9a02b;font:600 18px/1 'IBM Plex Mono',monospace;color:#d9a02b">+</div></div>
-<div sc-camel-on-click="{{ openCreate }}" style="display:flex;align-items:center;padding:0 14px;min-height:48px;border-top:1px solid #1f2216;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b" style-hover="background:#1c2014">{{ createLabel }}</div>
-<div style="display:{{ cfVis }};border-top:1px solid #d9a02b;background:#12160c;padding:14px">
-<div style="display:{{ cfNoteVis }};font:600 10px/1.5 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#d9a02b;margin-bottom:12px">{{ cfNote }}</div>
-<div style="min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b;margin-bottom:5px">NAME</div><input value="{{ cfName }}" sc-camel-on-change="{{ cfSetName }}" placeholder="e.g. Mom’s lasagna" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 16px/1.2 Barlow,sans-serif;padding:10px;outline:none"></div><div style="display:grid;grid-template-columns:3fr 2fr;gap:8px;margin-top:10px"><div style="min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b;margin-bottom:5px">SERVING</div><input value="{{ cfServ }}" sc-camel-on-change="{{ cfSetServ }}" placeholder="1 slice" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 16px/1.2 Barlow,sans-serif;padding:10px;outline:none"></div><div style="min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b;margin-bottom:5px">GRAMS · OPTIONAL</div><input value="{{ cfG }}" sc-camel-on-change="{{ cfSetG }}" sc-camel-input-mode="decimal" placeholder="250" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 16px/1.2 Barlow,sans-serif;padding:10px;outline:none"></div></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px"><div style="min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b;margin-bottom:5px">KCAL</div><input value="{{ cfKcal }}" sc-camel-on-change="{{ cfSetKcal }}" sc-camel-input-mode="decimal" placeholder="auto" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 16px/1.2 Barlow,sans-serif;padding:10px;outline:none"></div><div style="min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b;margin-bottom:5px">PROT</div><input value="{{ cfP }}" sc-camel-on-change="{{ cfSetP }}" sc-camel-input-mode="decimal" placeholder="g" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 16px/1.2 Barlow,sans-serif;padding:10px;outline:none"></div><div style="min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b;margin-bottom:5px">CARB</div><input value="{{ cfC }}" sc-camel-on-change="{{ cfSetC }}" sc-camel-input-mode="decimal" placeholder="g" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 16px/1.2 Barlow,sans-serif;padding:10px;outline:none"></div><div style="min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b;margin-bottom:5px">FAT</div><input value="{{ cfF }}" sc-camel-on-change="{{ cfSetF }}" sc-camel-input-mode="decimal" placeholder="g" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 16px/1.2 Barlow,sans-serif;padding:10px;outline:none"></div></div><div style="font:400 10px/1.5 'IBM Plex Mono',monospace;color:#6f7a4b;margin-top:8px">PER SERVING, FROM THE LABEL. {{ cfKcalHint }} · ADD GRAMS TO LOG ANY AMOUNT LATER.</div><div style="display:flex;gap:7px;margin-top:12px"><div sc-camel-on-click="{{ cancelCf }}" style="flex:1;border:1px solid #3a4029;padding:14px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8b8f7e">CANCEL</div><div sc-camel-on-click="{{ saveCf }}" style="flex:2;background:#d9a02b;padding:14px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#1a1500">SAVE &amp; ADD</div></div>
-</div>
-<div style="display:{{ toastVis }};align-items:center;gap:8px;padding:0 6px 0 14px;min-height:48px;background:#2a2410;border-top:1px solid #d9a02b">
-<span style="flex:1;min-width:0;font:600 11px/1.35 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#e8e9e0">✓ {{ toastText }}</span>
-<span sc-camel-on-click="{{ editLast }}" style="padding:12px 10px;cursor:pointer;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b">EDIT</span>
-<span sc-camel-on-click="{{ undoLast }}" style="padding:12px 10px;cursor:pointer;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b">UNDO</span>
-</div>
-</div>
-</div>
-<div style="padding:16px 22px 6px;display:flex;align-items:center;justify-content:space-between">
-<span style="font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#e8e9e0">Meals logged</span>
-<span style="font:500 12px/1 'IBM Plex Mono',monospace;color:#6f7a4b">{{ mealCount }} ENTRIES</span>
-</div>
-<div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
-<sc-for list="{{ meals }}" as="m" hint-placeholder-count="4">
-<div sc-camel-on-click="{{ m.pick }}" style="display:flex;align-items:center;gap:12px;background:#191b12;border:1px solid {{ m.border }};padding:12px 14px;cursor:pointer" style-hover="border-color:#d9a02b">
-<div style="width:44px;flex:none;font:600 11px/1 'IBM Plex Mono',monospace;color:#6f7a4b">{{ m.time }}</div>
-<div style="flex:1;min-width:0">
-<div style="font:600 15px/1.2 Barlow,sans-serif;color:#e8e9e0;text-decoration:underline dotted #4a5138;text-underline-offset:5px">{{ m.name }}</div>
-<div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#6f7a4b;margin-top:3px">{{ m.detail }}</div>
-</div>
-<div style="font:700 19px/1 'Saira Condensed',sans-serif;color:#d9a02b;flex:none">{{ m.kcal }}</div>
-</div>
-</sc-for>
-</div>
-<div style="display:{{ mealEditVis }};padding:12px 22px 0">
-<div style="background:#12160c;border:1px solid #d9a02b;padding:14px">
-<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
-<span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b">EDIT FOOD</span>
-<span sc-camel-on-click="{{ closeMeal }}" style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b;cursor:pointer">{{ mealTime }} · CLOSE</span>
-</div>
-<input value="{{ mealName }}" sc-camel-on-change="{{ renameMeal }}" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;font-weight:600">
-<div style="display:flex;gap:5px;margin-top:8px"><sc-for list="{{ mealSlots }}" as="a" hint-placeholder-count="4"><div sc-camel-on-click="{{ a.pick }}" style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ a.bg }};border:1px solid {{ a.border }};font:600 11px/1 'IBM Plex Mono',monospace;color:{{ a.fg }}">{{ a.label }}</div></sc-for></div>
-<div style="display:flex;align-items:center;gap:5px;margin:8px 0 12px"><span style="width:62px;flex:none;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b">SCALE</span><sc-for list="{{ mealScales }}" as="o" hint-placeholder-count="4"><div sc-camel-on-click="{{ o.pick }}" style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid #3a4029;font:600 11px/1 'IBM Plex Mono',monospace;color:#8b8f7e" style-hover="border-color:#d9a02b;color:#d9a02b">{{ o.label }}</div></sc-for></div>
-<div style="display:{{ mealGramsVis }};align-items:center;gap:6px;margin-bottom:12px"><span style="width:62px;flex:none;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6f7a4b">GRAMS</span><div sc-camel-on-click="{{ decGrams }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid #3a4029;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#e8e9e0">−</div><input value="{{ mealGrams }}" sc-camel-on-change="{{ setGrams }}" sc-camel-input-mode="decimal" style="flex:1;min-width:0;height:44px;box-sizing:border-box;text-align:center;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:700 20px/1 'Saira Condensed',sans-serif;outline:none"><div sc-camel-on-click="{{ incGrams }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid #3a4029;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#e8e9e0">+</div></div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-<sc-for list="{{ mealSteppers }}" as="s" hint-placeholder-count="4">
-<div>
-<div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:5px">{{ s.label }}</div>
-<div style="display:flex;align-items:stretch;border:1px solid #3a4029">
-<div sc-camel-on-click="{{ s.dec }}" style="width:32px;text-align:center;padding:8px 0;cursor:pointer;font:600 15px/1 'IBM Plex Mono',monospace;color:#6f7a4b;border-right:1px solid #3a4029" style-hover="color:#d9a02b">−</div>
-<div style="flex:1;text-align:center;padding:8px 0;font:700 19px/1 'Saira Condensed',sans-serif;color:#e8e9e0;font-variant-numeric:tabular-nums">{{ s.value }}</div>
-<div sc-camel-on-click="{{ s.inc }}" style="width:32px;text-align:center;padding:8px 0;cursor:pointer;font:600 15px/1 'IBM Plex Mono',monospace;color:#6f7a4b;border-left:1px solid #3a4029" style-hover="color:#d9a02b">+</div>
-</div>
-</div>
-</sc-for>
-</div>
-<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:{{ mealNoteFg }};margin-top:10px">{{ mealNote }}</div>
-<div sc-camel-on-click="{{ deleteMeal }}" style="margin-top:10px;text-align:center;padding:11px;cursor:pointer;border:1px solid #4a2018;color:#c9432a;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE ENTRY</div>
-</div>
-</div>
-<div style="height:24px"></div>
-</div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div style="flex:1;min-height:0"><x-import component-from-global-scope="FuelScreen" from="screens.js" dc-props="{{ fuelProps }}"></x-import></div>
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#d9a02b"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
 <div id="s04" class="screen"><x-import component-from-global-scope="IOSDevice" from="app-frame.js">
 <div style="height:100%;display:flex;flex-direction:column;background:#101109;font-family:Barlow,system-ui,sans-serif">
-<div style="flex:1;overflow:auto">
-<div style="padding:56px 22px 18px;border-bottom:1px solid #262a1b">
-<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px">
-<span style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#6f7a4b">SPLIT · 7-DAY ROTATION</span>
-<span sc-camel-on-click="{{ toggleEdit }}" style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8a9757;cursor:pointer;border:1px solid #3a4029;padding:5px 8px" style-hover="border-color:#8a9757">{{ editLabel }}</span>
-</div>
-<div style="display:flex;gap:5px;margin-bottom:16px">
-<sc-for list="{{ plan }}" as="p" hint-placeholder-count="7">
-<div sc-camel-on-click="{{ p.pick }}" style="flex:1;cursor:pointer;background:{{ p.bg }};border:1px solid {{ p.border }};padding:8px 0 7px;text-align:center" style-hover="border-color:#8a9757">
-<div style="font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.06em;color:{{ p.fg }}">{{ p.abbr }}</div>
-<div style="font:500 8px/1 'IBM Plex Mono',monospace;letter-spacing:.04em;color:{{ p.sub }};margin-top:5px">{{ p.tag }}</div>
-</div>
-</sc-for>
-</div>
-<div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#6f7a4b">{{ planKind }}</div>
-<div sc-camel-on-click="{{ toggleDayEdit }}" style="cursor:pointer;margin-top:2px">
-<div style="display:flex;align-items:flex-end;gap:10px"><div style="flex:1;min-width:0;font:800 40px/1 'Saira Condensed',sans-serif;text-transform:uppercase;color:#e8e9e0;text-decoration:underline dotted #4a5138;text-underline-offset:5px;text-decoration-thickness:2px">{{ planName }}</div><span style="flex:none;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8a9757;border:1px solid #3a4029;padding:8px;margin-bottom:5px">{{ dayEditLabel }}</span></div>
-<div style="font:500 11px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8a9757;margin-top:7px">{{ planFocus }}</div>
-</div>
-<div style="display:{{ dayEditVis }};margin-top:12px;background:#12160c;border:1px solid #8a9757;padding:14px">
-<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">{{ planAbbr }} · SESSION NAME</div><input value="{{ planRawName }}" sc-camel-on-change="{{ setPlanName }}" placeholder="e.g. Upper / Push" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;font-weight:600">
-<div style="display:flex;gap:8px;margin-top:12px">
-<div style="width:96px;flex:none"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">CHIP TAG</div><input value="{{ planTag }}" sc-camel-on-change="{{ setPlanTag }}" sc-camel-max-length="7" placeholder="PUSH" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;text-transform:uppercase"></div>
-<div style="flex:1;min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">FOCUS</div><input value="{{ planRawFocus }}" sc-camel-on-change="{{ setPlanFocus }}" placeholder="Chest · shoulders" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none"></div>
-</div>
-<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">QUICK PRESETS</div><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ dayPresets }}" as="p" hint-placeholder-count="8"><div sc-camel-on-click="{{ p.pick }}" style="padding:11px 11px;cursor:pointer;border:1px solid #3a4029;font:500 13px/1 Barlow,sans-serif;color:#e8e9e0" style-hover="border-color:#8a9757;color:#8a9757">{{ p.name }}</div></sc-for></div></div>
-<div style="display:flex;gap:7px;margin-top:14px">
-<div sc-camel-on-click="{{ resetDay }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #3a4029;color:#8b8f7e;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em">RESET</div>
-<div sc-camel-on-click="{{ toggleDayEdit }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#8a9757;color:#0d1005;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
-</div>
-</div>
-<div style="display:flex;gap:22px;margin-top:14px">
-<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:{{ timerTone }}">{{ timerLabel }}</div><div style="font:700 26px/1.1 'Saira Condensed',sans-serif;color:#e8e9e0;font-variant-numeric:tabular-nums">{{ elapsed }}</div></div>
-<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b">{{ volumeLabel }}</div><div style="font:700 26px/1.1 'Saira Condensed',sans-serif;color:#e8e9e0">{{ volume }}<span style="font-size:14px;color:#6f7a4b">{{ volumeUnit }}</span></div></div>
-<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b">SETS</div><div style="font:700 26px/1.1 'Saira Condensed',sans-serif;color:#8a9757">{{ setsDone }}<span style="font-size:14px;color:#6f7a4b">/{{ setsTotal }}</span></div></div>
-</div>
-</div>
-<div style="padding:16px 22px 24px;display:flex;flex-direction:column;gap:11px">
-<sc-for list="{{ exercises }}" as="e" hint-placeholder-count="4">
-<div style="background:#191b12;border:1px solid {{ e.cardBorder }}">
-<div sc-camel-on-click="{{ e.toggleInfo }}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:52px;box-sizing:border-box;cursor:pointer" style-hover="background:#1c2014">
-<div style="flex:1;min-width:0"><div style="font:700 19px/1.05 'Saira Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#e8e9e0;text-decoration:underline dotted #4a5138;text-underline-offset:5px">{{ e.name }}</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#6f7a4b;margin-top:4px">{{ e.scheme }} · {{ e.lastLabel }}</div></div>
-<span sc-camel-on-click="{{ e.remove }}" style="display:{{ e.removeVis }};cursor:pointer;font:600 10px/1 'IBM Plex Mono',monospace;color:#c9432a;border:1px solid #4a2018;padding:8px">REMOVE</span>
-<span style="flex:none;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8a9757;border:1px solid #3a4029;padding:8px">{{ e.infoLabel }}</span>
-</div>
-<div style="display:flex;gap:7px;padding:0 14px 14px">
-<sc-for list="{{ e.sets }}" as="s" hint-placeholder-count="4">
-<div sc-camel-on-click="{{ s.toggle }}" style="flex:1;min-width:0;cursor:pointer;border:1px solid {{ s.border }};background:{{ s.bg }};padding:10px 0;text-align:center" style-hover="border-color:#8a9757">
-<div style="font:700 17px/1 'Saira Condensed',sans-serif;color:{{ s.fg }}">{{ s.weight }}</div>
-<div style="font:500 10px/1 'IBM Plex Mono',monospace;color:{{ s.sub }};margin-top:4px">{{ s.reps }}</div>
-</div>
-</sc-for>
-<div sc-camel-on-click="{{ e.addSet }}" style="width:40px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px dashed #3a4029;font:600 16px/1 'IBM Plex Mono',monospace;color:#6f7a4b" style-hover="border-color:#8a9757;color:#8a9757">+</div>
-</div>
-<div style="display:{{ e.adjVis }};border-top:1px solid #4d7cff;background:#12160c;padding:14px">
-<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#e8e9e0">{{ e.adj.setLabel }}</span><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#6f7a4b">{{ e.adj.prev }}</span></div>
-<div style="display:flex;gap:9px">
-<div style="flex:1;min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">{{ e.adj.wLabel }}</div><div style="display:flex;align-items:stretch;border:1px solid #3a4029;height:50px"><div sc-camel-on-click="{{ e.adj.decW }}" style="width:48px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#8b8f7e;border-right:1px solid #3a4029" style-hover="color:#4d7cff">−</div><input value="{{ e.adj.w }}" sc-camel-on-change="{{ e.adj.setW }}" sc-camel-input-mode="decimal" sc-camel-read-only="{{ e.adj.wRead }}" style="flex:1;min-width:0;width:100%;background:transparent;border:none;outline:none;text-align:center;font:700 24px/1 'Saira Condensed',sans-serif;color:{{ e.adj.wDim }};font-variant-numeric:tabular-nums"><div sc-camel-on-click="{{ e.adj.incW }}" style="width:48px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#8b8f7e;border-left:1px solid #3a4029" style-hover="color:#4d7cff">+</div></div></div>
-<div style="flex:1;min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">{{ e.adj.rLabel }}</div><div style="display:flex;align-items:stretch;border:1px solid #3a4029;height:50px"><div sc-camel-on-click="{{ e.adj.decR }}" style="width:48px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#8b8f7e;border-right:1px solid #3a4029" style-hover="color:#4d7cff">−</div><input value="{{ e.adj.r }}" sc-camel-on-change="{{ e.adj.setR }}" sc-camel-input-mode="decimal" style="flex:1;min-width:0;width:100%;background:transparent;border:none;outline:none;text-align:center;font:700 24px/1 'Saira Condensed',sans-serif;color:#e8e9e0;font-variant-numeric:tabular-nums"><div sc-camel-on-click="{{ e.adj.incR }}" style="width:48px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#8b8f7e;border-left:1px solid #3a4029" style-hover="color:#4d7cff">+</div></div></div>
-</div>
-<div style="display:flex;gap:7px;margin-top:9px">
-<div sc-camel-on-click="{{ e.adj.fill }}" style="display:{{ e.adj.fillVis }};flex:1;text-align:center;padding:13px 0;cursor:pointer;border:1px solid #3a4029;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8b8f7e" style-hover="border-color:#4d7cff;color:#4d7cff">COPY TO NEXT SETS</div>
-<div sc-camel-on-click="{{ e.adj.removeSet }}" style="flex:1;text-align:center;padding:13px 0;cursor:pointer;border:1px solid #4a2018;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#c9432a">REMOVE SET</div>
-</div>
-<div sc-camel-on-click="{{ e.adj.log }}" style="margin-top:9px;text-align:center;padding:15px;cursor:pointer;background:{{ e.adj.logBg }};border:1px solid #8a9757;color:{{ e.adj.logFg }};font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">{{ e.adj.logLabel }}</div>
-</div>
-<div style="display:{{ e.infoVis }};border-top:1px solid #4d7cff;background:#12160c;padding:14px">
-<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">EXERCISE</div><input value="{{ e.rawName }}" sc-camel-on-change="{{ e.rename }}" style="width:100%;box-sizing:border-box;background:#191b12;border:1px solid #3a4029;color:#e8e9e0;font:600 15px/1.2 Barlow,sans-serif;padding:12px;outline:none">
-<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b;margin-bottom:7px">SWAP FOR</div><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ e.swaps }}" as="w" hint-placeholder-count="3"><div sc-camel-on-click="{{ w.pick }}" style="padding:11px 11px;cursor:pointer;border:1px solid {{ w.border }};background:{{ w.bg }};font:500 13px/1 Barlow,sans-serif;color:{{ w.fg }}" style-hover="border-color:#8a9757">{{ w.name }}</div></sc-for></div></div>
-<div style="margin-top:14px;display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px"><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6f7a4b">HISTORY</span><span style="font:600 11px/1 'IBM Plex Mono',monospace;color:#d9a02b">{{ e.best }}</span></div>
-<div style="display:{{ e.historyVis }};flex-direction:column;gap:1px;background:#262a1b;border:1px solid #262a1b">
-<sc-for list="{{ e.history }}" as="r" hint-placeholder-count="4">
-<div style="display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:10px 11px;background:#151810">
-<span style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:{{ r.tone }}">{{ r.day }}</span>
-<span style="font:500 12px/1.45 'IBM Plex Mono',monospace;color:#c9cbbc">{{ r.sets }}</span>
-<span style="font:500 10px/1.3 'IBM Plex Mono',monospace;color:#6f7a4b">{{ r.vol }}</span>
-</div>
-</sc-for>
-</div>
-<div style="display:{{ e.noHistVis }};border:1px dashed #3a4029;padding:13px;font:500 11px/1.4 'IBM Plex Mono',monospace;color:#6f7a4b">NO SESSIONS LOGGED FOR {{ e.name }} YET</div>
-<div style="display:flex;gap:7px;margin-top:12px">
-<div sc-camel-on-click="{{ e.removeEx }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #4a2018;color:#c9432a;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">REMOVE</div>
-<div sc-camel-on-click="{{ e.toggleInfo }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#8a9757;color:#0d1005;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
-</div>
-</div>
-</div>
-</sc-for>
-<div sc-camel-on-click="{{ addExercise }}" style="border:1px dashed #3a4029;padding:14px;text-align:center;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b;cursor:pointer" style-hover="border-color:#8a9757;color:#8a9757">+ ADD EXERCISE TO {{ planName }}</div>
-<div style="background:#191b12;border:1px solid #262a1b;padding:14px">
-<div style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#e8e9e0;margin-bottom:4px">Mobility · 30 min</div>
-<div style="font:400 12px/1.3 'IBM Plex Mono',monospace;color:#6f7a4b;margin-bottom:10px">{{ planMobility }}</div>
-<div style="height:9px;background:#23271a;overflow:hidden"><div style="height:100%;background:#8a9757;width:{{ planMobPct }}"></div></div>
-<div style="display:flex;justify-content:space-between;margin-top:8px;font:500 11px/1 'IBM Plex Mono',monospace;color:#6f7a4b"><span>{{ mobDone }} MIN LOGGED</span><span>{{ mobLeft }}</span></div>
-</div>
-<div sc-camel-on-click="{{ toggleTimer }}" style="background:{{ timerBtnBg }};color:{{ timerBtnFg }};text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">{{ timerBtn }}</div>
-<div style="display:{{ finishedVis }};text-align:center;font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b">{{ finishedText }}</div>
-</div>
-</div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div style="flex:1;min-height:0"><x-import component-from-global-scope="TrainScreen" from="screens.js" dc-props="{{ trainProps }}"></x-import></div>
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#8a9757"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8a9757">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
@@ -581,12 +342,12 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </div>
 </div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#4d7cff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4d7cff">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
@@ -627,12 +388,12 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </div>
 </div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#d9a02b"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#d9a02b"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#d9a02b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
@@ -674,12 +435,12 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="padding:8px 22px 24px;font:400 12px/1.4 'IBM Plex Mono',monospace;color:#5c6150">{{ waterSummary }}</div>
 </div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#4d7cff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4d7cff">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
@@ -708,12 +469,12 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="padding:18px 22px 24px"><label style="display:block;background:#4d7cff;color:#06122e;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">Capture day {{ dayNum }}<input type="file" accept="image/*" capture="environment" sc-camel-on-change="{{ addPhoto }}" style="display:none"></label></div>
 </div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#4d7cff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4d7cff">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
@@ -800,16 +561,16 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <label style="display:block;border:1px solid #3a4029;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#e8e9e0;cursor:pointer">RESTORE FROM BACKUP<input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
 <a href="#s01" style="display:block;border:1px solid #3a4029;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8b8f7e;text-decoration:none">VIEW CHALLENGE RULES</a>
 <div sc-camel-on-click="{{ restart }}" style="border:1px solid #5c2b2e;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#c9432a;cursor:pointer">RESTART CHALLENGE</div>
-<div style="padding:6px 0 0;text-align:center;font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#5c6150">APP VERSION 2026-09-26 11:34</div>
+<div style="padding:6px 0 0;text-align:center;font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#5c6150">APP VERSION 2026-09-26 15:40</div>
 </div>
 <div style="height:24px"></div>
 </div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#4d7cff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4d7cff">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
@@ -874,15 +635,24 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="padding:12px 22px 24px;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#6f7a4b">RELAXED, TAPE LEVEL, SAME SPOT EACH WEEK · <a href="#s10">SET A WEEKLY REMINDER ›</a></div>
 </div>
-<div style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#4d7cff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4d7cff">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">COACH</span></a>
 </div>
 </div>
 </x-import></div>
+<div id="s12" class="screen"><x-import component-from-global-scope="IOSDevice" from="app-frame.js"><div style="height:100%;display:flex;flex-direction:column;background:#101109;font-family:Barlow,system-ui,sans-serif"><div style="flex:1;min-height:0"><x-import component-from-global-scope="CoachScreen" from="screens.js" dc-props="{{ coachProps }}"></x-import></div>
+<div class="tabbar" style="display:flex;background:#0d0e08;border-top:1px solid #262a1b;padding:0 6px 24px">
+<a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TODAY</span></a>
+<a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">FUEL</span></a>
+<a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">TRAIN</span></a>
+<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">PROGRESS</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6f7a4b">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#14160d"><div style="width:28px;height:2px;background:#4d7cff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4d7cff">COACH</span></a>
+</div>
+</div></x-import></div>
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;dayNumber&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:27,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:1,&quot;max&quot;:70,&quot;section&quot;:&quot;Challenge&quot;}}">
 const HABITS = [
   { k: 'strength', name: 'Workout', spec: '45 MIN · ANY TRAINING', g: 'BODY' },
@@ -1092,6 +862,10 @@ function exList(s, pd) {
 }
 function snapshot(s) {
   const ex = {};
+  (s.workouts || []).filter(w => w.date === s.curDate).forEach(w => w.exercises.forEach(e => {
+    const done = e.sets.filter(x => x.done !== false);
+    if (done.length) ex[e.name] = { u: e.type, w: done.map(x => x.w), r: done.map(x => x.r) };
+  }));
   Object.keys(s.sets || {}).forEach(key => {
     const pd = parseInt(key, 10);
     if (isNaN(pd) || !PLAN[pd]) return;
@@ -1104,6 +878,7 @@ function snapshot(s) {
   });
   const tot = s.meals.reduce((a, m) => ({ kcal: a.kcal + m.kcal, p: a.p + m.p }), { kcal: 0, p: 0 });
   let setsN = 0; Object.values(s.sets || {}).forEach(r => { setsN += r.filter(Boolean).length; });
+  (s.workouts || []).filter(w => w.date === s.curDate).forEach(w => w.exercises.forEach(e => { setsN += e.sets.length; }));
   return { date: s.curDate, rules: s.ruleDefs.filter(h => h.on).map(h => h.k), done: { ...s.done }, doneAt: { ...s.doneAt },
     waterMl: s.waterMl, kcal: tot.kcal, p: tot.p, meals: s.meals.length, sets: setsN, note: s.dayNote, ex };
 }
@@ -1124,7 +899,8 @@ function rollover(s) {
   for (let n = dn + 1; n < Math.min(todayN, 71); n++) {
     if (!history[n]) { history[n] = { date: addDays(s.startDate, n - 1), skipped: true, rules: s.ruleDefs.filter(h => h.on).map(h => h.k), done: {}, doneAt: {}, waterMl: 0, kcal: 0, p: 0, meals: 0, sets: 0, note: '', ex: {} }; verdict = verdict || n; }
   }
-  return { ...s, ...freshDay(), history, curDate: today, planDay: weekdayIdx(today), selDay: Math.min(70, Math.max(1, todayN)), verdict: verdict || s.verdict || null };
+  const diary = { ...(s.diary || {}), [s.curDate]: { meals: s.meals || [], waterMl: s.waterMl || 0 } };
+  return { ...s, ...freshDay(), history, diary, curDate: today, planDay: weekdayIdx(today), selDay: Math.min(70, Math.max(1, todayN)), verdict: verdict || s.verdict || null };
 }
 const OLD_HABITS = [
   { k: 'strength', name: 'Strength session', spec: 'LOWER / PULL · 45 MIN', g: 'BODY' }, { k: 'stretch', name: 'Stretching', spec: '30 MIN · MOBILITY FLOW', g: 'BODY' },
@@ -1227,6 +1003,8 @@ const STRIPE = 'repeating-linear-gradient(135deg,#1c2014,#1c2014 8px,#22271a 8px
 const photoBg = url => url ? 'url(' + url + ') center/cover no-repeat, #1c2014' : STRIPE;
 
 
+window.SH = { PLAN, FOODS, DAY_PRESETS, nowHM, weekdayIdx, todayIso, addDays };
+
 class Component extends DCLogic {
   state = loadState();
   photoUrls = {};
@@ -1302,7 +1080,8 @@ class Component extends DCLogic {
     this.photoUrls = {};
     const st = this.state;
     const keep = { setup: { ...st.setup, step: 0, done: false }, ruleDefs: st.ruleDefs, waterGoal: st.waterGoal, targets: st.targets, planEdit: st.planEdit, customEx: st.customEx, removed: st.removed, exOver: st.exOver,
-      rem: st.rem, extras: st.extras, imperial: st.imperial, regulars: st.regulars, customFoods: st.customFoods, savedFoods: st.savedFoods, push: st.push };
+      rem: st.rem, extras: st.extras, imperial: st.imperial, regulars: st.regulars, customFoods: st.customFoods, savedFoods: st.savedFoods, push: st.push,
+      workouts: st.workouts, exLib: st.exLib, templates: st.templates, favFoods: st.favFoods, recentFoods: st.recentFoods, diary: st.diary };
     this.setState({ ...defaultState(), ...keep });
     window.__goto && window.__goto('s01');
   }
@@ -1537,7 +1316,7 @@ class Component extends DCLogic {
         const t0 = todayIso(), sd = startFor(this.state.setup.start, t0);
         this.setState(st => ({
           setup: { ...st.setup, done: true },
-          startDate: sd, curDate: t0, history: {}, verdict: null, selDay: 1, planDay: weekdayIdx(t0), ...freshDay(), measLog: {},
+          templates: null, startDate: sd, curDate: t0, history: {}, verdict: null, selDay: 1, planDay: weekdayIdx(t0), ...freshDay(), measLog: {},
           meas: st.meas.map(m => m.k === 'weight' ? { ...m, start: st.setup.weight, cur: st.setup.weight } : m),
           rem: { ...st.rem, ...Object.fromEntries(st.ruleDefs.map(r => { const v = st.rem[r.k] || DEFREM; return [r.k, { ...v, on: st.setup.remindersOn && r.k !== 'meals', t: suggestT(r.k, st.setup) }]; })) }
         }));
@@ -2173,6 +1952,7 @@ class Component extends DCLogic {
         customEx: { ...s.customEx, [pd]: [...(s.customEx[pd] || []), { name: 'New exercise', scheme: '3 sets · 10 reps', u: 'kg', w: [20, 20, 20], r: [10, 10, 10] }] }
       })),
       ...this.extraVals(dayNum),
+      trainProps: { app: this, st: this.state }, fuelProps: { app: this, st: this.state }, coachProps: { app: this, st: this.state },
       ...this.obVals(ACT, rings),
       waterGoalL: (goal / 1000).toFixed(2).replace(/0$/, ''),
       greet: (this.state.setup.name ? 'MORNING, ' + this.state.setup.name.toUpperCase() : '06:12'),
