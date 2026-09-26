@@ -20,7 +20,7 @@ export default async (req) => {
   } catch (e) { /* fall through to USDA */ }
 
   try {
-    const key = process.env.USDA_API_KEY || 'DEMO_KEY';
+    const key = String(process.env.USDA_API_KEY || '').trim() || 'DEMO_KEY';
     const r = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${code}&dataType=Branded&pageSize=5&api_key=${encodeURIComponent(key)}`);
     if (r.ok) {
       const j = await r.json();

@@ -73,3 +73,20 @@ Edit or replace files in the GitHub repo. Netlify rebuilds automatically, and th
 - **Scanning on iPhone** uses a barcode library that downloads the first time you scan, so do your first scan with internet.
 - **Food values**: database foods store exact per-100 g values. Tap a logged meal to change the grams and everything rescales.
 - **Cost**: it all fits in Netlify's free plan at personal use, and USDA and Open Food Facts are free.
+
+## Coach (AI helper)
+
+The **Coach** tab chats with Claude. It can log food from phrases like "usual breakfast", answer questions like "why am I not gaining weight?" using your logs, and change targets, water or reminders when you ask. Every change it makes has an **Undo**.
+
+Setup (one time):
+1. Go to https://console.anthropic.com, sign up, and add credit under **Billing** (the minimum top-up is plenty; each message costs a fraction of a cent with the default Haiku model).
+2. Under **Limits**, set a monthly spend limit (for example $5) so it can never run away.
+3. Under **API Keys**, click **Create Key** and copy it.
+4. In Netlify: **Project configuration → Environment variables → Add a variable**: `ANTHROPIC_API_KEY` = your key.
+5. Recommended: add `COACH_CODE` = any passcode. Anyone who finds your site link could otherwise use the coach on your key. The app asks for the code once.
+6. Optional: `ANTHROPIC_MODEL` to use a different Claude model (default `claude-haiku-4-5-20251001`).
+7. Redeploy (Deploys → Trigger deploy), or add the variables before your next upload so one deploy covers both.
+
+**Photo logging** (Fuel → + on a meal → 📷 Snap a photo) uses the same key and passcode: Claude estimates each food's grams and macros from the picture, and you can edit everything before it's added.
+
+What the coach sees: your profile, targets, today's diary, the last 13 days' totals, weight log, measurements, saved meals, your foods, and recent workouts. Each message is sent to Anthropic's API to get the answer.

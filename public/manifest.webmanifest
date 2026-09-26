@@ -6,8 +6,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#101109",
-  "theme_color": "#101109",
+  "background_color": "#15181d",
+  "theme_color": "#15181d",
   "description": "70-day habit challenge: daily rules, food log, training split, board and stats.",
   "icons": [
     {
