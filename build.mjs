@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
+import { toLight } from './tools/light-theme.mjs';
 
 const ROOT = path.dirname(new URL(import.meta.url).pathname);
 const SRC = path.join(ROOT, 'src'), OUT = path.join(ROOT, 'public');
@@ -47,6 +48,12 @@ if (LABEL) {
   const mf = path.join(OUT, 'manifest.webmanifest'), m = JSON.parse(fs.readFileSync(mf, 'utf8'));
   m.name += ' ' + nice; m.short_name += ' ' + nice;
   fs.writeFileSync(mf, JSON.stringify(m, null, 2));
+}
+// The DEV app gets the light colour scheme (THEME=light also forces it, e.g. `THEME=light npm run dev`).
+if (CTX === 'branch-deploy' || process.env.THEME === 'light') {
+  page = toLight(page).replace('name="apple-mobile-web-app-status-bar-style" content="black-translucent"', 'name="apple-mobile-web-app-status-bar-style" content="default"');
+  const sj = path.join(OUT, 'screens.js'); fs.writeFileSync(sj, toLight(fs.readFileSync(sj, 'utf8')));
+  const mf = path.join(OUT, 'manifest.webmanifest'); fs.writeFileSync(mf, toLight(fs.readFileSync(mf, 'utf8')));
 }
 fs.writeFileSync(path.join(OUT, 'index.html'), page);
 

@@ -7,6 +7,10 @@ learning to edit this himself — explain changes plainly and keep them small an
 - `npm run build` → compiles `src/` into `public/` (gitignored). Netlify runs the same build on deploy.
 - `npm run dev` → build + serve http://localhost:8888 + rebuild on save. `/api/*` returns a stub locally.
 - No test runner; verify by building and loading the page (check the browser console for errors).
+- Two apps: `main` = live app (merging costs production-deploy credits). `dev` = Netlify branch deploy at
+  dev--<site>.netlify.app, installed as "70 Hard Dev": free, auto-updates on push, DEV badge, light colours
+  (tools/light-theme.mjs maps each dark colour to a light one at build time; `THEME=light npm run dev` to try it).
+  Push changes to `dev`; publish by merging dev → main.
 - Workflow: work on a branch → push → GitHub PR gives a free Netlify deploy preview; merging to main publishes
   (costs production-deploy credits, so don't suggest merging unfinished work).
 
