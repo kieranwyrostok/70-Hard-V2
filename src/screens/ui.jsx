@@ -57,13 +57,21 @@ function Card({ children, style, onClick, accent }) {
 }
 // Full-screen layer above the whole app (tab bar included).
 function Sheet({ title, sub, left, right, children, footer, z = 40, bg = C.bg, onTitle }) {
-  const leftRef = useRef(null), edge = useRef(null);
-  // swipe right from the left edge of the screen = the ‹ BACK button (like iOS)
-  const edgeDown = e => { edge.current = e.clientX < 30 ? { x: e.clientX, y: e.clientY } : null; };
-  const edgeUp = e => { const s = edge.current; edge.current = null; if (!s) return;
-    if (e.clientX - s.x > 80 && Math.abs(e.clientY - s.y) < 70) { const b = leftRef.current && leftRef.current.querySelector('[role=button]'); if (b) b.click(); } };
+  const leftRef = useRef(null), edge = useRef(null), rootRef = useRef(null);
+  // swipe right from the left edge = ‹ BACK (like iOS): the screen follows the finger, then slides away or springs back
+  const edgeDown = e => { edge.current = e.clientX < 30 ? { x: e.clientX, y: e.clientY, t: performance.now(), lock: null } : null; };
+  const edgeMove = e => { const g = edge.current, el = rootRef.current; if (!g || !el) return;
+    const dx = e.clientX - g.x, dy = e.clientY - g.y;
+    if (g.lock == null) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; g.lock = dx > Math.abs(dy) ? 'x' : 'y'; }
+    if (g.lock !== 'x') return;
+    el.style.transition = 'none'; el.style.transform = `translate3d(${Math.max(0, dx)}px,0,0)`; el.style.boxShadow = '-12px 0 30px rgba(0,0,0,.35)'; };
+  const edgeUp = e => { const g = edge.current, el = rootRef.current; edge.current = null; if (!g || !el || g.lock !== 'x') return;
+    const dx = e.clientX - g.x, v = dx / Math.max(1, performance.now() - g.t), b = leftRef.current && leftRef.current.querySelector('[role=button]');
+    el.style.transition = 'transform .26s cubic-bezier(.2,.9,.25,1)';
+    if (b && (dx > innerWidth * 0.35 || (dx > 40 && v > 0.5))) { el.style.transform = 'translate3d(100%,0,0)'; setTimeout(() => b.click(), 200); }
+    else { el.style.transform = ''; el.style.boxShadow = ''; } };
   return ReactDOM.createPortal(
-    <div onPointerDownCapture={edgeDown} onPointerUpCapture={edgeUp} style={{ position: 'fixed', inset: 0, zIndex: z, background: bg, display: 'flex', flexDirection: 'column', fontFamily: F.body, color: C.text }}>
+    <div ref={rootRef} onPointerDownCapture={edgeDown} onPointerMoveCapture={edgeMove} onPointerUpCapture={edgeUp} onPointerCancelCapture={edgeUp} style={{ position: 'fixed', inset: 0, zIndex: z, background: bg, display: 'flex', flexDirection: 'column', fontFamily: F.body, color: C.text }}>
       <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 16px 12px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'center', gap: 10, minHeight: 44 }}>
         <div ref={leftRef} style={{ minWidth: 70 }}>{left}</div>
         <div onClick={onTitle} style={{ flex: 1, minWidth: 0, textAlign: 'center', cursor: onTitle ? 'pointer' : 'default' }}>
@@ -312,44 +320,91 @@ function Grip({ h, color }) {
 }
 
 // ── Swipe gestures ──
-// SwipeRow: slide a row left to reveal actions (like iOS Mail); a long swipe runs the first action straight away.
+// SwipeRow: slide a row left to reveal actions (like iOS Mail); a long swipe or a hard flick runs the first action.
+// While the finger is down the row is moved directly (no React re-render), so it tracks at full frame rate.
+let openSwipeRow = null;   // only one row open at a time
 function SwipeRow({ actions, children, bg = C.card, radius = 0, disabled, style }) {
-  const [dx, setDx] = useState(0), [drag, setDrag] = useState(false);
-  const s = useRef(null), justSwiped = useRef(0);
+  const content = useRef(null), box = useRef(null), outer = useRef(null), g = useRef(null), pos = useRef(0), justSwiped = useRef(0), raf = useRef(0);
   const acts = (actions || []).filter(Boolean), W = acts.length * 78;
+  const apply = (x, anim) => {
+    pos.current = x;
+    const el = content.current, a = box.current; if (!el) return;
+    el.style.transition = anim ? 'transform .32s cubic-bezier(.2,.9,.25,1)' : 'none';
+    el.style.transform = x ? `translate3d(${x}px,0,0)` : '';
+    if (a) { a.style.visibility = x < 0 ? 'visible' : 'hidden'; a.style.width = Math.max(W, -x) + 'px'; a.style.transition = anim ? 'width .32s cubic-bezier(.2,.9,.25,1)' : 'none'; }
+  };
+  const close = () => { apply(0, true); if (openSwipeRow === close) openSwipeRow = null; };
+  useEffect(() => () => { cancelAnimationFrame(raf.current); if (openSwipeRow === close) openSwipeRow = null; }, []);
   if (disabled || !acts.length) return <div style={style}>{children}</div>;
-  const down = e => { if (e.button > 0) return; s.current = { x: e.clientX, y: e.clientY, base: dx, lock: null }; };
+  const down = e => {
+    if (e.button > 0) return;
+    if (openSwipeRow && openSwipeRow !== close) openSwipeRow();
+    g.current = { x: e.clientX, y: e.clientY, base: pos.current, lock: null, pts: [[e.clientX, performance.now()]] };
+  };
   const move = e => {
-    const t = s.current; if (!t) return;
+    const t = g.current; if (!t) return;
     const mx = e.clientX - t.x, my = e.clientY - t.y;
-    if (t.lock == null) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; t.lock = Math.abs(mx) > Math.abs(my) * 1.3 ? 'x' : 'y'; if (t.lock === 'x') { setDrag(true); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ } } }
+    if (t.lock == null) {
+      if (Math.abs(mx) < 6 && Math.abs(my) < 6) return;
+      t.lock = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+      if (t.lock === 'x') { try { e.currentTarget.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ } }
+    }
     if (t.lock !== 'x') return;
     e.stopPropagation();
-    setDx(Math.min(0, Math.max(-W - 150, t.base + mx)));
+    t.pts.push([e.clientX, performance.now()]); if (t.pts.length > 6) t.pts.shift();
+    let x = t.base + mx;
+    if (x > 0) x = x * 0.25;                                          // rubber band to the right
+    const max = W + 140; if (x < -max) x = -max - (-x - max) * 0.3;    // and past a full swipe
+    cancelAnimationFrame(raf.current); raf.current = requestAnimationFrame(() => apply(x, false));
   };
   const up = e => {
-    const t = s.current; s.current = null; setDrag(false);
+    const t = g.current; g.current = null;
     if (!t || t.lock !== 'x') return;
-    e.stopPropagation(); justSwiped.current = Date.now();
-    if (dx < -W - 90) { setDx(0); vib(20); acts[0].run(); } else setDx(dx < -W / 2 ? -W : 0);
+    e.stopPropagation(); justSwiped.current = Date.now(); cancelAnimationFrame(raf.current);
+    const x = t.base + (e.clientX - t.x), p0 = t.pts[0], v = p0 ? (e.clientX - p0[0]) / Math.max(1, performance.now() - p0[1]) : 0;   // px per ms
+    const width = outer.current ? outer.current.offsetWidth : 360;
+    if (x < -W - 90 || (v < -1.1 && x < -W * 0.7)) {                    // full swipe / hard flick → first action
+      apply(-width, true); vib(20);
+      setTimeout(() => { acts[0].run(); apply(0, false); }, 220);
+      if (openSwipeRow === close) openSwipeRow = null;
+    } else if (x < -W / 2 || v < -0.45) {
+      apply(-W, true); openSwipeRow = close;
+      // tapping anywhere outside this row closes it again
+      const away = ev => { if (outer.current && outer.current.contains(ev.target)) return; document.removeEventListener('pointerdown', away, true); if (pos.current) close(); };
+      setTimeout(() => document.addEventListener('pointerdown', away, true), 0);
+    }
+    else close();
   };
-  return <div style={{ position: 'relative', overflow: 'hidden', borderRadius: radius, ...style }}>
-    {dx < 0 || drag ? <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, display: 'flex', width: Math.max(W, -dx) }}>
-      {acts.map((a, i) => <div key={i} role="button" onClick={() => { setDx(0); a.run(); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: a.tone || C.red, color: a.ink || '#fff', ...T.mono, fontSize: 11, cursor: 'pointer' }}>{a.label}</div>)}
-    </div> : null}
-    <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
-      onClickCapture={e => { if (Date.now() - justSwiped.current < 350) { e.stopPropagation(); e.preventDefault(); } else if (dx) { e.stopPropagation(); setDx(0); } }}
-      style={{ position: 'relative', background: bg, transform: `translateX(${dx}px)`, transition: drag ? 'none' : 'transform .2s ease', touchAction: 'pan-y' }}>{children}</div>
+  return <div ref={outer} style={{ position: 'relative', overflow: 'hidden', borderRadius: radius, ...style }}>
+    <div ref={box} style={{ position: 'absolute', top: 0, bottom: 0, right: 0, display: 'flex', width: W, visibility: 'hidden' }}>
+      {acts.map((a, i) => <div key={i} role="button" onClick={() => { close(); a.run(); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: a.tone || C.red, color: a.ink || '#fff', ...T.mono, fontSize: 11, cursor: 'pointer' }}>{a.label}</div>)}
+    </div>
+    <div ref={content} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+      onClickCapture={e => { if (Date.now() - justSwiped.current < 350) { e.stopPropagation(); e.preventDefault(); } else if (pos.current) { e.stopPropagation(); close(); } }}
+      style={{ position: 'relative', background: bg, touchAction: 'pan-y', willChange: 'transform' }}>{children}</div>
   </div>;
 }
-// Horizontal swipe anywhere on an area → onLeft / onRight (e.g. next / previous day). Spread the result on an element.
+// Horizontal swipe on an area → onLeft / onRight (next / previous day, month…). The area follows the finger a little
+// and springs back, so it feels connected. Gesture state lives on the element, so re-renders mid-swipe don't lose it.
 function swipeNav(onLeft, onRight) {
-  let st = null;
+  const ease = 'transform .3s cubic-bezier(.2,.9,.25,1)';
   return {
-    onPointerDown: e => { if (e.button > 0) return; st = { x: e.clientX, y: e.clientY, t: Date.now() }; },
-    onPointerUp: e => { if (!st) return; const dx = e.clientX - st.x, dy = e.clientY - st.y, fast = Date.now() - st.t < 700; st = null;
-      if (fast && Math.abs(dx) > 60 && Math.abs(dy) < Math.abs(dx) * 0.6) { if (dx < 0 && onLeft) onLeft(); else if (dx > 0 && onRight) onRight(); } },
-    onPointerCancel: () => { st = null; },
+    onPointerDown: e => { if (e.button > 0) return; e.currentTarget.__sw = { x: e.clientX, y: e.clientY, t: performance.now(), lock: null }; },
+    onPointerMove: e => {
+      const el = e.currentTarget, t = el.__sw; if (!t) return;
+      const dx = e.clientX - t.x, dy = e.clientY - t.y;
+      if (t.lock == null) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; t.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y'; }
+      if (t.lock !== 'x') return;
+      const can = dx < 0 ? !!onLeft : !!onRight, k = can ? 0.45 : 0.15;
+      el.style.transition = 'none'; el.style.transform = `translate3d(${dx * k}px,0,0)`; el.style.opacity = String(1 - Math.min(0.35, Math.abs(dx) / 900));
+    },
+    onPointerUp: e => {
+      const el = e.currentTarget, t = el.__sw; el.__sw = null; if (!t) return;
+      const dx = e.clientX - t.x, dy = e.clientY - t.y, v = Math.abs(dx) / Math.max(1, performance.now() - t.t);
+      el.style.transition = ease + ', opacity .3s'; el.style.transform = ''; el.style.opacity = '';
+      if (t.lock === 'x' && Math.abs(dy) < Math.abs(dx) && (Math.abs(dx) > 70 || (Math.abs(dx) > 30 && v > 0.5))) { if (dx < 0 && onLeft) onLeft(); else if (dx > 0 && onRight) onRight(); }
+    },
+    onPointerCancel: e => { const el = e.currentTarget; el.__sw = null; el.style.transition = ease; el.style.transform = ''; el.style.opacity = ''; },
     style: { touchAction: 'pan-y' }
   };
 }
