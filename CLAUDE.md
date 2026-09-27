@@ -67,6 +67,10 @@ ui → library → train → fuel → coach and compiled into one IIFE, so later
   up to 6 sessions either side; suggests ×0.4536 / ×2.2046 (lb↔kg), ÷10 (decimal), km↔mi/m fixes only when the result
   lands back in range; single odd sets checked against the rest of their session. Applies only after review; `dataFixUndo`
   keeps the originals; `recomputeWorkouts` rebuilds volume + PRs. Banner on History when anything is found.
+- Tab swipe (ui.jsx `tabSwipe`, document capture listeners): sideways swipe on a main screen → next/previous tab
+  (Today, Fuel, Train, Progress group, Log, Coach). Skips anything marked `data-hswipe` (SwipeRow, swipeNav areas, charts),
+  inputs, `touch-action:none`, sideways-scrolling rows, and whenever a full-screen sheet is open.
+- Data check suggestions left unticked (or 'All correct') go into `dataFixIgnored` and never come back.
 - Strong import (train.jsx, `StrongImport`): reads Strong's CSV export (columns found by name; kg/lb and m/km/mi in
   headers or per row; rest-timer rows skipped), matches exercise names to the list, adds unknown ones to `exLib`,
   skips workouts already present (same name within 90 s), computes volume + PRs in date order. Ids `strong-<start>`.

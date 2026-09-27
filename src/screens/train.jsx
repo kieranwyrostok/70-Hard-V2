@@ -164,7 +164,7 @@ function TrainScreen({ app, st }) {
   const [strongImp, setStrongImp] = useState(false);
   const [allTime, setAllTime] = useState(false);
   const [dataFix, setDataFix] = useState(false);
-  const oddCount = useMemo(() => tab === 'history' ? findOddSets(st).length : 0, [tab, st.workouts]);
+  const oddCount = useMemo(() => tab === 'history' ? openOddSets(st).length : 0, [tab, st.workouts, st.dataFixIgnored]);
   const SH = window.SH;
   const today = st.curDate;
   const aw = st.activeWorkout;
@@ -1236,6 +1236,8 @@ function findOddSets(st) {
   }
   return issues;
 }
+// Suggestions you've already dealt with (fixed, or unticked as “that was real”) don't come back.
+const openOddSets = st => { const ig = new Set(st.dataFixIgnored || []); return findOddSets(st).filter(i => !ig.has(i.key)); };
 // Rebuild volume and PRs for every workout, in date order (after fixes or undo).
 function recomputeWorkouts(st, workouts) {
   const all = workouts.slice().sort((a, b) => a.start - b.start).map(w => { const x = { ...w }; x.volume = workoutVolume(x); return x; });
@@ -1244,12 +1246,12 @@ function recomputeWorkouts(st, workouts) {
   return all;
 }
 function DataFix({ app, st, onClose }) {
-  const issues = useMemo(() => findOddSets(st), [st.workouts]);
+  const issues = useMemo(() => openOddSets(st), [st.workouts, st.dataFixIgnored]);
   const [off, setOff] = useState({});
   const unitOf = t => t === 'wr' ? wUnit(st) : 'km', show = (t, v) => t === 'wr' ? wDisp(st, r2(v)) : r2(v);
   const apply = () => {
-    const pick = issues.filter(i => !off[i.key]);
-    if (!pick.length) return;
+    const pick = issues.filter(i => !off[i.key]), keep = issues.filter(i => off[i.key]).map(i => i.key);
+    if (!pick.length) { markReal(); return; }
     const log = [];
     const ws = (st.workouts || []).map(w => {
       const mine = pick.filter(i => i.wid === w.id); if (!mine.length) return w;
@@ -1263,10 +1265,11 @@ function DataFix({ app, st, onClose }) {
         }) };
       }) };
     });
-    app.setState({ workouts: recomputeWorkouts(st, ws), dataFixUndo: log });
+    app.setState({ workouts: recomputeWorkouts(st, ws), dataFixUndo: log, dataFixIgnored: (st.dataFixIgnored || []).concat(keep) });
     alert('Fixed ' + log.length + (log.length === 1 ? ' set' : ' sets') + '. Graphs, records and PRs have been recalculated.');
     onClose();
   };
+  const markReal = () => { app.setState({ dataFixIgnored: (st.dataFixIgnored || []).concat(issues.map(i => i.key)) }); onClose(); };
   const undo = () => {
     const log = st.dataFixUndo || []; if (!log.length) return;
     const ws = (st.workouts || []).map(w => { const mine = log.filter(l => l.wid === w.id); if (!mine.length) return w;
@@ -1278,9 +1281,11 @@ function DataFix({ app, st, onClose }) {
   issues.forEach(i => (groups[i.name] = groups[i.name] || []).push(i));
   const n = issues.filter(i => !off[i.key]).length;
   return <Sheet z={57} title="Check lift data" sub={issues.length ? issues.length + ' THINGS LOOK OFF' : 'NOTHING LOOKS OFF'} left={<TopLink onClick={onClose}>‹ BACK</TopLink>}
-    footer={issues.length ? <Btn tone={C.olive} ink={C.oliveInk} disabled={!n} onClick={apply}>{n ? 'Fix ' + n + ' selected' : 'Select something to fix'}</Btn> : null}>
+    footer={issues.length ? <div style={{ display: 'flex', gap: 8 }}>
+      <Btn kind="ghost" tone={C.dim} onClick={markReal} style={{ flex: 1, padding: '0 8px' }}>ALL CORRECT</Btn>
+      <Btn tone={C.olive} ink={C.oliveInk} onClick={apply} style={{ flex: 2 }}>{n ? 'Fix ' + n + (n < issues.length ? ' · keep ' + (issues.length - n) : '') : 'Keep all as they are'}</Btn></div> : null}>
     <div style={{ padding: '14px 18px 30px' }}>
-      <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>Each session is compared with your nearby sessions of the same exercise. When a number only makes sense after a pounds↔kilograms (or decimal) correction, it’s listed here. Untick anything that was real.</div>
+      <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>Each session is compared with your nearby sessions of the same exercise. When a number only makes sense after a pounds↔kilograms (or decimal) correction, it’s listed here. Untick anything that was real — it won’t be suggested again.</div>
       {!issues.length ? <Empty>ALL YOUR LIFTS LINE UP · NOTHING TO FIX</Empty> : null}
       {Object.entries(groups).map(([name, list]) => <div key={name}>
         <div style={{ ...T.h2, margin: '20px 0 6px' }}>{name}</div>

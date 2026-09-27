@@ -174,7 +174,7 @@ function LineChart({ points, tone = C.olive, fmt = v => String(r1(v)), height = 
       <span style={{ font: `700 22px/1 ${F.head}`, color: C.text }}>{fmt(s.y)}</span>
       <span style={{ ...T.label }}>{sel != null ? shortDate(s.x).toUpperCase() : 'LATEST · ' + shortDate(s.x).toUpperCase()}</span>
     </div>
-    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', touchAction: 'pan-y' }}
+    <svg ref={ref} data-hswipe="" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', touchAction: 'pan-y' }}
       onPointerDown={pick} onPointerMove={e => e.buttons && pick(e)} onTouchMove={pick}>
       {ticks.map(t => <g key={t}><line x1={L} x2={W - R} y1={Y(t)} y2={Y(t)} stroke="#282d36" strokeWidth="1" />
         <text x={L - 6} y={Y(t) + 3.5} textAnchor="end" fill={C.faint} style={{ font: `500 10px ${F.mono}` }}>{fmt(t)}</text></g>)}
@@ -379,7 +379,7 @@ function SwipeRow({ actions, children, bg = C.card, radius = 0, disabled, style 
     <div ref={box} style={{ position: 'absolute', top: 0, bottom: 0, right: 0, display: 'flex', width: W, visibility: 'hidden' }}>
       {acts.map((a, i) => <div key={i} role="button" onClick={() => { close(); a.run(); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: a.tone || C.red, color: a.ink || '#fff', ...T.mono, fontSize: 11, cursor: 'pointer' }}>{a.label}</div>)}
     </div>
-    <div ref={content} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+    <div ref={content} data-hswipe="" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
       onClickCapture={e => { if (Date.now() - justSwiped.current < 350) { e.stopPropagation(); e.preventDefault(); } else if (pos.current) { e.stopPropagation(); close(); } }}
       style={{ position: 'relative', background: bg, touchAction: 'pan-y', willChange: 'transform' }}>{children}</div>
   </div>;
@@ -405,7 +405,7 @@ function swipeNav(onLeft, onRight) {
       if (t.lock === 'x' && Math.abs(dy) < Math.abs(dx) && (Math.abs(dx) > 70 || (Math.abs(dx) > 30 && v > 0.5))) { if (dx < 0 && onLeft) onLeft(); else if (dx > 0 && onRight) onRight(); }
     },
     onPointerCancel: e => { const el = e.currentTarget; el.__sw = null; el.style.transition = ease; el.style.transform = ''; el.style.opacity = ''; },
-    style: { touchAction: 'pan-y' }
+    style: { touchAction: 'pan-y' }, 'data-hswipe': ''
   };
 }
 
@@ -467,3 +467,63 @@ function PailWidget({ app, st }) {
   return <Pail ml={st.waterMl || 0} goal={st.waterGoal || 3500} size={112} onTap={() => app.addWater(250)} />;
 }
 window.PailWidget = PailWidget;
+
+
+// ── Swipe between the main tabs ──
+// A clear sideways swipe on a main screen (anywhere that isn't already a swipe area: food rows, day/month swipers,
+// charts, sideways-scrolling chip rows, inputs, drag handles) moves to the next / previous tab in the tab bar.
+(function tabSwipe() {
+  if (window.__tabSwipe) return; window.__tabSwipe = true;
+  const ORDER = [['s02'], ['s03'], ['s04'], ['s05', 's07', 's08', 's11'], ['s06'], ['s12']];
+  const at = id => ORDER.findIndex(g => g.includes(id));
+  const blocked = el => {
+    for (let e = el; e && e !== document.body; e = e.parentElement) {
+      if (e.hasAttribute && e.hasAttribute('data-hswipe')) return true;
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.tagName)) return true;
+      const cs = getComputedStyle(e);
+      if (cs.touchAction === 'none') return true;
+      if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && e.scrollWidth > e.clientWidth + 2) return true;
+      if (e.classList && e.classList.contains('screen')) return false;
+    }
+    return false;
+  };
+  let g = null;
+  const reset = (el, anim) => { if (!el) return; el.style.transition = anim ? 'transform .25s cubic-bezier(.2,.9,.25,1), opacity .25s' : 'none'; el.style.transform = ''; el.style.opacity = ''; };
+  document.addEventListener('pointerdown', e => {
+    g = null;
+    if (e.button > 0 || document.querySelector('body > div[style*="position: fixed"][style*="inset: 0px"]')) return;   // a full-screen sheet is open
+    const scr = e.target.closest && e.target.closest('.screen');
+    if (!scr || at(scr.id) < 0 || blocked(e.target)) return;
+    g = { x: e.clientX, y: e.clientY, t: performance.now(), scr, lock: null, id: e.pointerId };
+  }, true);
+  document.addEventListener('pointermove', e => {
+    if (!g || e.pointerId !== g.id) return;
+    const dx = e.clientX - g.x, dy = e.clientY - g.y;
+    if (g.lock == null) { if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return; g.lock = Math.abs(dx) > Math.abs(dy) * 1.5 ? 'x' : 'y'; }
+    if (g.lock !== 'x') return;
+    const i = at(g.scr.id), can = dx < 0 ? i < ORDER.length - 1 : i > 0;
+    g.scr.style.transition = 'none';
+    g.scr.style.transform = `translate3d(${dx * (can ? 0.35 : 0.1)}px,0,0)`;
+    g.scr.style.opacity = String(1 - Math.min(0.4, Math.abs(dx) / 700));
+  }, true);
+  const end = e => {
+    const t = g; g = null; if (!t || t.lock !== 'x') { if (t) reset(t.scr, true); return; }
+    const dx = e.clientX - t.x, dy = e.clientY - t.y, v = Math.abs(dx) / Math.max(1, performance.now() - t.t);
+    const i = at(t.scr.id), j = dx < 0 ? i + 1 : i - 1;
+    const go = e.type === 'pointerup' && Math.abs(dy) < Math.abs(dx) * 0.6 && (Math.abs(dx) > innerWidth * 0.28 || (Math.abs(dx) > 60 && v > 0.6)) && j >= 0 && j < ORDER.length;
+    if (!go) { reset(t.scr, true); return; }
+    const dir = dx < 0 ? -1 : 1;
+    t.scr.style.transition = 'transform .16s ease-in, opacity .16s'; t.scr.style.transform = `translate3d(${dir * 70}px,0,0)`; t.scr.style.opacity = '0';
+    vib(8);
+    setTimeout(() => {
+      reset(t.scr, false);
+      const next = ORDER[j][0];
+      if (window.__goto) window.__goto(next); else location.hash = next;
+      const el = document.getElementById(next); if (!el) return;
+      el.style.transition = 'none'; el.style.transform = `translate3d(${-dir * 70}px,0,0)`; el.style.opacity = '0';
+      requestAnimationFrame(() => requestAnimationFrame(() => reset(el, true)));
+    }, 150);
+  };
+  document.addEventListener('pointerup', end, true);
+  document.addEventListener('pointercancel', end, true);
+})();
