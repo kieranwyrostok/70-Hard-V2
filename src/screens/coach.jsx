@@ -171,7 +171,7 @@ function CoachScreen({ app, st }) {
   const reg = (st.regulars || [])[0];
   const ideas = [reg ? 'Log my ' + reg.name.toLowerCase() : 'Log 2 eggs and toast for breakfast', 'Why am I not gaining weight?', 'How’s my protein been this week?', 'Plan the rest of today’s food to hit my targets', 'I drank 500 ml of water', 'Move my reading reminder to 21:00'];
 
-  return <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: C.bg, fontFamily: F.body, color: C.text }}>
+  return <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'transparent', fontFamily: F.body, color: C.text }}>
     <div style={{ padding: '58px 22px 12px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div><div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · ASK, OR TELL IT WHAT YOU DID</div><div style={T.h1}>Coach</div></div>
       {chat.length ? <TopLink tone={C.dim} onClick={() => { if (confirm('Clear the conversation?')) app.setState({ coachChat: [] }); }}>CLEAR</TopLink> : null}
@@ -309,7 +309,7 @@ function DayDetail({ app, st, n, onClose, onNav }) {
         {section('Rules')}
         {skipped ? <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>The app wasn’t opened this day, so nothing was checked off.</div> : null}
         {keys.map(k => { const d = defOf(k), ok = !!done[k]; return <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #272c34' }}>
-          <span style={{ width: 22, height: 22, flex: 'none', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: ok ? (TONES[d && d.g] || C.blue) : 'transparent', border: '1.5px solid ' + (ok ? (TONES[d && d.g] || C.blue) : C.line2), color: C.bg, font: `700 12px/1 ${F.mono}` }}>{ok ? '✓' : ''}</span>
+          <span style={{ width: 22, height: 22, flex: 'none', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: ok ? (TONES[d && d.g] || C.blue) : 'transparent', border: '1.5px solid ' + (ok ? (TONES[d && d.g] || C.blue) : C.line2), color: C.solid, font: `700 12px/1 ${F.mono}` }}>{ok ? '✓' : ''}</span>
           <span style={{ ...T.name, flex: 1, color: ok ? C.text : C.dim }}>{nameOf(k)}</span>
           <span style={{ ...T.mono, fontSize: 11, color: ok ? C.dim : C.red }}>{ok ? (doneAt[k] || '✓') : isToday ? 'OPEN' : 'MISSED'}</span>
         </div>; })}

@@ -68,7 +68,8 @@ ui → library → train → fuel → coach and compiled into one IIFE, so later
   lands back in range; single odd sets checked against the rest of their session. Applies only after review; `dataFixUndo`
   keeps the originals; `recomputeWorkouts` rebuilds volume + PRs. Banner on History when anything is found.
 - Tab swipe (ui.jsx `tabSwipe`, document capture listeners): sideways swipe on a main screen → next/previous tab
-  (Today, Fuel, Train, Progress group, Log, Coach). Skips anything marked `data-hswipe` (SwipeRow, swipeNav areas, charts),
+  (Today, Fuel, Train, Progress group, Log, Coach). Tolerates up/down wobble (decides at 12 px, sideways if |dx| > 1.1·|dy|;
+  a touchmove listener stops iOS from starting a vertical scroll once it's sideways). Skips anything marked `data-hswipe` (SwipeRow, swipeNav areas, charts),
   inputs, `touch-action:none`, sideways-scrolling rows, and whenever a full-screen sheet is open.
 - Data check suggestions left unticked (or 'All correct') go into `dataFixIgnored` and never come back.
 - Strong import (train.jsx, `StrongImport`): reads Strong's CSV export (columns found by name; kg/lb and m/km/mi in
@@ -83,11 +84,21 @@ tips (daily AI suggestions: coach.jsx `tipsMaybe` sends a ~1.8 KB 7-day summary 
 max 500 tokens out; state `aiTips`, toggle `aiTipsOn`; card on Today, setting in Habits & reminders).
 Env vars live in Netlify only: ANTHROPIC_API_KEY, USDA_API_KEY, COACH_CODE, ANTHROPIC_MODEL.
 
-**Today extras (ui.jsx):** `RingsWidget` (3D-tilted glowing SVG rings, flick to spin, eases back to 0°),
+**Today extras (ui.jsx):** `RingsWidget` (glowing 3D disc of stacked SVG slices; drag/flick tumbles it toward/away
+from you (up-down) or turns it (sideways), finishes the turn in the flick's direction; flies in from depth on opening Today),
 `SleepWidget` (state `sleepLog[date] = {bed, wake, q}`, minutes after midnight; shown in DayDetail, weekly report, tips).
 **Custom colours:** localStorage `sh.colors` = {core, secondary, accent}, set in Habits & reminders → App colours
 (`CustomizeWidget`). `window.__SH_PALETTE()` (head script in index.html) returns a hex swap map for the current page;
 a script right after `</x-dc>` swaps it in the markup before boot and ui.jsx swaps the `C` tokens. Reset = remove the key.
+Named setups the user saves: localStorage `sh.colorSets` [{name, core, secondary, accent}] (swatch grid `SWATCHES`;
+hexes there are written `HX('…')` so the light build leaves them alone).
+**Liquid glass (tools/glass.mjs, run by build.mjs after the light swap):** surface colours inside `<x-dc>` and in
+screens.js become translucent (background:/border colours, gradients, and `bg`/`border` values in the logic code);
+adds `#aurora` (drifting blurred colour blobs from CSS vars --n1/--n2/--n3), frosted tab bar, card highlights, screen
+and sheet entrance animations, press effect. ui.jsx sets glass `C.bg/card/line…` (C.solid = old opaque page colour,
+use it for text on accent fills). Neon glows for the accent colours: head script in index.html builds `#neon` CSS.
+New solid surface colours need an entry in glass.mjs SURF (dark + light).
+**Fuel meals** fold up: tap the meal name to show/hide items; a section opens itself when food is added.
 **Lift data check (train.jsx `findOddSets`):** flags sessions/sets that look ~2.2×, ~0.45×, ~10× or ~0.1× your usual
 (unit or decimal mistakes); whole-session fixes only scale sets that land in a believable range (warm-ups stay).
 Fixed or dismissed ones go in `dataFixIgnored`; `dataFixUndo` holds the last fix.

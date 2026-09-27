@@ -4,12 +4,19 @@ const { useState, useEffect, useRef, useMemo, useLayoutEffect } = React;
 const C = {
   bg: '#15181d', card: '#1e232a', card2: '#171a20', line: '#2b3039', line2: '#3d4450',
   text: '#eef0f4', dim: '#9ca3b0', mute: '#8f9ab0', faint: '#6b7382',
-  blue: '#6390ff', blueInk: '#081631', amber: '#f4b544', amberInk: '#231800', olive: '#a3c46e', oliveInk: '#111a08', red: '#f06a50'
+  blue: '#4f8dff', blueInk: '#081631', amber: '#ffc233', amberInk: '#231800', olive: '#a8f25c', oliveInk: '#111a08', red: '#ff5a5f'
 };
 // custom app colours (see __SH_PALETTE in index.html): swap any matching token for the user's pick
 (() => { const P = window.__SH_PALETTE && window.__SH_PALETTE(); if (!P) return;
   const low = {}; Object.keys(P.map).forEach(k => { low[k.toLowerCase()] = P.map[k]; });
   Object.keys(C).forEach(k => { const v = low[String(C[k]).toLowerCase()]; if (v) C[k] = v; }); })();
+// Liquid glass: page, cards and lines become see-through so the moving colour glow behind the app shows through
+// (tools/glass.mjs does the same for the page markup). C.solid keeps the old opaque page colour for text on accents.
+C.solid = C.bg;
+Object.assign(C, window.__PAGE === 'light'
+  ? { bg: 'rgba(240,243,250,.74)', card: 'rgba(255,255,255,.62)', card2: 'rgba(255,255,255,.42)', line: 'rgba(30,45,90,.10)', line2: 'rgba(30,45,90,.17)' }
+  : { bg: 'rgba(10,12,19,.74)', card: 'rgba(255,255,255,.06)', card2: 'rgba(255,255,255,.035)', line: 'rgba(255,255,255,.09)', line2: 'rgba(255,255,255,.16)' });
+const GLASS_BLUR = 'blur(26px) saturate(170%)';
 const F = {
   head: "'Saira Condensed',sans-serif", mono: "'IBM Plex Mono',monospace", body: 'Barlow,system-ui,sans-serif'
 };
@@ -75,7 +82,7 @@ function Sheet({ title, sub, left, right, children, footer, z = 40, bg = C.bg, o
     if (b && (dx > innerWidth * 0.35 || (dx > 40 && v > 0.5))) { el.style.transform = 'translate3d(100%,0,0)'; setTimeout(() => b.click(), 200); }
     else { el.style.transform = ''; el.style.boxShadow = ''; } };
   return ReactDOM.createPortal(
-    <div ref={rootRef} onPointerDownCapture={edgeDown} onPointerMoveCapture={edgeMove} onPointerUpCapture={edgeUp} onPointerCancelCapture={edgeUp} style={{ position: 'fixed', inset: 0, zIndex: z, background: bg, display: 'flex', flexDirection: 'column', fontFamily: F.body, color: C.text }}>
+    <div ref={rootRef} onPointerDownCapture={edgeDown} onPointerMoveCapture={edgeMove} onPointerUpCapture={edgeUp} onPointerCancelCapture={edgeUp} style={{ position: 'fixed', inset: 0, zIndex: z, background: bg, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, animation: 'shIn .34s cubic-bezier(.2,.9,.25,1) both', display: 'flex', flexDirection: 'column', fontFamily: F.body, color: C.text }}>
       <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 16px 12px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'center', gap: 10, minHeight: 44 }}>
         <div ref={leftRef} style={{ minWidth: 70 }}>{left}</div>
         <div onClick={onTitle} style={{ flex: 1, minWidth: 0, textAlign: 'center', cursor: onTitle ? 'pointer' : 'default' }}>
@@ -94,8 +101,8 @@ function TopLink({ children, onClick, tone = C.blue }) {
 // Bottom action sheet (menus).
 function ActionSheet({ title, actions, onClose }) {
   return ReactDOM.createPortal(
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} {...(() => { let y0 = null; return { onPointerDown: e => { y0 = e.clientY; }, onPointerUp: e => { if (y0 != null && e.clientY - y0 > 70) onClose(); y0 = null; } }; })()} style={{ width: '100%', background: '#1a1e24', borderTop: '1px solid ' + C.line2, borderRadius: '18px 18px 0 0', padding: '8px 0 calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,.4)', animation: 'fadeIn .2s both', display: 'flex', alignItems: 'flex-end' }}>
+      <div onClick={e => e.stopPropagation()} onPointerDown={e => { e.currentTarget._y0 = e.clientY; }} onPointerUp={e => { const y0 = e.currentTarget._y0; e.currentTarget._y0 = null; if (y0 != null && e.clientY - y0 > 70) onClose(); }} style={{ width: '100%', backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, animation: 'asUp .3s cubic-bezier(.2,.9,.25,1) both', background: '#1a1e24', borderTop: '1px solid ' + C.line2, borderRadius: '18px 18px 0 0', padding: '8px 0 calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
         {title ? <div style={{ ...T.label, padding: '10px 18px 8px' }}>{title}</div> : null}
         {actions.filter(Boolean).map((a, i) => <div key={i} role="button" onClick={() => { onClose(); a.run(); }} style={{ padding: '15px 18px', cursor: 'pointer', font: `500 16px/1.2 ${F.body}`, color: a.danger ? C.red : C.text, borderTop: i ? '1px solid #272c34' : 'none' }}>{a.label}</div>)}
         <div role="button" onClick={onClose} style={{ margin: '8px 16px 0', padding: 14, textAlign: 'center', border: '1px solid ' + C.line2, borderRadius: 12, cursor: 'pointer', ...T.mono, color: C.dim }}>CANCEL</div>
@@ -113,7 +120,7 @@ function Empty({ children }) {
   return <div style={{ padding: '26px 18px', textAlign: 'center', ...T.mono, fontSize: 11, lineHeight: 1.6, color: C.faint }}>{children}</div>;
 }
 function Bar({ pct, tone, h = 7 }) {
-  return <div style={{ height: h, background: '#282d36', overflow: 'hidden', borderRadius: 99 }}><div style={{ height: '100%', borderRadius: 99, width: Math.max(0, Math.min(100, pct)) + '%', background: tone }} /></div>;
+  return <div style={{ height: h, background: '#282d36', overflow: 'hidden', borderRadius: 99 }}><div style={{ height: '100%', borderRadius: 99, width: Math.max(0, Math.min(100, pct)) + '%', background: tone, transition: 'width .7s cubic-bezier(.2,.9,.25,1)' }} /></div>;
 }
 // re-render every `ms` while `on`
 function useTick(on, ms = 1000) {
@@ -187,7 +194,7 @@ function LineChart({ points, tone = C.olive, fmt = v => String(r1(v)), height = 
       <path d={d + ` L${X(points.length - 1).toFixed(1)},${(H - B).toFixed(1)} L${X(0).toFixed(1)},${(H - B).toFixed(1)} Z`} fill={tone} opacity="0.10" />
       <path d={d} fill="none" stroke={tone} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
       {sel != null ? <line x1={X(sel)} x2={X(sel)} y1={Tp} y2={H - B} stroke={C.dim} strokeWidth="1" strokeDasharray="3 3" /> : null}
-      {points.map((p, i) => <circle key={i} cx={X(i)} cy={Y(p.y)} r={i === (sel != null ? sel : points.length - 1) ? 5 : 3.5} fill={tone} stroke={C.card} strokeWidth="2" />)}
+      {points.map((p, i) => <circle key={i} cx={X(i)} cy={Y(p.y)} r={i === (sel != null ? sel : points.length - 1) ? 5 : 3.5} fill={tone} stroke={C.solid} strokeWidth="2" />)}
       <rect x={L} y={0} width={W - L} height={H} fill="transparent" />
     </svg>
   </div>;
@@ -335,7 +342,7 @@ function SwipeRow({ actions, children, bg = C.card, radius = 0, disabled, style 
     const el = content.current, a = box.current; if (!el) return;
     el.style.transition = anim ? 'transform .32s cubic-bezier(.2,.9,.25,1)' : 'none';
     el.style.transform = x ? `translate3d(${x}px,0,0)` : '';
-    if (a) { a.style.visibility = x < 0 ? 'visible' : 'hidden'; a.style.width = Math.max(W, -x) + 'px'; a.style.transition = anim ? 'width .32s cubic-bezier(.2,.9,.25,1)' : 'none'; }
+    if (a) { a.style.visibility = x < 0 ? 'visible' : 'hidden'; a.style.width = Math.max(0, -x) + 'px'; a.style.transition = anim ? 'width .32s cubic-bezier(.2,.9,.25,1)' : 'none'; }
   };
   const close = () => { apply(0, true); if (openSwipeRow === close) openSwipeRow = null; };
   useEffect(() => () => { cancelAnimationFrame(raf.current); if (openSwipeRow === close) openSwipeRow = null; }, []);
@@ -380,8 +387,8 @@ function SwipeRow({ actions, children, bg = C.card, radius = 0, disabled, style 
     else close();
   };
   return <div ref={outer} style={{ position: 'relative', overflow: 'hidden', borderRadius: radius, ...style }}>
-    <div ref={box} style={{ position: 'absolute', top: 0, bottom: 0, right: 0, display: 'flex', width: W, visibility: 'hidden' }}>
-      {acts.map((a, i) => <div key={i} role="button" onClick={() => { close(); a.run(); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: a.tone || C.red, color: a.ink || '#fff', ...T.mono, fontSize: 11, cursor: 'pointer' }}>{a.label}</div>)}
+    <div ref={box} style={{ position: 'absolute', top: 0, bottom: 0, right: 0, display: 'flex', width: 0, overflow: 'hidden', visibility: 'hidden' }}>
+      {acts.map((a, i) => <div key={i} role="button" onClick={() => { close(); a.run(); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: a.tone || C.red, color: a.ink || '#fff', ...T.mono, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', minWidth: 0, overflow: 'hidden' }}>{a.label}</div>)}
     </div>
     <div ref={content} data-hswipe="" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
       onClickCapture={e => { if (Date.now() - justSwiped.current < 350) { e.stopPropagation(); e.preventDefault(); } else if (pos.current) { e.stopPropagation(); close(); } }}
@@ -457,7 +464,7 @@ function Pail({ ml, goal, onTap, size = 118 }) {
       {pct > 0 && pct < 1 ? <g className="pailwave" style={{ transform: `translateY(${y - 6}px)` }}>
         <path d="M-60 6 Q -45 0 -30 6 T 0 6 T 30 6 T 60 6 T 90 6 T 120 6 T 150 6 T 180 6 V 14 H -60 Z" fill={C.blue} opacity=".55" />
       </g> : null}
-      {[0.25, 0.5, 0.75].map(f => <line key={f} x1="18" x2="102" y1={bottom - f * (bottom - top)} y2={bottom - f * (bottom - top)} stroke={C.bg} strokeOpacity=".35" strokeDasharray="3 4" />)}
+      {[0.25, 0.5, 0.75].map(f => <line key={f} x1="18" x2="102" y1={bottom - f * (bottom - top)} y2={bottom - f * (bottom - top)} stroke={C.solid} strokeOpacity=".35" strokeDasharray="3 4" />)}
     </g>
     <path d="M17 38 L103 38 L94 104 Q93 110 87 110 L33 110 Q27 110 26 104 Z" fill="none" stroke={pct >= 1 ? C.blue : C.line2} strokeWidth="3" strokeLinejoin="round" />
     <ellipse cx="60" cy="38" rx="44" ry="4" fill="none" stroke={pct >= 1 ? C.blue : C.line2} strokeWidth="3" />
@@ -500,10 +507,18 @@ window.PailWidget = PailWidget;
     if (!scr || at(scr.id) < 0 || blocked(e.target)) return;
     g = { x: e.clientX, y: e.clientY, t: performance.now(), scr, lock: null, id: e.pointerId };
   }, true);
+  // iPhone: once a finger is clearly moving sideways, stop the page from starting a vertical scroll (which would
+  // cancel the swipe). A slightly diagonal swipe still changes page; a mostly up/down drag still scrolls.
+  document.addEventListener('touchmove', e => {
+    if (!g || g.lock === 'y' || e.touches.length !== 1 || !e.cancelable) return;
+    const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if (g.lock === 'x' || (Math.abs(dx) >= 6 && Math.abs(dx) > Math.abs(dy) * 1.1)) e.preventDefault();
+  }, { passive: false, capture: true });
   document.addEventListener('pointermove', e => {
     if (!g || e.pointerId !== g.id) return;
     const dx = e.clientX - g.x, dy = e.clientY - g.y;
-    if (g.lock == null) { if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return; g.lock = Math.abs(dx) > Math.abs(dy) * 1.5 ? 'x' : 'y'; }
+    // decide once, after a little movement: mostly sideways = page swipe. Once it's a page swipe, up/down wobble is ignored.
+    if (g.lock == null) { if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return; g.lock = Math.abs(dx) > Math.abs(dy) * 1.1 ? 'x' : 'y'; }
     if (g.lock !== 'x') return;
     const i = at(g.scr.id), can = dx < 0 ? i < ORDER.length - 1 : i > 0;
     g.scr.style.transition = 'none';
@@ -514,7 +529,7 @@ window.PailWidget = PailWidget;
     const t = g; g = null; if (!t || t.lock !== 'x') { if (t) reset(t.scr, true); return; }
     const dx = e.clientX - t.x, dy = e.clientY - t.y, v = Math.abs(dx) / Math.max(1, performance.now() - t.t);
     const i = at(t.scr.id), j = dx < 0 ? i + 1 : i - 1;
-    const go = e.type === 'pointerup' && Math.abs(dy) < Math.abs(dx) * 0.6 && (Math.abs(dx) > innerWidth * 0.28 || (Math.abs(dx) > 60 && v > 0.6)) && j >= 0 && j < ORDER.length;
+    const go = e.type === 'pointerup' && Math.abs(dy) < Math.abs(dx) * 1.2 && (Math.abs(dx) > innerWidth * 0.28 || (Math.abs(dx) > 55 && v > 0.45)) && j >= 0 && j < ORDER.length;
     if (!go) { reset(t.scr, true); return; }
     const dir = dx < 0 ? -1 : 1;
     t.scr.style.transition = 'transform .16s ease-in, opacity .16s'; t.scr.style.transform = `translate3d(${dir * 70}px,0,0)`; t.scr.style.opacity = '0';
@@ -532,61 +547,87 @@ window.PailWidget = PailWidget;
   document.addEventListener('pointercancel', end, true);
 })();
 
-// ── Today's progress rings: 3D-tilted, glowing, and they spin when you flick them ──
-// Drag to turn them, flick to send them spinning (they slow down, then ease back to 12 o'clock); a tap gives one spin.
+// ── Today's progress rings: a glowing 3D disc ──
 function RingsWidget({ rings }) {
+  // 3D rings: drag or flick to tumble them toward / away from you (up-down) or turn them (sideways). They coast,
+  // then settle back. Opening Today makes them fly in from deep in the screen with one forward flip.
   const list = (rings || []).filter(r => r && r.display !== 'none');
-  const g = useRef(null), st = useRef({ a: 0, v: 0, drag: null, raf: 0, mounted: false }), [drawn, setDrawn] = useState(false);
-  const uidRef = useRef('rg' + uid());
+  const puck = useRef(null), floor = useRef(null), [drawn, setDrawn] = useState(false);
+  const st = useRef({ ax: 0, ay: 0, z: 0, vx: 0, vy: 0, drag: null, raf: 0 });
+  const id = useRef('rg' + uid()).current, TILT = 16;
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  useEffect(() => { const t = setTimeout(() => setDrawn(true), 60); return () => { clearTimeout(t); cancelAnimationFrame(st.current.raf); }; }, []);
-  const paint = () => { if (g.current) g.current.setAttribute('transform', `rotate(${st.current.a % 360} 100 100)`); };
-  const angleAt = e => { const r = e.currentTarget.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
-  const coast = () => {                               // momentum, then a soft return to the start position
-    const s = st.current; cancelAnimationFrame(s.raf);
+  const paint = () => { const s = st.current, el = puck.current; if (!el) return;
+    el.style.transform = `translateZ(${s.z}px) rotateX(${TILT + s.ax}deg) rotateY(${s.ay}deg)`;
+    const k = Math.abs(Math.cos((TILT + s.ax) * Math.PI / 180) * Math.cos(s.ay * Math.PI / 180));
+    if (floor.current) { floor.current.style.transform = `scale(${0.45 + 0.55 * k}, ${0.6 + 0.4 * k})`; floor.current.style.opacity = String(0.35 + 0.65 * k * Math.max(0, 1 + s.z / 400)); } };
+  const run = () => { const s = st.current; cancelAnimationFrame(s.raf);
+    let last = performance.now(), dirX = Math.sign(s.vx), dirY = Math.sign(s.vy), tx = null, ty = null;
     const step = () => {
-      if (Math.abs(s.v) > 0.15) { s.a += s.v; s.v *= 0.975; paint(); s.raf = requestAnimationFrame(step); return; }
-      const target = Math.round(s.a / 360) * 360, d = target - s.a;
-      if (Math.abs(d) < 0.3) { s.a = 0; s.v = 0; paint(); return; }
-      s.a += d * 0.12; paint(); s.raf = requestAnimationFrame(step);
+      if (s.drag) return;
+      const now = performance.now(), f = Math.min(4, (now - last) / 16.67); last = now;   // same speed at 60 or 120 Hz
+      if (tx == null && (Math.abs(s.vx) > 0.6 || Math.abs(s.vy) > 0.6)) { s.ax += s.vx * f; s.ay += s.vy * f; const fr = Math.pow(0.962, f); s.vx *= fr; s.vy *= fr; }
+      else {
+        // finish the turn in the direction it was going, then rest
+        if (tx == null) { tx = (dirX > 0 ? Math.ceil : dirX < 0 ? Math.floor : Math.round)(s.ax / 360) * 360; ty = (dirY > 0 ? Math.ceil : dirY < 0 ? Math.floor : Math.round)(s.ay / 360) * 360; }
+        const k = 1 - Math.pow(1 - 0.12, f);
+        s.ax += (tx - s.ax) * k; s.ay += (ty - s.ay) * k;
+        if (Math.abs(tx - s.ax) < 0.2 && Math.abs(ty - s.ay) < 0.2) { s.ax = s.ay = 0; paint(); return; }
+      }
+      paint(); s.raf = requestAnimationFrame(step);
     };
-    s.raf = requestAnimationFrame(step);
-  };
+    s.raf = requestAnimationFrame(step); };
+  const flyIn = () => { if (reduce) return; const s = st.current; cancelAnimationFrame(s.raf); s.vx = s.vy = 0; s.ay = 0;
+    const t0 = performance.now(), D = 950, out = t => 1 - Math.pow(1 - t, 3);   // ease-out: one flip toward you as it comes forward
+    const step = () => { if (s.drag) return; const k = out(Math.min(1, (performance.now() - t0) / D));
+      s.ax = -360 * (1 - k); s.z = -360 * (1 - k); paint(); if (k < 1) s.raf = requestAnimationFrame(step); else { s.ax = s.z = 0; paint(); } };
+    step(); };
+  useEffect(() => {
+    const t = setTimeout(() => setDrawn(true), 60); paint(); flyIn();
+    const onHash = () => { if ((location.hash || '#s02') === '#s02') flyIn(); };
+    window.addEventListener('hashchange', onHash);
+    return () => { clearTimeout(t); cancelAnimationFrame(st.current.raf); window.removeEventListener('hashchange', onHash); };
+  }, []);
   const down = e => { if (reduce) return; const s = st.current; cancelAnimationFrame(s.raf); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
-    s.drag = { last: angleAt(e), t: performance.now(), moved: 0 }; s.v = 0; };
+    s.drag = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0 }; s.vx = s.vy = 0; };
   const move = e => { const s = st.current, d = s.drag; if (!d) return;
-    const a = angleAt(e); let da = a - d.last; if (da > 180) da -= 360; if (da < -180) da += 360;
-    const now = performance.now(), dt = Math.max(1, now - d.t);
-    s.a += da; d.moved += Math.abs(da); s.v = s.v * 0.6 + (da / dt * 16) * 0.4; d.last = a; d.t = now; paint(); };
+    const dx = e.clientX - d.x, dy = e.clientY - d.y, now = performance.now(), dt = Math.max(1, now - d.t);
+    s.ax -= dy * 0.9; s.ay += dx * 0.9; d.moved += Math.abs(dx) + Math.abs(dy);
+    s.vx = s.vx * 0.5 + (-dy * 0.9 / dt * 16) * 0.5; s.vy = s.vy * 0.5 + (dx * 0.9 / dt * 16) * 0.5;
+    d.x = e.clientX; d.y = e.clientY; d.t = now; paint(); };
   const up = () => { const s = st.current, d = s.drag; s.drag = null; if (!d) return;
-    if (d.moved < 4) s.v = 14;                          // a tap = one lively spin
-    s.v = Math.max(-40, Math.min(40, s.v)); if (Math.abs(s.v) > 2) vib(10); coast(); };
-  const id = uidRef.current;
-  return <div style={{ width: 176, height: 176, flex: 'none', perspective: 600 }}>
-    <svg viewBox="0 0 200 200" width="176" height="176" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
-      style={{ overflow: 'visible', touchAction: 'none', cursor: 'grab', transform: 'rotateX(22deg)', transformOrigin: '50% 60%' }}>
-      <defs>
-        <filter id={id + 'glow'} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5" /></filter>
-        <radialGradient id={id + 'floor'} cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#000" stopOpacity=".45" /><stop offset="100%" stopColor="#000" stopOpacity="0" /></radialGradient>
-        {list.map((r, i) => <linearGradient key={i} id={id + 'g' + i} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity=".55" /><stop offset="18%" stopColor={r.tone} /><stop offset="100%" stopColor={r.tone} stopOpacity=".78" /></linearGradient>)}
-      </defs>
-      <ellipse cx="100" cy="196" rx="78" ry="10" fill={`url(#${id}floor)`} />
-      {list.map((r, i) => <circle key={'t' + i} cx="100" cy="100" r={r.r} fill="none" stroke="#282d36" strokeWidth={r.sw} />)}
-      {list.map((r, i) => <circle key={'s' + i} cx="100" cy="100" r={r.r} fill="none" stroke="#000" strokeOpacity=".35" strokeWidth={Math.max(1, r.sw * 0.28)} transform="translate(0 1.5)" />)}
-      <g ref={g} style={{ transformBox: 'fill-box' }}>
-        <g transform="rotate(-90 100 100)">
-          {list.map((r, i) => { const off = drawn ? r.off : r.c, frac = r.c ? 1 - r.off / r.c : 0, end = (frac * 360 - 90) * Math.PI / 180;
-            const ease = 'stroke-dashoffset 1.1s cubic-bezier(.2,.9,.25,1)';
-            return <g key={i}>
-              <circle cx="100" cy="100" r={r.r} fill="none" stroke={r.tone} strokeWidth={r.sw} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} filter={`url(#${id}glow)`} opacity={frac > 0 ? 0.75 : 0} style={{ transition: ease }} />
-              <circle cx="100" cy="100" r={r.r} fill="none" stroke={`url(#${id}g${i})`} strokeWidth={r.sw} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} opacity={frac > 0 ? 1 : 0} style={{ transition: ease }} />
-              <circle cx="100" cy="100" r={r.r - r.sw * 0.22} fill="none" stroke="#ffffff" strokeOpacity=".28" strokeWidth={Math.max(1, r.sw * 0.18)} strokeLinecap="round" strokeDasharray={2 * Math.PI * (r.r - r.sw * 0.22)} strokeDashoffset={drawn ? 2 * Math.PI * (r.r - r.sw * 0.22) * (1 - frac) : 2 * Math.PI * (r.r - r.sw * 0.22)} opacity={frac > 0 ? 1 : 0} style={{ transition: ease }} />
-              {drawn && frac > 0.02 ? <circle cx={100 + r.r * Math.cos(end + Math.PI / 2)} cy={100 + r.r * Math.sin(end + Math.PI / 2)} r={r.sw * 0.34} fill="#ffffff" opacity=".85" filter={`url(#${id}glow)`} style={{ transition: 'opacity .8s .9s' }} /> : null}
-            </g>; })}
-        </g>
-      </g>
-    </svg>
+    if (d.moved < 6) { s.vx = -17; s.vy = 0; }                  // a tap = one flip toward you
+    const cap = v => Math.max(-45, Math.min(45, v)); s.vx = cap(s.vx); s.vy = cap(s.vy);
+    if (Math.abs(s.vx) + Math.abs(s.vy) > 3) vib(10); run(); };
+  const ease = 'stroke-dashoffset 1.1s cubic-bezier(.2,.9,.25,1)';
+  const fracOf = r => r.c ? 1 - r.off / r.c : 0;
+  // one flat slice of the disc; the back slices are plain and dim, the front one glows
+  const slice = (z, front) => <svg key={z} viewBox="0 0 200 200" width="176" height="176"
+    style={{ position: 'absolute', inset: 0, overflow: 'visible', transform: `translateZ(${z}px)`, opacity: front ? 1 : 0.5 + z / 30 }}>
+    {front ? <defs>
+      <filter id={id + 'glow'} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6" /></filter>
+      {list.map((r, i) => <linearGradient key={i} id={id + 'g' + i} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#ffffff" stopOpacity=".7" /><stop offset="20%" stopColor={r.tone} /><stop offset="100%" stopColor={r.tone} stopOpacity=".8" /></linearGradient>)}
+    </defs> : null}
+    {list.map((r, i) => <circle key={'t' + i} cx="100" cy="100" r={r.r} fill="none" stroke={r.tone} strokeOpacity={front ? '.14' : '.1'} strokeWidth={r.sw} />)}
+    <g transform="rotate(-90 100 100)">
+      {list.map((r, i) => { const off = drawn ? r.off : r.c, frac = fracOf(r), end = (frac * 360 - 90) * Math.PI / 180, ri = r.r - r.sw * 0.22, ci = 2 * Math.PI * ri;
+        if (!front) return <circle key={i} cx="100" cy="100" r={r.r} fill="none" stroke={r.tone} strokeWidth={r.sw} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} opacity={frac > 0 ? 0.55 : 0} style={{ transition: ease, filter: 'brightness(.45)' }} />;
+        return <g key={i}>
+          <circle cx="100" cy="100" r={r.r} fill="none" stroke={r.tone} strokeWidth={r.sw + 4} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} filter={`url(#${id}glow)`} opacity={frac > 0 ? 0.9 : 0} style={{ transition: ease }} />
+          <circle cx="100" cy="100" r={r.r} fill="none" stroke={`url(#${id}g${i})`} strokeWidth={r.sw} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} opacity={frac > 0 ? 1 : 0} style={{ transition: ease }} />
+          <circle cx="100" cy="100" r={ri} fill="none" stroke="#ffffff" strokeOpacity=".4" strokeWidth={Math.max(1, r.sw * 0.16)} strokeLinecap="round" strokeDasharray={ci} strokeDashoffset={drawn ? ci * (1 - frac) : ci} opacity={frac > 0 ? 1 : 0} style={{ transition: ease }} />
+          {drawn && frac > 0.02 ? <circle cx={100 + r.r * Math.cos(end + Math.PI / 2)} cy={100 + r.r * Math.sin(end + Math.PI / 2)} r={r.sw * 0.38} fill="#ffffff" opacity=".95" filter={`url(#${id}glow)`} style={{ transition: 'opacity .8s .9s' }} /> : null}
+        </g>; })}
+    </g>
+  </svg>;
+  return <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+    style={{ width: 176, height: 176, flex: 'none', position: 'relative', perspective: 640, touchAction: 'none', cursor: 'grab' }}>
+    <div ref={floor} style={{ position: 'absolute', left: 16, right: 16, bottom: -14, height: 22, borderRadius: '50%', background: `radial-gradient(closest-side, ${(list[0] && list[0].tone) || '#000'}55, transparent)`, filter: 'blur(4px)', pointerEvents: 'none' }} />
+    <div style={{ position: 'absolute', inset: 0, animation: reduce ? 'none' : 'ringFloat 5s ease-in-out infinite', transformStyle: 'preserve-3d' }}>
+      <div ref={puck} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', willChange: 'transform' }}>
+        {[-9, -6, -3].map(z => slice(z, false))}{slice(0, true)}
+      </div>
+    </div>
   </div>;
 }
 window.RingsWidget = RingsWidget;
@@ -651,36 +692,72 @@ const COLOR_PRESETS = [
   ['Ember', { core: '#ff7a3d', secondary: '#ffcf5c', accent: '#c9e265' }],
   ['Mono', { core: '#c9ced8', secondary: '#9aa3b2', accent: '#7c8698' }]
 ];
+// hex written as HX('...') so the light-theme build step leaves these exact colours alone
+const HX = h => '#' + h;
+const SWATCHES = ['4f8dff', '3aa0ff', '00d4ff', '22e3c4', '2ee86f', 'a8f25c', 'd7ff3a', 'ffe14d', 'ffc233', 'ff9f2e',
+  'ff6b3d', 'ff5a5f', 'ff4f8b', 'ff6bd6', 'e05cff', 'b36bff', '8a6bff', '6b7dff', 'c9ced8', '8a93a6'].map(HX);
+const readSets = () => { try { return JSON.parse(localStorage.getItem('sh.colorSets') || '[]') || []; } catch (e) { return []; } };
 function CustomizeWidget() {
   let saved = null; try { saved = JSON.parse(localStorage.getItem('sh.colors') || 'null'); } catch (e) { /* ignore */ }
-  const DEF = { core: '#6390ff', secondary: '#f4b544', accent: '#a3c46e' };
-  const [pick, setPick] = useState(saved || DEF), refs = { core: useRef(null), secondary: useRef(null), accent: useRef(null) };
-  const changed = JSON.stringify(pick) !== JSON.stringify(saved || DEF);
+  const DEF = { core: HX('4f8dff'), secondary: HX('ffc233'), accent: HX('a8f25c') };
+  const clean = v => ({ core: v.core, secondary: v.secondary, accent: v.accent });
+  const [pick, setPick] = useState(saved ? clean(saved) : DEF), [open, setOpen] = useState(null);
+  const [sets, setSets] = useState(readSets), [naming, setNaming] = useState(null);
+  const custom = useRef(null);
+  const same = (x, y) => x && y && x.core === y.core && x.secondary === y.secondary && x.accent === y.accent;
+  const changed = !same(pick, saved ? clean(saved) : DEF);
   const apply = p => { try { if (p) localStorage.setItem('sh.colors', JSON.stringify(p)); else localStorage.removeItem('sh.colors'); } catch (e) { /* ignore */ } location.reload(); };
-  const ink = h => (window.__SH_PALETTE ? null : null) || (() => { const n = parseInt(h.slice(1), 16), l = (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; return l > 0.6 ? '#10131a' : '#ffffff'; })();
-  const row = (k, label, what) => <div key={k} role="button" onClick={() => refs[k].current && refs[k].current.click()} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid ' + C.line, cursor: 'pointer' }}>
-    <div style={{ width: 34, height: 34, borderRadius: 999, background: pick[k], boxShadow: `0 0 14px ${pick[k]}66`, flex: 'none', border: '2px solid ' + C.line2 }} />
-    <div style={{ flex: 1 }}><div style={T.name}>{label}</div><div style={{ ...T.label, marginTop: 2 }}>{what}</div></div>
-    <span style={{ ...T.mono, fontSize: 12, color: C.dim }}>{pick[k].toUpperCase()}</span>
-    <input ref={refs[k]} type="color" value={pick[k]} onChange={e => setPick(p => ({ ...p, [k]: e.target.value }))} style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} />
-  </div>;
+  const keepSets = list => { setSets(list); try { localStorage.setItem('sh.colorSets', JSON.stringify(list)); } catch (e) { /* ignore */ } };
+  const saveSet = () => { const name = (naming || '').trim().slice(0, 18); if (!name) return;
+    keepSets(sets.filter(x => x.name.toLowerCase() !== name.toLowerCase()).concat({ name, ...pick })); setNaming(null); vib(10); };
+  const ink = h => { const n = parseInt(h.slice(1), 16), l = (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; return l > 0.6 ? HX('10131a') : HX('ffffff'); };
+  const set = (k, v) => setPick(p => ({ ...p, [k]: v }));
+  const row = (k, label, what) => { const on = open === k;
+    return <div key={k} style={{ borderBottom: '1px solid ' + C.line }}>
+      <div role="button" aria-expanded={on} onClick={() => setOpen(on ? null : k)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer' }}>
+        <div style={{ width: 34, height: 34, borderRadius: 999, background: pick[k], boxShadow: `0 0 16px ${pick[k]}88`, flex: 'none', border: '2px solid rgba(255,255,255,.35)' }} />
+        <div style={{ flex: 1 }}><div style={T.name}>{label}</div><div style={{ ...T.label, marginTop: 2 }}>{what}</div></div>
+        <span style={{ ...T.mono, fontSize: 12, color: C.dim }}>{pick[k].toUpperCase()}</span>
+        <span style={{ color: C.dim, transition: 'transform .3s', transform: on ? 'rotate(180deg)' : 'none' }}>▾</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateRows: on ? '1fr' : '0fr', transition: 'grid-template-rows .32s cubic-bezier(.2,.9,.25,1)' }}><div style={{ overflow: 'hidden', minHeight: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, padding: '4px 2px 12px' }}>
+          {SWATCHES.map(h => { const sel = pick[k] === h;
+            return <div key={h} role="button" aria-label={label + ' ' + h} onClick={() => { set(k, h); vib(6); }} style={{ height: 40, borderRadius: 12, background: h, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ink(h), font: `700 16px/1 ${F.mono}`,
+              boxShadow: sel ? `0 0 0 2px ${C.solid}, 0 0 0 4px ${h}, 0 0 18px ${h}` : `0 0 10px -4px ${h}` }}>{sel ? '✓' : ''}</div>; })}
+          <div role="button" onClick={() => custom.current && custom.current.click()} style={{ gridColumn: 'span 5', height: 40, borderRadius: 12, border: '1px dashed ' + C.line2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', ...T.mono, fontSize: 11, color: C.dim }}>
+            <span style={{ width: 14, height: 14, borderRadius: 99, background: 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)' }} />ANY OTHER COLOUR…
+            {on ? <input ref={custom} type="color" value={pick[k]} onChange={e => set(k, e.target.value)} style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} /> : null}</div>
+        </div>
+      </div></div>
+    </div>; };
+  const chip = (name, v, del) => { const on = same(v, pick);
+    return <div key={name} role="button" onClick={() => setPick(clean(v))} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: del ? '7px 4px 7px 10px' : '7px 10px', borderRadius: 999, border: '1px solid ' + (on ? C.text : C.line2), cursor: 'pointer' }}>
+      <span style={{ display: 'flex' }}>{[v.core, v.secondary, v.accent].map((h, i) => <span key={i} style={{ width: 12, height: 12, borderRadius: 99, background: h, marginLeft: i ? -3 : 0, border: '1px solid ' + C.solid }} />)}</span>
+      <span style={{ ...T.mono, fontSize: 10, color: on ? C.text : C.dim }}>{name.toUpperCase()}</span>
+      {del ? <span role="button" aria-label={'Delete ' + name} onClick={e => { e.stopPropagation(); if (confirm('Delete “' + name + '”?')) keepSets(sets.filter(x => x.name !== name)); }} style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.faint, fontSize: 14 }}>×</span> : null}
+    </div>; };
   return <div style={{ background: C.card, border: '1px solid ' + C.line, borderRadius: 14, padding: '6px 14px 14px' }}>
     {row('core', 'Core', 'BUTTONS, TODAY, WATER, TABS')}
     {row('secondary', 'Secondary', 'FOOD, HIGHLIGHTS, BANNERS')}
     {row('accent', 'Accent', 'TRAINING, MIND, SUCCESS')}
     <div style={{ ...T.label, margin: '12px 0 6px' }}>PRESETS</div>
-    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-      {COLOR_PRESETS.map(([name, p]) => { const v = p || DEF, on = JSON.stringify(v) === JSON.stringify(pick);
-        return <div key={name} role="button" onClick={() => setPick(v)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', borderRadius: 999, border: '1px solid ' + (on ? C.text : C.line2), cursor: 'pointer' }}>
-          <span style={{ display: 'flex' }}>{[v.core, v.secondary, v.accent].map((h, i) => <span key={i} style={{ width: 12, height: 12, borderRadius: 99, background: h, marginLeft: i ? -3 : 0, border: '1px solid ' + C.bg }} />)}</span>
-          <span style={{ ...T.mono, fontSize: 10, color: on ? C.text : C.dim }}>{name.toUpperCase()}</span></div>; })}
-    </div>
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{COLOR_PRESETS.map(([name, p]) => chip(name, p || DEF, false))}</div>
+    {sets.length ? <><div style={{ ...T.label, margin: '12px 0 6px' }}>MY SETUPS</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{sets.map(x => chip(x.name, x, true))}</div></> : null}
+    {naming != null
+      ? <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'flex-end' }}>
+          <Field label="NAME THIS SETUP" value={naming} onChange={setNaming} placeholder="e.g. Night mode" autoFocus style={{ flex: 1 }} />
+          <Btn kind="ghost" tone={C.dim} onClick={() => setNaming(null)} style={{ minHeight: 42, padding: '0 10px' }}>✕</Btn>
+          <Btn tone={pick.core} ink={ink(pick.core)} disabled={!naming.trim()} onClick={saveSet} style={{ minHeight: 42, fontSize: 14 }}>SAVE</Btn>
+        </div>
+      : <div role="button" onClick={() => setNaming('')} style={{ marginTop: 12, padding: '11px 0', textAlign: 'center', borderRadius: 12, border: '1px dashed ' + C.line2, cursor: 'pointer', ...T.mono, fontSize: 11, color: C.dim }}>＋ SAVE THESE AS MY OWN SETUP</div>}
     <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
-      {[['core', 'START'], ['secondary', '+ FOOD'], ['accent', 'FINISH']].map(([k, l]) => <div key={k} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 12, background: pick[k], color: ink(pick[k]), font: `700 14px/1 ${F.head}`, letterSpacing: '.12em' }}>{l}</div>)}
+      {[['core', 'START'], ['secondary', '+ FOOD'], ['accent', 'FINISH']].map(([k, l]) => <div key={k} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 12, background: pick[k], color: ink(pick[k]), boxShadow: `0 0 18px -4px ${pick[k]}`, font: `700 14px/1 ${F.head}`, letterSpacing: '.12em' }}>{l}</div>)}
     </div>
     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
       <Btn kind="ghost" tone={C.dim} onClick={() => apply(null)} style={{ flex: 1, minHeight: 42 }}>RESET</Btn>
-      <Btn tone={pick.core} ink={ink(pick.core)} disabled={!changed} onClick={() => apply(JSON.stringify(pick) === JSON.stringify(DEF) ? null : pick)} style={{ flex: 2, minHeight: 42, fontSize: 15 }}>{changed ? 'Apply colours' : 'Applied'}</Btn>
+      <Btn tone={pick.core} ink={ink(pick.core)} disabled={!changed} onClick={() => apply(same(pick, DEF) ? null : pick)} style={{ flex: 2, minHeight: 42, fontSize: 15 }}>{changed ? 'Apply colours' : 'Applied'}</Btn>
     </div>
     <div style={{ ...T.label, marginTop: 8, color: C.faint }}>WORKS IN BOTH LIGHT AND DARK · THE APP RELOADS TO APPLY</div>
   </div>;

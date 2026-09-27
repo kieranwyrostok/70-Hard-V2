@@ -57,7 +57,7 @@ function ExFilters({ q, setQ, part, setPart, equip, setEquip, right }) {
   return <>
     <div style={{ display: 'flex', gap: 8 }}><Field value={q} onChange={setQ} placeholder="Search exercises" style={{ flex: 1 }} />{right}</div>
     <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '10px -16px 0', padding: '0 16px' }}>{PARTS.map(p => <Chip key={p} on={part === p} tone={C.olive} ink={C.oliveInk} onClick={() => setPart(p)}>{p.toUpperCase()}</Chip>)}</div>
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '6px -16px 4px', padding: '0 16px' }}>{EQUIPS.map(p => <Chip key={p} on={equip === p} tone={C.text} ink={C.bg} onClick={() => setEquip(p)} style={{ padding: '7px 10px', fontSize: 10 }}>{p.toUpperCase()}</Chip>)}</div>
+    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '6px -16px 4px', padding: '0 16px' }}>{EQUIPS.map(p => <Chip key={p} on={equip === p} tone={C.text} ink={C.solid} onClick={() => setEquip(p)} style={{ padding: '7px 10px', fontSize: 10 }}>{p.toUpperCase()}</Chip>)}</div>
   </>;
 }
 const exMatch = (e, q, part, equip) => (part === 'All' || e.part === part) && (equip === 'Any' || e.equip === equip || (!e.equip && equip === 'Other')) && (!q || e.name.toLowerCase().includes(q.toLowerCase()));
@@ -330,7 +330,7 @@ function TrainScreen({ app, st }) {
   const previewTpl = templates.find(t => t.id === preview);
   const histW = (st.workouts || []).find(w => w.id === histOpen);
 
-  return <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: C.bg, fontFamily: F.body, color: C.text }}>
+  return <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'transparent', fontFamily: F.body, color: C.text }}>
     <div style={{ flex: 1, overflow: 'auto' }}>
       <div style={{ padding: '58px 22px 14px', borderBottom: '1px solid ' + C.line }}>
         <div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · TRAIN</div>
@@ -509,7 +509,7 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
             {e.sets.map((s, i) => {
               const prev = lp && lp.sets[i] ? lp.sets[i] : null, ph = phOf(prev, s.target);
               const kindCol = s.kind === 'w' ? C.amber : s.kind === 'd' ? C.blue : s.kind === 'f' ? C.red : C.text;
-              const rowBg = s.done ? 'rgba(163,196,110,.18)' : 'transparent';
+              const rowBg = s.done ? 'rgba(168,242,92,.18)' : 'transparent';
               const inStyle = { ...cellIn, background: s.done ? 'transparent' : '#282d36' };
               const numIdx = e.sets.slice(0, i + 1).filter(x => x.kind !== 'w').length;
               return <SwipeRow key={i} bg={C.bg} style={{ marginTop: 6 }} actions={[{ label: 'DELETE', run: () => updEx(e.uid, x => ({ ...x, sets: x.sets.filter((_, j) => j !== i) })) }]}>
@@ -568,7 +568,7 @@ function ExercisePicker({ st, app, multi, onPick, onClose }) {
     footer={multi ? <Btn tone={C.olive} ink={C.oliveInk} disabled={!sel.length} onClick={() => onPick(sel)}>{sel.length ? 'Add ' + sel.length + (sel.length === 1 ? ' exercise' : ' exercises') : 'Pick exercises'}</Btn> : null}>
     <div style={{ padding: '12px 16px 20px' }}>
       <ExFilters q={q} setQ={setQ} part={part} setPart={setPart} equip={equip} setEquip={setEquip} />
-      {list.map(e => { const on = sel.includes(e.id); return <div key={e.id} role="button" onClick={() => pick(e.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 4px', borderBottom: '1px solid #272c34', cursor: 'pointer', background: on ? 'rgba(163,196,110,.14)' : 'transparent' }}>
+      {list.map(e => { const on = sel.includes(e.id); return <div key={e.id} role="button" onClick={() => pick(e.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 4px', borderBottom: '1px solid #272c34', cursor: 'pointer', background: on ? 'rgba(168,242,92,.14)' : 'transparent' }}>
         <div style={{ flex: 1 }}><div style={T.name}>{e.name}</div><div style={{ ...T.label, marginTop: 3 }}>{e.part}{e.equip ? ' · ' + e.equip : ''} · {({ wr: 'WEIGHT × REPS', r: 'REPS', d: 'TIME', dt: 'DISTANCE + TIME' })[e.type]}</div></div>
         {multi ? <div style={{ width: 22, height: 22, border: '1.5px solid ' + (on ? C.olive : C.line2), background: on ? C.olive : 'transparent', color: C.oliveInk, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 13px/1 ${F.mono}` }}>{on ? '✓' : ''}</div> : null}
       </div>; })}
@@ -713,7 +713,7 @@ function ExerciseDetail({ st, app, exId, onClose }) {
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length}, 1fr)`, gap: 7 }}>{tiles.map(([l, v]) => <Card key={l} style={{ padding: '10px 11px' }}><div style={T.label}>{l}</div><div style={{ font: `700 20px/1.1 ${F.head}`, marginTop: 4, color: C.text }}>{v}</div></Card>)}</div>
       <div style={{ ...T.label, margin: '20px 0 8px' }}>TREND</div>
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '0 -18px', padding: '0 18px' }}>{metrics.map(([k, l]) => <Chip key={k} on={metric === k} tone={C.olive} ink={C.oliveInk} onClick={() => setMetric(k)}>{l}</Chip>)}</div>
-      <div style={{ display: 'flex', gap: 6, margin: '6px 0 12px' }}>{[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y'], ['all', 'ALL']].map(([k, l]) => <Chip key={k} on={range === k} tone={C.text} ink={C.bg} onClick={() => setRange(k)} style={{ flex: 1, textAlign: 'center', padding: '7px 0', fontSize: 10 }}>{l}</Chip>)}</div>
+      <div style={{ display: 'flex', gap: 6, margin: '6px 0 12px' }}>{[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y'], ['all', 'ALL']].map(([k, l]) => <Chip key={k} on={range === k} tone={C.text} ink={C.solid} onClick={() => setRange(k)} style={{ flex: 1, textAlign: 'center', padding: '7px 0', fontSize: 10 }}>{l}</Chip>)}</div>
       <Card style={{ padding: '12px 12px 6px' }}>
         <LineChart points={pts} tone={C.olive} fmt={metricFmt(st, metric)} />
         {tt ? <div style={{ ...T.mono, fontSize: 11, margin: '6px 0 4px', color: tt.startsWith('▲') ? C.olive : tt.startsWith('▼') ? C.red : C.dim }}>{tt}</div> : null}
@@ -774,7 +774,7 @@ function PlateCalc({ st, start, onClose }) {
         {!res ? <div style={{ ...T.label, color: C.faint }}>{t != null ? 'LESS THAN THE BAR' : 'ENTER A WEIGHT'}</div> : <>
           <div style={{ ...T.label, marginBottom: 8 }}>EACH SIDE{res.out.length ? '' : ': JUST THE BAR'}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-            {res.out.map((p, i) => <div key={i} style={{ width: p >= 10 ? 30 : 22, height: p >= 20 ? 70 : p >= 10 ? 56 : 40, background: colors[p] || C.dim, color: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 11px/1 ${F.mono}`, writingMode: 'vertical-rl' }}>{p}</div>)}
+            {res.out.map((p, i) => <div key={i} style={{ width: p >= 10 ? 30 : 22, height: p >= 20 ? 70 : p >= 10 ? 56 : 40, background: colors[p] || C.dim, color: C.solid, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 11px/1 ${F.mono}`, writingMode: 'vertical-rl' }}>{p}</div>)}
           </div>
           <div style={{ ...T.mono, fontSize: 12, color: C.text, marginTop: 10 }}>{res.out.length ? res.out.join(' + ') + ' ' + wUnit(st) + ' per side' : ''}{res.left > 0 ? ' · ' + res.left + ' ' + wUnit(st) + ' can’t be made per side' : ''}</div>
         </>}
@@ -802,7 +802,7 @@ function MobilityPicker({ title = 'Add mobility', routinesOnly, onClose, onAdd }
       </Card>; }) : <>
         <div style={{ marginTop: 10 }}><Field value={q} onChange={setQ} placeholder="Search drills" /></div>
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '8px -16px 4px', padding: '0 16px' }}>{MOB_AREAS.map(a => <Chip key={a} on={area === a} tone={C.olive} ink={C.oliveInk} onClick={() => setArea(a)}>{a.toUpperCase()}</Chip>)}</div>
-        {drills.map(d => { const on = sel.includes(d.id); return <div key={d.id} role="button" onClick={() => toggle(d.id)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 4px', borderBottom: '1px solid #272c34', cursor: 'pointer', background: on ? 'rgba(163,196,110,.14)' : 'transparent' }}>
+        {drills.map(d => { const on = sel.includes(d.id); return <div key={d.id} role="button" onClick={() => toggle(d.id)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 4px', borderBottom: '1px solid #272c34', cursor: 'pointer', background: on ? 'rgba(168,242,92,.14)' : 'transparent' }}>
           <div style={{ flex: 1 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><span style={T.name}>{d.name}</span><span style={{ ...T.label, flex: 'none' }}>{d.area} · {d.min} MIN</span></div><div style={{ font: `400 12px/1.4 ${F.body}`, color: C.dim, marginTop: 3 }}>{d.cue}</div></div>
           <div style={{ width: 22, height: 22, flex: 'none', border: '1.5px solid ' + (on ? C.olive : C.line2), background: on ? C.olive : 'transparent', color: C.oliveInk, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 13px/1 ${F.mono}` }}>{on ? '✓' : ''}</div>
         </div>; })}

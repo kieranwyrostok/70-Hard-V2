@@ -31,14 +31,30 @@
     var inkFor = function (h) { return contrast(h, K('ffffff')) >= contrast(h, K('10131a')) ? K('ffffff') : mix(h, K('000000'), .86); };
     var light = PAGE === 'light';
     var fitLight = function (h) { var i = 0; while (contrast(h, K('ffffff')) < 3 && i++ < 12) h = mix(h, K('000000'), .1); return h; };   // readable on white
-    var base = light ? { core: K('3b6df0'), coreInk: K('ffffff'), sec: K('e6a01e'), secInk: K('231800'), secDark: K('c9861a'), acc: K('5f9230'), accInk: K('ffffff'), accRgb: 'rgba(95,146,48' }
-      : { core: K('6390ff'), coreInk: K('081631'), sec: K('f4b544'), secInk: K('231800'), secDark: K('d99b2e'), acc: K('a3c46e'), accInk: K('111a08'), accRgb: 'rgba(163,196,110' };
+    var base = light ? { core: K('2d68ff'), coreInk: K('ffffff'), sec: K('f2a20c'), secInk: K('231800'), secDark: K('d4880a'), acc: K('45a01e'), accInk: K('ffffff'), accRgb: 'rgba(69,160,30' }
+      : { core: K('4f8dff'), coreInk: K('081631'), sec: K('ffc233'), secInk: K('231800'), secDark: K('e6a312'), acc: K('a8f25c'), accInk: K('111a08'), accRgb: 'rgba(168,242,92' };
     var map = {};
     if (c.core) { var cc = light ? fitLight(c.core) : c.core; map[base.core] = cc; if (!light) map[base.coreInk] = inkFor(cc); }
     if (c.secondary) { map[base.sec] = c.secondary; map[base.secInk] = inkFor(c.secondary); map[base.secDark] = mix(c.secondary, K('000000'), .16); }
     if (c.accent) { var ac = light ? fitLight(c.accent) : c.accent, a3 = rgb(ac); map[base.acc] = ac; if (!light) map[base.accInk] = inkFor(ac); map[base.accRgb] = 'rgba(' + a3.join(','); }
     return { map: map, c: c, light: light, ink: inkFor };
   };
+  // Neon: the accent colours glow wherever they're used (text, fills, outlines), and tint the moving glow behind
+  // the app (#aurora, see tools/glass.mjs). Follows the custom colours too.
+  (function () {
+    var n = { core: '#4f8dff', sec: '#ffc233', acc: '#a8f25c', red: '#ff5a5f' }, P = window.__SH_PALETTE(), light = PAGE === 'light';
+    if (P) for (var k in n) if (P.map[n[k]]) n[k] = P.map[n[k]];
+    var css = '', root = document.documentElement;
+    root.style.setProperty('--n1', n.core); root.style.setProperty('--n2', n.sec); root.style.setProperty('--n3', n.acc);
+    for (var key in n) {
+      var h = n[key].toLowerCase(), x = parseInt(h.slice(1), 16), r = [x >> 16 & 255, x >> 8 & 255, x & 255], rs = r.join(', ');
+      var g = function (a) { return 'rgba(' + r.join(',') + ',' + a + ')'; };
+      css += '[style*="color:' + h + '"],[style*="color: rgb(' + rs + ')"]{text-shadow:0 0 ' + (light ? '8px ' + g(.28) : '11px ' + g(.6)) + '}';
+      css += '[style*="solid ' + h + '"],[style*="solid rgb(' + rs + ')"]{box-shadow:0 0 14px -4px ' + g(light ? .45 : .7) + ',inset 0 0 10px -6px ' + g(.6) + '}';
+      css += '[style*="background:' + h + '"],[style*="background: rgb(' + rs + ')"]{box-shadow:0 ' + (light ? '6px 18px -6px ' + g(.55) : '0 20px -3px ' + g(.6)) + ',inset 0 1px 0 rgba(255,255,255,.4)}';
+    }
+    var el = document.createElement('style'); el.id = 'neon'; el.textContent = css; document.head.appendChild(el);
+  })();
   window.__setTheme = function (t) { try { localStorage.setItem('sh.theme', t); sessionStorage.removeItem('sh.themeHops'); } catch (e) { /* ignore */ } go(); };
   if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (pref() === 'system') go(); });
   go();
@@ -57,7 +73,7 @@
 html{background:#111419}
 body{background:#15181d}
 html,body{height:100%;margin:0;overflow:hidden;color:#eef0f4;font-family:Barlow,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
-a{color:#6390ff;text-decoration:none}
+a{color:#4f8dff;text-decoration:none}
 ::-webkit-scrollbar{width:0;height:0}
 input,textarea{font-size:16px!important}
 .screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0}
@@ -120,21 +136,21 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="height:100%;display:flex;flex-direction:column;background:#15181d;font-family:Barlow,system-ui,sans-serif">
 <div style="display:{{ obHeadVis }};padding:54px 22px 4px">
 <div style="display:flex;align-items:center;justify-content:space-between">
-<div sc-camel-on-click="{{ obBack }}" style="min-height:44px;min-width:60px;display:flex;align-items:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">‹ BACK</div>
+<div sc-camel-on-click="{{ obBack }}" style="min-height:44px;min-width:60px;display:flex;align-items:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">‹ BACK</div>
 <span style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#8f9ab0">{{ obStepLabel }}</span>
 </div>
 <div style="display:flex;gap:4px;margin-top:4px"><sc-for list="{{ obProgress }}" as="p" hint-placeholder-count="6"><div style="flex:1;height:3px;background:{{ p.bg }}"></div></sc-for></div>
 </div>
 <div style="flex:1;overflow:auto">
 <div style="display:{{ ob0 }};flex-direction:column;min-height:100%;box-sizing:border-box;padding:110px 26px 34px">
-<div style="align-self:flex-start;transform:rotate(-1.4deg);background:repeating-linear-gradient(45deg,#f4b544,#f4b544 7px,#d99b2e 7px,#d99b2e 14px);color:#231800;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;padding:8px 12px">70 DAYS · YOUR RULES · NO SHORTCUTS</div>
+<div style="align-self:flex-start;transform:rotate(-1.4deg);background:repeating-linear-gradient(45deg,#ffc233,#ffc233 7px,#e6a312 7px,#e6a312 14px);color:#231800;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;padding:8px 12px">70 DAYS · YOUR RULES · NO SHORTCUTS</div>
 <div style="font:800 76px/0.84 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4;margin-top:24px">Seventy<br>Hard</div>
 <div style="font:400 17px/1.5 Barlow,sans-serif;color:#9ca3b0;margin-top:16px;text-wrap:pretty">Pick your daily non-negotiables. Show up for seventy days. Every miss is marked, never hidden.</div>
 <div style="flex:1;min-height:40px"></div>
 <div style="display:flex;flex-direction:column;gap:9px">
 <div sc-camel-on-click="{{ obStart }}" style="background:#eef0f4;color:#15181d;text-align:center;padding:17px;cursor:pointer;font:700 16px/1 'Saira Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase">Get started</div>
 </div>
-<label style="display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:8px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;text-decoration:none">HAVE A BACKUP? <span style="color:#6390ff;margin-left:6px">RESTORE ›</span><input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
+<label style="display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:8px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;text-decoration:none">HAVE A BACKUP? <span style="color:#4f8dff;margin-left:6px">RESTORE ›</span><input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
 <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#6b7382;text-align:center;margin-top:4px">SETUP TAKES ~2 MIN · SAVED ON THIS PHONE · EVERYTHING BUT THE RULES STAYS EDITABLE<br>APP VERSION __APP_VERSION__</div>
 </div>
 <div style="display:{{ ob1 }};flex-direction:column;padding:18px 22px 24px">
@@ -143,38 +159,38 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">UNITS</div><div style="display:flex;gap:6px"><sc-for list="{{ obUnits }}" as="u" hint-placeholder-count="2"><div sc-camel-on-click="{{ u.pick }}" style="flex:1;min-width:0;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ u.bg }};border:1px solid {{ u.border }};font:600 11px/1.2 'IBM Plex Mono',monospace;letter-spacing:.06em;color:{{ u.fg }};text-align:center">{{ u.label }}</div></sc-for></div></div>
 <div style="margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">SEX · FOR THE CALORIE FORMULA</div><div style="display:flex;gap:6px"><sc-for list="{{ obSexes }}" as="x" hint-placeholder-count="3"><div sc-camel-on-click="{{ x.pick }}" style="flex:1;min-width:0;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ x.bg }};border:1px solid {{ x.border }};font:600 11px/1.2 'IBM Plex Mono',monospace;letter-spacing:.06em;color:{{ x.fg }};text-align:center">{{ x.label }}</div></sc-for></div></div>
 <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:16px">
-<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">AGE</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obAgeDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obAge }}</div><div sc-camel-on-click="{{ obAgeInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
-<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">HEIGHT</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obHDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obHeight }}</div><div sc-camel-on-click="{{ obHInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
+<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">AGE</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obAgeDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obAge }}</div><div sc-camel-on-click="{{ obAgeInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
+<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">HEIGHT</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obHDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obHeight }}</div><div sc-camel-on-click="{{ obHInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 </div>
-<div style="margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">STARTING WEIGHT · BECOMES YOUR DAY 1 BASELINE</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obWDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obWeight }}</div><div sc-camel-on-click="{{ obWInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
+<div style="margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">STARTING WEIGHT · BECOMES YOUR DAY 1 BASELINE</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obWDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obWeight }}</div><div sc-camel-on-click="{{ obWInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 </div>
 <div style="display:{{ ob2 }};flex-direction:column;padding:18px 22px 24px">
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">What's the goal?</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Targets are estimated from your profile. Nudge them if you know better.</div>
 <div style="display:flex;flex-direction:column;gap:7px">
 <sc-for list="{{ obGoals }}" as="g" hint-placeholder-count="3">
-<div sc-camel-on-click="{{ g.pick }}" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:{{ g.bg }};border:1px solid {{ g.border }};padding:13px 14px;min-height:56px;box-sizing:border-box" style-hover="border-color:#6390ff">
+<div sc-camel-on-click="{{ g.pick }}" style="display:flex;align-items:center;gap:12px;cursor:pointer;background:{{ g.bg }};border:1px solid {{ g.border }};padding:13px 14px;min-height:56px;box-sizing:border-box" style-hover="border-color:#4f8dff">
 <div style="width:20px;height:20px;flex:none;border:1.5px solid {{ g.border }};display:flex;align-items:center;justify-content:center"><div style="width:9px;height:9px;background:{{ g.dot }}"></div></div>
 <div style="flex:1;min-width:0"><div style="font:600 16px/1.2 Barlow,sans-serif;color:#eef0f4">{{ g.name }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px">{{ g.sub }}</div></div>
 </div>
 </sc-for>
 </div>
 <div style="background:#1e232a;border:1px solid #2b3039;padding:14px;margin-top:16px">
-<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px"><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">DAILY TARGETS</span><span sc-camel-on-click="{{ obRecalc }}" style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff;cursor:pointer;padding:6px 0">RECALCULATE</span></div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px"><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">DAILY TARGETS</span><span sc-camel-on-click="{{ obRecalc }}" style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff;cursor:pointer;padding:6px 0">RECALCULATE</span></div>
 <div style="display:flex;flex-direction:column;gap:7px">
 <sc-for list="{{ targetRows }}" as="t" hint-placeholder-count="4">
 <div style="display:flex;align-items:center;gap:10px">
 <span style="flex:1;font:500 11px/1 'IBM Plex Mono',monospace;color:#9ca3b0">{{ t.label }}</span>
 <div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:44px">
-<div sc-camel-on-click="{{ t.dec }}" style="width:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 16px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div>
+<div sc-camel-on-click="{{ t.dec }}" style="width:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 16px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div>
 <div style="width:72px;display:flex;align-items:center;justify-content:center;font:700 19px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ t.value }}</div>
-<div sc-camel-on-click="{{ t.inc }}" style="width:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 16px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div>
+<div sc-camel-on-click="{{ t.inc }}" style="width:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 16px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div>
 </div>
 </div>
 </sc-for>
 </div>
 <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:{{ obTargetNoteFg }};margin-top:10px">{{ obTargetNote }}</div>
 </div>
-<div style="margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">WATER PER DAY · {{ obWaterHint }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obWaterDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obWaterL }}</div><div sc-camel-on-click="{{ obWaterInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
+<div style="margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">WATER PER DAY · {{ obWaterHint }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obWaterDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obWaterL }}</div><div sc-camel-on-click="{{ obWaterInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 </div>
 <div style="display:{{ ob3 }};flex-direction:column;padding:18px 22px 24px">
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Set your<br>non-negotiables</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Start from these basics. Tap any rule to rewrite it, add ideas below, or create your own. A miss turns that day red — no restart.</div>
@@ -188,28 +204,28 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div sc-camel-on-click="{{ r.toggle }}" style="width:72px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><div style="width:46px;height:26px;border-radius:13px;background:{{ r.swBg }};position:relative"><div style="position:absolute;top:3px;left:{{ r.knob }};width:20px;height:20px;border-radius:10px;background:#15181d"></div></div></div>
 </div>
-<div style="display:{{ r.editVis }};background:#171a20;border:1px solid #6390ff;border-top:none;padding:14px">
+<div style="display:{{ r.editVis }};background:#171a20;border:1px solid #4f8dff;border-top:none;padding:14px">
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">RULE</div><input value="{{ r.rawName }}" sc-camel-on-change="{{ r.rename }}" placeholder="e.g. No sugar" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:600 15px/1.35 Barlow,sans-serif;padding:12px;outline:none">
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">DETAIL · WHAT COUNTS AS DONE</div><input value="{{ r.rawSpec }}" sc-camel-on-change="{{ r.respec }}" placeholder="e.g. 45 min, one outdoors" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:600 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;font-weight:500"></div>
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">RING</div><div style="display:flex;gap:6px"><sc-for list="{{ r.groups }}" as="g" hint-placeholder-count="3"><div sc-camel-on-click="{{ g.pick }}" style="flex:1;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ g.bg }};border:1px solid {{ g.border }};font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ g.fg }}">{{ g.label }}</div></sc-for></div></div>
 <div style="display:flex;gap:7px;margin-top:14px">
-<div sc-camel-on-click="{{ r.remove }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#f06a50;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE</div>
-<div sc-camel-on-click="{{ r.edit }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#6390ff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
+<div sc-camel-on-click="{{ r.remove }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#ff5a5f;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE</div>
+<div sc-camel-on-click="{{ r.edit }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#4f8dff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
 </div>
 </div>
 </div>
 </sc-for>
 </div>
-<div style="display:{{ ideasVis }};margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">IDEAS · TAP TO ADD</div><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ruleIdeas }}" as="i" hint-placeholder-count="6"><div sc-camel-on-click="{{ i.add }}" style="min-height:40px;display:flex;align-items:center;padding:0 12px;cursor:pointer;border:1px solid #3d4450;font:500 13px/1 Barlow,sans-serif;color:#eef0f4" style-hover="border-color:#6390ff;color:#6390ff">+ {{ i.name }}</div></sc-for></div></div>
-<div sc-camel-on-click="{{ addRule }}" style="margin-top:12px;border:1px dashed #3d4450;padding:15px;text-align:center;cursor:pointer;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0" style-hover="border-color:#6390ff;color:#6390ff">+ CREATE CUSTOM RULE</div>
+<div style="display:{{ ideasVis }};margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">IDEAS · TAP TO ADD</div><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ruleIdeas }}" as="i" hint-placeholder-count="6"><div sc-camel-on-click="{{ i.add }}" style="min-height:40px;display:flex;align-items:center;padding:0 12px;cursor:pointer;border:1px solid #3d4450;font:500 13px/1 Barlow,sans-serif;color:#eef0f4" style-hover="border-color:#4f8dff;color:#4f8dff">+ {{ i.name }}</div></sc-for></div></div>
+<div sc-camel-on-click="{{ addRule }}" style="margin-top:12px;border:1px dashed #3d4450;padding:15px;text-align:center;cursor:pointer;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0" style-hover="border-color:#4f8dff;color:#4f8dff">+ CREATE CUSTOM RULE</div>
 
-<div style="margin-top:14px;background:#171a20;border:1px solid #3d4450;padding:13px 14px;display:flex;align-items:center;gap:12px"><div style="font:700 30px/1 'Saira Condensed',sans-serif;color:#6390ff">{{ ringCount }}</div><div style="flex:1;min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">{{ ringWord }} ON TODAY · {{ ruleCount }} RULES</div><div style="font:600 14px/1.3 Barlow,sans-serif;color:#eef0f4;margin-top:4px">{{ ringSummary }}</div></div></div>
+<div style="margin-top:14px;background:#171a20;border:1px solid #3d4450;padding:13px 14px;display:flex;align-items:center;gap:12px"><div style="font:700 30px/1 'Saira Condensed',sans-serif;color:#4f8dff">{{ ringCount }}</div><div style="flex:1;min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">{{ ringWord }} ON TODAY · {{ ruleCount }} RULES</div><div style="font:600 14px/1.3 Barlow,sans-serif;color:#eef0f4;margin-top:4px">{{ ringSummary }}</div></div></div>
 </div>
 <div style="display:{{ ob4 }};flex-direction:column;padding:18px 22px 24px">
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Pick a split</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">A starting point, not a contract. Rename any day or swap any exercise later in Train.</div>
 <div style="display:flex;flex-direction:column;gap:8px">
 <sc-for list="{{ obSplits }}" as="p" hint-placeholder-count="4">
-<div sc-camel-on-click="{{ p.pick }}" style="cursor:pointer;background:{{ p.bg }};border:1px solid {{ p.border }};padding:13px 14px" style-hover="border-color:#a3c46e">
+<div sc-camel-on-click="{{ p.pick }}" style="cursor:pointer;background:{{ p.bg }};border:1px solid {{ p.border }};padding:13px 14px" style-hover="border-color:#a8f25c">
 <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 19px/1.1 'Saira Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#eef0f4">{{ p.name }}</span><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:{{ p.badgeFg }}">{{ p.badge }}</span></div>
 <div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:4px">{{ p.sub }}</div>
 <div style="display:flex;gap:4px;margin-top:10px">
@@ -222,10 +238,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="display:{{ ob5 }};flex-direction:column;padding:18px 22px 24px">
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Set the clock</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Your sleep window becomes a rule. Reminders are built around it — tune each one later.</div>
 <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
-<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">WAKE</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obWakeDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obWake }}</div><div sc-camel-on-click="{{ obWakeInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
-<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">LIGHTS OUT</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obSleepDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obSleep }}</div><div sc-camel-on-click="{{ obSleepInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
+<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">WAKE</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obWakeDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obWake }}</div><div sc-camel-on-click="{{ obWakeInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
+<div><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">LIGHTS OUT</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obSleepDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obSleep }}</div><div sc-camel-on-click="{{ obSleepInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 </div>
-<div style="font:500 11px/1.4 'IBM Plex Mono',monospace;color:#a3c46e;margin-top:8px">{{ obInBed }}</div>
+<div style="font:500 11px/1.4 'IBM Plex Mono',monospace;color:#a8f25c;margin-top:8px">{{ obInBed }}</div>
 <div style="margin-top:18px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">DAY 1 STARTS</div><div style="display:flex;gap:6px"><sc-for list="{{ obStarts }}" as="s" hint-placeholder-count="3"><div sc-camel-on-click="{{ s.pick }}" style="flex:1;min-width:0;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ s.bg }};border:1px solid {{ s.border }};font:600 11px/1.2 'IBM Plex Mono',monospace;letter-spacing:.06em;color:{{ s.fg }};text-align:center">{{ s.label }}</div></sc-for></div></div>
 <div sc-camel-on-click="{{ obToggleRem }}" style="margin-top:18px;background:#1e232a;border:1px solid #2b3039;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;min-height:56px;box-sizing:border-box">
 <div style="flex:1;min-width:0"><div style="font:600 15px/1.2 Barlow,sans-serif;color:#eef0f4">Suggested reminders</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px">{{ obRemSub }}</div></div>
@@ -239,22 +255,22 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <sc-for list="{{ obReview }}" as="r" hint-placeholder-count="5">
 <div sc-camel-on-click="{{ r.go }}" style="display:flex;align-items:center;gap:12px;background:#1e232a;padding:12px 14px;min-height:58px;box-sizing:border-box;cursor:pointer" style-hover="background:#20252c">
 <div style="flex:1;min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">{{ r.label }}</div><div style="font:600 15px/1.3 Barlow,sans-serif;color:#eef0f4;margin-top:5px">{{ r.value }}</div></div>
-<span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">EDIT</span>
+<span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">EDIT</span>
 </div>
 </sc-for>
 </div>
 </div>
 <div style="display:{{ obDoneVis }};flex-direction:column;padding-top:40px">
-<div style="width:64px;height:64px;background:#6390ff;display:flex;align-items:center;justify-content:center;font:800 34px/1 'Saira Condensed',sans-serif;color:#081631">✓</div>
+<div style="width:64px;height:64px;background:#4f8dff;display:flex;align-items:center;justify-content:center;font:800 34px/1 'Saira Condensed',sans-serif;color:#081631">✓</div>
 <div style="font:800 52px/0.9 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4;margin-top:22px">Locked in,<br>{{ obNameUp }}</div>
 <div style="font:400 16px/1.5 Barlow,sans-serif;color:#9ca3b0;margin-top:12px;text-wrap:pretty">{{ obDoneText }}</div>
-<a href="#s02" style="margin-top:28px;background:#6390ff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;text-decoration:none">Open Today ›</a>
+<a href="#s02" style="margin-top:28px;background:#4f8dff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;text-decoration:none">Open Today ›</a>
 <div sc-camel-on-click="{{ obRestart }}" style="margin-top:8px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:500 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0">RESTART CHALLENGE · RUN SETUP AGAIN</div>
 </div>
 </div>
 </div>
 <div style="display:{{ obFootVis }};padding:12px 22px 30px;border-top:1px solid #2b3039;background:#111419">
-<div sc-camel-on-click="{{ obNext }}" style="background:#6390ff;color:#081631;text-align:center;padding:17px;cursor:pointer;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">{{ obNextLabel }}</div>
+<div sc-camel-on-click="{{ obNext }}" style="background:#4f8dff;color:#081631;text-align:center;padding:17px;cursor:pointer;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">{{ obNextLabel }}</div>
 </div>
 </div>
 </x-import></div>
@@ -268,7 +284,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="display:flex;align-items:baseline;gap:9px;margin-top:2px"><span style="font:800 66px/0.85 'Saira Condensed',sans-serif;color:#eef0f4">{{ dayNum }}</span><span style="font:600 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8f9ab0">/ 70</span></div>
 </div>
 <div style="text-align:right">
-<div style="font:600 12px/1 'IBM Plex Mono',monospace;color:#f4b544">{{ remainLabel }}</div>
+<div style="font:600 12px/1 'IBM Plex Mono',monospace;color:#ffc233">{{ remainLabel }}</div>
 <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#6b7382;margin-top:4px">STREAK {{ streak }}<br>BEST {{ best }}</div>
 </div>
 </div>
@@ -280,22 +296,22 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </sc-for>
 </div>
 </div>
-<div style="margin-top:14px;transform:rotate(-.6deg);background:repeating-linear-gradient(45deg,#f4b544,#f4b544 7px,#d99b2e 7px,#d99b2e 14px);color:#231800;font:600 12px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;padding:9px 12px;text-align:center">{{ orders }}</div>
+<div style="margin-top:14px;transform:rotate(-.6deg);background:repeating-linear-gradient(45deg,#ffc233,#ffc233 7px,#e6a312 7px,#e6a312 14px);color:#231800;font:600 12px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;padding:9px 12px;text-align:center">{{ orders }}</div>
 </div>
 <div style="display:{{ reportShow }};padding:16px 22px 0">
-<div sc-camel-on-click="{{ openReport }}" style="background:#1e232a;border:1px solid #2b3039;border-left:3px solid #f4b544;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
+<div sc-camel-on-click="{{ openReport }}" style="background:#1e232a;border:1px solid #2b3039;border-left:3px solid #ffc233;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
 <div style="font:400 26px/1 Barlow,system-ui,sans-serif">📊</div>
-<div style="flex:1;min-width:0"><div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#f4b544">YOUR WEEKLY REPORT</div><div style="font:600 15px/1.3 Barlow,system-ui,sans-serif;color:#eef0f4;margin-top:5px">{{ reportLabel }}</div></div>
+<div style="flex:1;min-width:0"><div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#ffc233">YOUR WEEKLY REPORT</div><div style="font:600 15px/1.3 Barlow,system-ui,sans-serif;color:#eef0f4;margin-top:5px">{{ reportLabel }}</div></div>
 <span sc-camel-on-click="{{ hideReport }}" style="font:600 14px/1 'IBM Plex Mono',monospace;color:#6b7382;padding:8px 2px 8px 10px;cursor:pointer">✕</span>
 </div>
 </div>
 <div style="display:{{ tipsShow }};padding:16px 22px 0">
-<div style="background:#1e232a;border:1px solid #2b3039;border-left:3px solid #a3c46e;padding:12px 14px">
-<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#a3c46e">COACH · TODAY'S SUGGESTIONS</span><span sc-camel-on-click="{{ dismissTips }}" style="font:600 14px/1 'IBM Plex Mono',monospace;color:#6b7382;padding:6px 2px 6px 14px;cursor:pointer">✕</span></div>
+<div style="background:#1e232a;border:1px solid #2b3039;border-left:3px solid #a8f25c;padding:12px 14px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#a8f25c">COACH · TODAY'S SUGGESTIONS</span><span sc-camel-on-click="{{ dismissTips }}" style="font:600 14px/1 'IBM Plex Mono',monospace;color:#6b7382;padding:6px 2px 6px 14px;cursor:pointer">✕</span></div>
 <sc-for list="{{ tipsList }}" as="t" hint-placeholder-count="3">
 <div style="margin-top:10px"><div style="font:600 15px/1.25 Barlow,system-ui,sans-serif;color:#eef0f4">{{ t.title }}</div><div style="font:400 13px/1.4 Barlow,system-ui,sans-serif;color:#9ca3b0;margin-top:2px">{{ t.detail }}</div></div>
 </sc-for>
-<a href="#s12" style="display:inline-block;margin-top:10px;padding:4px 0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff;text-decoration:none">ASK COACH ›</a>
+<a href="#s12" style="display:inline-block;margin-top:10px;padding:4px 0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff;text-decoration:none">ASK COACH ›</a>
 </div>
 </div>
 <div style="padding:22px 22px 10px;display:flex;align-items:baseline;justify-content:space-between"><span style="font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Schedule</span><span style="font:500 12px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ doneCount }}/{{ ruleCount }} CLEARED</span></div>
@@ -325,37 +341,37 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="padding:22px 22px 10px;display:flex;align-items:baseline;justify-content:space-between"><span style="font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Today's targets</span></div>
 <div style="padding:0 22px;display:grid;grid-template-columns:1fr 1fr;gap:7px">
 <div style="grid-row:span 2;background:#1e232a;border:1px solid #2b3039;border-radius:14px;padding:12px;display:flex;flex-direction:column;align-items:center">
-<div style="align-self:stretch;display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6390ff">WATER</span><span style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ waterL }} / {{ waterGoalL }} L</span></div>
+<div style="align-self:stretch;display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#4f8dff">WATER</span><span style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ waterL }} / {{ waterGoalL }} L</span></div>
 <div style="margin-top:6px;width:112px;height:112px"><x-import component-from-global-scope="PailWidget" from="screens.js" dc-props="{{ pailProps }}"></x-import></div>
 <div style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6b7382;margin-top:4px;text-align:center">TAP FOR +250 ML</div>
 <div style="display:flex;gap:5px;margin-top:8px;align-self:stretch">
-<div sc-camel-on-click="{{ addWater500 }}" style="flex:1;text-align:center;border:1px solid #3d4450;padding:9px 0;font:600 12px/1 'IBM Plex Mono',monospace;color:#6390ff;cursor:pointer">+500</div>
+<div sc-camel-on-click="{{ addWater500 }}" style="flex:1;text-align:center;border:1px solid #3d4450;padding:9px 0;font:600 12px/1 'IBM Plex Mono',monospace;color:#4f8dff;cursor:pointer">+500</div>
 <div sc-camel-on-click="{{ resetWater }}" style="width:38px;text-align:center;border:1px solid #3d4450;padding:9px 0;font:600 12px/1 'IBM Plex Mono',monospace;color:#8f9ab0;cursor:pointer">↺</div>
 </div>
 </div>
 <a href="#s03" style="background:#1e232a;border:1px solid #2b3039;border-radius:14px;padding:12px;text-decoration:none;display:block">
-<div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#f4b544">CALORIES</div>
+<div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#ffc233">CALORIES</div>
 <div style="font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:8px">{{ kcalEaten }}<span style="font-size:13px;color:#8f9ab0"> / {{ kcalGoal }}</span></div>
 <div style="height:6px;border-radius:99px;background:#282d36;overflow:hidden;margin-top:8px"><div style="height:100%;border-radius:99px;background:{{ kcalTone }};width:{{ kcalPct }}"></div></div>
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;margin-top:7px">{{ kcalLeft }}</div>
 </a>
 <a href="#s03" style="background:#1e232a;border:1px solid #2b3039;border-radius:14px;padding:12px;text-decoration:none;display:block">
-<div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6390ff">PROTEIN</div>
+<div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#4f8dff">PROTEIN</div>
 <div style="font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:8px">{{ protEaten }}<span style="font-size:13px;color:#8f9ab0"> / {{ protGoal }} g</span></div>
-<div style="height:6px;border-radius:99px;background:#282d36;overflow:hidden;margin-top:8px"><div style="height:100%;border-radius:99px;background:#6390ff;width:{{ protPct }}"></div></div>
+<div style="height:6px;border-radius:99px;background:#282d36;overflow:hidden;margin-top:8px"><div style="height:100%;border-radius:99px;background:#4f8dff;width:{{ protPct }}"></div></div>
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;margin-top:7px">{{ protLeft }}</div>
 </a>
 <div style="grid-column:span 2"><x-import component-from-global-scope="SleepWidget" from="screens.js" dc-props="{{ pailProps }}"></x-import></div>
 <a href="#s04" style="grid-column:span 2;background:#1e232a;border:1px solid #2b3039;border-radius:14px;padding:12px 14px;text-decoration:none;display:flex;align-items:center;gap:12px">
 <div style="font:400 24px/1 Barlow,system-ui,sans-serif">🏋️</div>
-<div style="flex:1;min-width:0"><div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#a3c46e">TRAINING</div><div style="font:600 15px/1.25 Barlow,system-ui,sans-serif;color:#eef0f4;margin-top:5px">{{ wkName }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px">{{ wkSub }}</div></div>
-<span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#a3c46e">{{ wkAction }}</span>
+<div style="flex:1;min-width:0"><div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#a8f25c">TRAINING</div><div style="font:600 15px/1.25 Barlow,system-ui,sans-serif;color:#eef0f4;margin-top:5px">{{ wkName }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px">{{ wkSub }}</div></div>
+<span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#a8f25c">{{ wkAction }}</span>
 </a>
 </div>
 <div style="padding:14px 22px 26px"><a href="#s10" style="display:flex;align-items:center;gap:10px;border:1px dashed #3d4450;padding:13px 14px;min-height:48px;box-sizing:border-box;text-decoration:none"><span style="flex:1;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4">HABITS, REMINDERS &amp; SETTINGS</span><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">›</span></a></div>
 </div>
 <div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
-<a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">TODAY</span></a>
+<a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#4f8dff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">PROGRESS</span></a>
@@ -368,7 +384,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="flex:1;min-height:0"><x-import component-from-global-scope="FuelScreen" from="screens.js" dc-props="{{ fuelProps }}"></x-import></div>
 <div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
-<a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#f4b544"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#f4b544">FUEL</span></a>
+<a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#ffc233"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ffc233">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">PROGRESS</span></a>
 <a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">COACH</span></a>
@@ -381,7 +397,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
-<a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#a3c46e"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#a3c46e">TRAIN</span></a>
+<a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#a8f25c"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#a8f25c">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">PROGRESS</span></a>
 <a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">COACH</span></a>
 </div>
@@ -394,7 +410,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">The board</div>
 <div style="font:400 14px/1.4 Barlow,sans-serif;color:#9ca3b0;margin-top:5px">{{ startLabel }} · {{ clearedDays }} cleared · {{ missedCount }} missed · {{ leftCount }} to go</div>
 <div style="display:flex;margin-top:14px;border:1px solid #30363f">
-<a href="#s05" style="flex:1;text-align:center;padding:13px 0;background:#6390ff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;" style-hover="background:#20252c">BOARD</a>
+<a href="#s05" style="flex:1;text-align:center;padding:13px 0;background:#4f8dff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;" style-hover="background:#20252c">BOARD</a>
 <a href="#s07" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">STATS</a>
 <a href="#s08" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">PHOTOS</a>
 <a href="#s11" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">BODY</a>
@@ -406,9 +422,9 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </sc-for>
 </div>
 <div style="padding:8px 22px 0;display:flex;gap:16px;flex-wrap:wrap">
-<div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;background:#6390ff"></div><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">CLEARED</span></div>
-<div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;background:#f06a50"></div><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">MISSED</span></div>
-<div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;background:#f4b544"></div><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">TODAY</span></div>
+<div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;background:#4f8dff"></div><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">CLEARED</span></div>
+<div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;background:#ff5a5f"></div><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">MISSED</span></div>
+<div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;background:#ffc233"></div><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">TODAY</span></div>
 <div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;border:1.5px solid #3d4450"></div><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">AHEAD</span></div>
 </div>
 <div style="padding:18px 22px 24px">
@@ -422,8 +438,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px">
-<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">DAYS CLEARED</div><div style="font:700 26px/1.1 'Saira Condensed',sans-serif;color:#6390ff;margin-top:3px">{{ clearedDays }}<span style="font-size:14px;color:#8f9ab0">/{{ pastDays }}</span></div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#6b7382;margin-top:3px">STREAK {{ streak }} · BEST {{ best }}</div></div>
-<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">MISSED</div><div style="font:700 26px/1.1 'Saira Condensed',sans-serif;color:#f06a50;margin-top:3px">{{ missedCount }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#6b7382;margin-top:3px">{{ missedList }}</div></div>
+<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">DAYS CLEARED</div><div style="font:700 26px/1.1 'Saira Condensed',sans-serif;color:#4f8dff;margin-top:3px">{{ clearedDays }}<span style="font-size:14px;color:#8f9ab0">/{{ pastDays }}</span></div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#6b7382;margin-top:3px">STREAK {{ streak }} · BEST {{ best }}</div></div>
+<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">MISSED</div><div style="font:700 26px/1.1 'Saira Condensed',sans-serif;color:#ff5a5f;margin-top:3px">{{ missedCount }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#6b7382;margin-top:3px">{{ missedList }}</div></div>
 </div>
 </div>
 </div>
@@ -431,7 +447,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
-<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">PROGRESS</span></a>
+<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#4f8dff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">PROGRESS</span></a>
 <a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">COACH</span></a>
 </div>
 </div>
@@ -443,8 +459,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#8f9ab0">DEBRIEF · DAY {{ selDay }}</div>
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4;margin-top:2px">{{ selVerdict }}</div>
 <div style="display:flex;gap:7px;margin-top:12px">
-<div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:9px 11px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8f9ab0">WATER</div><div style="font:700 20px/1.1 'Saira Condensed',sans-serif;color:#f4b544;margin-top:3px">{{ dbWater }}</div></div>
-<div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:9px 11px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8f9ab0">KCAL</div><div style="font:700 20px/1.1 'Saira Condensed',sans-serif;color:#a3c46e;margin-top:3px">{{ dbKcal }}</div></div>
+<div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:9px 11px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8f9ab0">WATER</div><div style="font:700 20px/1.1 'Saira Condensed',sans-serif;color:#ffc233;margin-top:3px">{{ dbWater }}</div></div>
+<div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:9px 11px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8f9ab0">KCAL</div><div style="font:700 20px/1.1 'Saira Condensed',sans-serif;color:#a8f25c;margin-top:3px">{{ dbKcal }}</div></div>
 <div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:9px 11px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8f9ab0">SETS</div><div style="font:700 20px/1.1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:3px">{{ dbSets }}</div></div>
 </div>
 </div>
@@ -478,7 +494,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#f4b544"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#f4b544">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">COACH</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#ffc233"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ffc233">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">COACH</span></a>
 </div>
 </div>
 </x-import></div>
@@ -489,15 +505,15 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Record</div>
 <div style="display:flex;margin-top:14px;border:1px solid #30363f">
 <a href="#s05" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;" style-hover="background:#20252c">BOARD</a>
-<a href="#s07" style="flex:1;text-align:center;padding:13px 0;background:#6390ff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">STATS</a>
+<a href="#s07" style="flex:1;text-align:center;padding:13px 0;background:#4f8dff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">STATS</a>
 <a href="#s08" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">PHOTOS</a>
 <a href="#s11" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">BODY</a>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px">
-<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">CURRENT STREAK</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#6390ff;margin-top:4px">{{ streak }}</div></div>
+<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">CURRENT STREAK</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#4f8dff;margin-top:4px">{{ streak }}</div></div>
 <div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">RULES CLEARED</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ rulesCleared }}</div></div>
-<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">BEST STREAK</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#f4b544;margin-top:4px">{{ best }}<span style="font-size:15px;color:#8f9ab0"> days</span></div></div>
-<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">MISSED DAYS</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#f06a50;margin-top:4px">{{ missedCount }}</div></div>
+<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">BEST STREAK</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#ffc233;margin-top:4px">{{ best }}<span style="font-size:15px;color:#8f9ab0"> days</span></div></div>
+<div style="background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">MISSED DAYS</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#ff5a5f;margin-top:4px">{{ missedCount }}</div></div>
 </div>
 </div>
 <div style="padding:18px 22px 8px;font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Weakest links</div>
@@ -524,7 +540,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
-<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">PROGRESS</span></a>
+<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#4f8dff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">PROGRESS</span></a>
 <a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">COACH</span></a>
 </div>
 </div>
@@ -538,13 +554,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="display:flex;margin-top:14px;border:1px solid #30363f">
 <a href="#s05" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;" style-hover="background:#20252c">BOARD</a>
 <a href="#s07" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">STATS</a>
-<a href="#s08" style="flex:1;text-align:center;padding:13px 0;background:#6390ff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">PHOTOS</a>
+<a href="#s08" style="flex:1;text-align:center;padding:13px 0;background:#4f8dff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">PHOTOS</a>
 <a href="#s11" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">BODY</a>
 </div>
 </div>
 <div style="padding:0 22px;display:flex;gap:9px">
 <div style="flex:1"><div style="aspect-ratio:3/4;background:{{ photo1Bg }};border:1px solid #353b45;display:flex;align-items:flex-end;padding:10px"><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0">DAY 01</span></div></div>
-<div style="flex:1"><div style="aspect-ratio:3/4;background:{{ photoNowBg }};border:1px solid #6390ff;display:flex;align-items:flex-end;padding:10px"><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;color:#6390ff">DAY {{ dayNum }}</span></div></div>
+<div style="flex:1"><div style="aspect-ratio:3/4;background:{{ photoNowBg }};border:1px solid #4f8dff;display:flex;align-items:flex-end;padding:10px"><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;color:#4f8dff">DAY {{ dayNum }}</span></div></div>
 </div>
 <div style="padding:20px 22px 8px;display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">All captures</span><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ photoCount }} SAVED</span></div>
 <div style="padding:0 22px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
@@ -552,13 +568,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="aspect-ratio:3/4;background:{{ p.bg }};border:1px solid {{ p.border }};display:flex;align-items:flex-end;justify-content:flex-start;padding:5px"><span style="font:500 9px/1 'IBM Plex Mono',monospace;color:{{ p.fg }}">{{ p.n }}</span></div>
 </sc-for>
 </div>
-<div style="padding:18px 22px 24px"><label style="display:block;background:#6390ff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">Capture day {{ dayNum }}<input type="file" accept="image/*" capture="environment" sc-camel-on-change="{{ addPhoto }}" style="display:none"></label></div>
+<div style="padding:18px 22px 24px"><label style="display:block;background:#4f8dff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">Capture day {{ dayNum }}<input type="file" accept="image/*" capture="environment" sc-camel-on-change="{{ addPhoto }}" style="display:none"></label></div>
 </div>
 <div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
-<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">PROGRESS</span></a>
+<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#4f8dff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">PROGRESS</span></a>
 <a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">COACH</span></a>
 </div>
 </div>
@@ -567,7 +583,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="height:100%;display:flex;flex-direction:column;background:#170f0d;font-family:Barlow,system-ui,sans-serif">
 <div style="flex:1;overflow:auto;padding:62px 22px 24px">
 <div style="transform:rotate(-1deg);background:repeating-linear-gradient(45deg,#b0452f,#b0452f 7px,#93371f 7px,#93371f 14px);color:#ffe9e2;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;padding:9px 12px;text-align:center;margin-bottom:22px">00:00 · DAY {{ vDay }} CLOSED · {{ vMissCount }} {{ vRuleWord }} MISSED</div>
-<div style="font:800 62px/0.85 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Day {{ vDay }}<br><span style="color:#f06a50">missed</span></div>
+<div style="font:800 62px/0.85 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Day {{ vDay }}<br><span style="color:#ff5a5f">missed</span></div>
 <div style="font:400 16px/1.5 Barlow,sans-serif;color:#a89b96;margin-top:12px;text-wrap:pretty">{{ vText }}</div>
 <div style="margin-top:22px;background:#251a18;border:1px solid #3b2622;padding:16px">
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8a6a60;margin-bottom:11px">WHAT YOU DID CLEAR</div>
@@ -579,8 +595,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="font:400 13px/1.5 Barlow,sans-serif;color:#8a6a60;margin-top:12px">Everything you cleared still counts toward your total.</div>
 </div>
 <div style="margin-top:22px;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8a6a60;margin-bottom:9px">WHAT CHANGES TOMORROW — ONE LINE</div>
-<textarea value="{{ fixLine }}" sc-camel-on-change="{{ setFixLine }}" rows="2" placeholder="e.g. Typing moves to 21:30, after stretching" style="display:block;width:100%;box-sizing:border-box;background:#251a18;border:1px solid #3b2622;border-left:3px solid #f06a50;padding:14px;font:400 15px/1.5 Barlow,sans-serif;color:#c9c0bc;outline:none;resize:none"></textarea>
-<div style="margin-top:24px;background:#f06a50;color:#200c08;text-align:center;padding:18px;font:700 18px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer" sc-camel-on-click="{{ dismissVerdict }}">Continue to day {{ dayNum }}</div>
+<textarea value="{{ fixLine }}" sc-camel-on-change="{{ setFixLine }}" rows="2" placeholder="e.g. Typing moves to 21:30, after stretching" style="display:block;width:100%;box-sizing:border-box;background:#251a18;border:1px solid #3b2622;border-left:3px solid #ff5a5f;padding:14px;font:400 15px/1.5 Barlow,sans-serif;color:#c9c0bc;outline:none;resize:none"></textarea>
+<div style="margin-top:24px;background:#ff5a5f;color:#200c08;text-align:center;padding:18px;font:700 18px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer" sc-camel-on-click="{{ dismissVerdict }}">Continue to day {{ dayNum }}</div>
 <a href="#s05" style="margin-top:6px;display:flex;align-items:center;justify-content:center;min-height:44px;font:500 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#a89b96;text-decoration:none">SEE IT ON THE BOARD ›</a>
 </div>
 </div>
@@ -589,30 +605,30 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="height:100%;display:flex;flex-direction:column;background:#15181d;font-family:Barlow,system-ui,sans-serif">
 <div style="flex:1;overflow:auto">
 <div style="padding:56px 22px 16px;border-bottom:1px solid #2b3039">
-<a href="#s02" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff;text-decoration:none">‹ TODAY</a>
+<a href="#s02" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff;text-decoration:none">‹ TODAY</a>
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Habits &amp;<br>reminders</div>
-<div style="margin-top:14px;background:#1e232a;border:1px solid #2b3039;border-left:3px solid #6390ff;padding:13px 14px;display:flex;align-items:center;gap:14px">
-<div style="font:700 30px/1 'Saira Condensed',sans-serif;color:#6390ff;font-variant-numeric:tabular-nums">{{ nextRemTime }}</div>
+<div style="margin-top:14px;background:#1e232a;border:1px solid #2b3039;border-left:3px solid #4f8dff;padding:13px 14px;display:flex;align-items:center;gap:14px">
+<div style="font:700 30px/1 'Saira Condensed',sans-serif;color:#4f8dff;font-variant-numeric:tabular-nums">{{ nextRemTime }}</div>
 <div style="flex:1;min-width:0"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">NEXT REMINDER</div><div style="font:600 15px/1.25 Barlow,sans-serif;color:#eef0f4;margin-top:4px">{{ nextRemName }}</div></div>
 <div style="font:500 10px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;text-align:right">{{ activeRem }}<br>ACTIVE</div>
 </div>
-<div style="margin-top:10px;background:#1e232a;border:1px solid #2b3039;padding:13px 14px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4">PHONE NOTIFICATIONS</span><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ pushTone }}">{{ pushStatus }}</span></div><div style="font:400 13px/1.45 Barlow,sans-serif;color:#9ca3b0;margin-top:8px;text-wrap:pretty">{{ pushDetail }}</div><div style="display:flex;gap:7px;margin-top:11px"><div sc-camel-on-click="{{ pushAction }}" style="display:{{ pushBtnVis }};flex:2;background:{{ pushBtnBg }};border:1px solid {{ pushBtnBorder }};padding:13px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ pushBtnFg }}">{{ pushBtn }}</div><div sc-camel-on-click="{{ pushTest }}" style="display:{{ pushTestVis }};flex:1;border:1px solid #6390ff;padding:13px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">SEND TEST</div></div></div>
+<div style="margin-top:10px;background:#1e232a;border:1px solid #2b3039;padding:13px 14px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4">PHONE NOTIFICATIONS</span><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ pushTone }}">{{ pushStatus }}</span></div><div style="font:400 13px/1.45 Barlow,sans-serif;color:#9ca3b0;margin-top:8px;text-wrap:pretty">{{ pushDetail }}</div><div style="display:flex;gap:7px;margin-top:11px"><div sc-camel-on-click="{{ pushAction }}" style="display:{{ pushBtnVis }};flex:2;background:{{ pushBtnBg }};border:1px solid {{ pushBtnBorder }};padding:13px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ pushBtnFg }}">{{ pushBtn }}</div><div sc-camel-on-click="{{ pushTest }}" style="display:{{ pushTestVis }};flex:1;border:1px solid #4f8dff;padding:13px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">SEND TEST</div></div></div>
 </div>
 <div style="padding:18px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Challenge rules</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;text-align:right">LOCKED TO DAY 70<br>REMINDERS EDITABLE</span></div>
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
 <sc-for list="{{ ruleRows }}" as="r" hint-placeholder-count="9">
 <div style="display:flex;flex-direction:column">
-<div sc-camel-on-click="{{ r.pick }}" style="display:flex;align-items:center;gap:12px;background:#1e232a;border:1px solid {{ r.border }};border-left:3px solid {{ r.tone }};padding:12px 14px;min-height:52px;box-sizing:border-box;cursor:pointer" style-hover="border-color:#6390ff">
+<div sc-camel-on-click="{{ r.pick }}" style="display:flex;align-items:center;gap:12px;background:#1e232a;border:1px solid {{ r.border }};border-left:3px solid {{ r.tone }};padding:12px 14px;min-height:52px;box-sizing:border-box;cursor:pointer" style-hover="border-color:#4f8dff">
 <div style="flex:1;min-width:0"><div style="font:600 15px/1.2 Barlow,sans-serif;color:#eef0f4">{{ r.name }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px">{{ r.group }} · {{ r.sub }}</div></div>
 <div style="font:700 20px/1 'Saira Condensed',sans-serif;color:{{ r.statusFg }};font-variant-numeric:tabular-nums">{{ r.status }}</div>
 <div style="width:18px;text-align:center;font:600 16px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ r.chev }}</div>
 </div>
-<div style="display:{{ r.editVis }};background:#171a20;border:1px solid #6390ff;border-top:none;padding:6px 14px 14px">
+<div style="display:{{ r.editVis }};background:#171a20;border:1px solid #4f8dff;border-top:none;padding:6px 14px 14px">
 <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4">REMIND ME</span><div sc-camel-on-click="{{ r.toggleOn }}" style="width:46px;height:26px;border-radius:13px;background:{{ r.swBg }};position:relative;cursor:pointer;flex:none"><div style="position:absolute;top:3px;left:{{ r.knob }};width:20px;height:20px;border-radius:10px;background:#15181d"></div></div></div>
-<div style="margin-top:8px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TIME · 15 MIN STEPS</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ r.decT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;text-align:center;padding:12px 0;font:700 24px/1 'Saira Condensed',sans-serif;color:{{ r.timeFg }};font-variant-numeric:tabular-nums">{{ r.time }}</div><div sc-camel-on-click="{{ r.incT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
+<div style="margin-top:8px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TIME · 15 MIN STEPS</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ r.decT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;text-align:center;padding:12px 0;font:700 24px/1 'Saira Condensed',sans-serif;color:{{ r.timeFg }};font-variant-numeric:tabular-nums">{{ r.time }}</div><div sc-camel-on-click="{{ r.incT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">REPEAT</div><div style="display:flex;gap:5px"><sc-for list="{{ r.dayChips }}" as="d" hint-placeholder-count="7"><div sc-camel-on-click="{{ d.toggle }}" style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ d.bg }};border:1px solid {{ d.border }};font:600 12px/1 'IBM Plex Mono',monospace;color:{{ d.fg }}">{{ d.label }}</div></sc-for></div></div>
 <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:12px">RULE IS LOCKED UNTIL DAY 70 — ONLY THE REMINDER CHANGES</div>
-<div sc-camel-on-click="{{ r.pick }}" style="margin-top:10px;text-align:center;padding:14px;cursor:pointer;border:1px solid #6390ff;color:#6390ff;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
+<div sc-camel-on-click="{{ r.pick }}" style="margin-top:10px;text-align:center;padding:14px;cursor:pointer;border:1px solid #4f8dff;color:#4f8dff;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
 </div>
 </div>
 </sc-for>
@@ -621,24 +637,24 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
 <sc-for list="{{ extraRows }}" as="x" hint-placeholder-count="2">
 <div style="display:flex;flex-direction:column">
-<div sc-camel-on-click="{{ x.pick }}" style="display:flex;align-items:center;gap:12px;background:#1e232a;border:1px solid {{ x.border }};border-left:3px solid {{ x.tone }};padding:12px 14px;min-height:52px;box-sizing:border-box;cursor:pointer" style-hover="border-color:#6390ff">
+<div sc-camel-on-click="{{ x.pick }}" style="display:flex;align-items:center;gap:12px;background:#1e232a;border:1px solid {{ x.border }};border-left:3px solid {{ x.tone }};padding:12px 14px;min-height:52px;box-sizing:border-box;cursor:pointer" style-hover="border-color:#4f8dff">
 <div style="flex:1;min-width:0"><div style="font:600 15px/1.2 Barlow,sans-serif;color:#eef0f4">{{ x.name }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px">{{ x.group }} · {{ x.sub }}</div></div>
 <div style="font:700 20px/1 'Saira Condensed',sans-serif;color:{{ x.statusFg }};font-variant-numeric:tabular-nums">{{ x.status }}</div>
 <div style="width:18px;text-align:center;font:600 16px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ x.chev }}</div>
 </div>
-<div style="display:{{ x.editVis }};background:#171a20;border:1px solid #6390ff;border-top:none;padding:14px">
+<div style="display:{{ x.editVis }};background:#171a20;border:1px solid #4f8dff;border-top:none;padding:14px">
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">NAME</div><input value="{{ x.rawName }}" sc-camel-on-change="{{ x.rename }}" placeholder="e.g. Cold shower" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:600 15px/1.2 Barlow,sans-serif;padding:12px;outline:none;margin-bottom:6px">
 <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4">REMIND ME</span><div sc-camel-on-click="{{ x.toggleOn }}" style="width:46px;height:26px;border-radius:13px;background:{{ x.swBg }};position:relative;cursor:pointer;flex:none"><div style="position:absolute;top:3px;left:{{ x.knob }};width:20px;height:20px;border-radius:10px;background:#15181d"></div></div></div>
-<div style="margin-top:8px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TIME · 15 MIN STEPS</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ x.decT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;text-align:center;padding:12px 0;font:700 24px/1 'Saira Condensed',sans-serif;color:{{ x.timeFg }};font-variant-numeric:tabular-nums">{{ x.time }}</div><div sc-camel-on-click="{{ x.incT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
+<div style="margin-top:8px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TIME · 15 MIN STEPS</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ x.decT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;text-align:center;padding:12px 0;font:700 24px/1 'Saira Condensed',sans-serif;color:{{ x.timeFg }};font-variant-numeric:tabular-nums">{{ x.time }}</div><div sc-camel-on-click="{{ x.incT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">REPEAT</div><div style="display:flex;gap:5px"><sc-for list="{{ x.dayChips }}" as="d" hint-placeholder-count="7"><div sc-camel-on-click="{{ d.toggle }}" style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ d.bg }};border:1px solid {{ d.border }};font:600 12px/1 'IBM Plex Mono',monospace;color:{{ d.fg }}">{{ d.label }}</div></sc-for></div></div>
 <div style="display:flex;gap:7px;margin-top:14px">
-<div sc-camel-on-click="{{ x.remove }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#f06a50;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE</div>
-<div sc-camel-on-click="{{ x.pick }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#6390ff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
+<div sc-camel-on-click="{{ x.remove }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#ff5a5f;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE</div>
+<div sc-camel-on-click="{{ x.pick }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#4f8dff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
 </div>
 </div>
 </div>
 </sc-for>
-<div sc-camel-on-click="{{ addHabit }}" style="border:1px dashed #3d4450;padding:15px;text-align:center;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;cursor:pointer" style-hover="border-color:#6390ff;color:#6390ff">+ ADD HABIT</div>
+<div sc-camel-on-click="{{ addHabit }}" style="border:1px dashed #3d4450;padding:15px;text-align:center;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;cursor:pointer" style-hover="border-color:#4f8dff;color:#4f8dff">+ ADD HABIT</div>
 </div>
 <div style="padding:22px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Appearance</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:right">YOUR DATA STAYS THE SAME</span></div>
 <div style="padding:0 22px;display:flex;gap:7px">
@@ -660,13 +676,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div sc-camel-on-click="{{ exportData }}" style="border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4;cursor:pointer">EXPORT BACKUP (.JSON)</div>
 <label style="display:block;border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4;cursor:pointer">RESTORE FROM BACKUP<input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
 <a href="#s01" style="display:block;border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;text-decoration:none">VIEW CHALLENGE RULES</a>
-<div sc-camel-on-click="{{ restart }}" style="border:1px solid #6e3638;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#f06a50;cursor:pointer">RESTART CHALLENGE</div>
+<div sc-camel-on-click="{{ restart }}" style="border:1px solid #6e3638;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ff5a5f;cursor:pointer">RESTART CHALLENGE</div>
 <div style="padding:6px 0 0;text-align:center;font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382">APP VERSION __APP_VERSION__</div>
 </div>
 <div style="height:24px"></div>
 </div>
 <div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
-<a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">TODAY</span></a>
+<a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#4f8dff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">PROGRESS</span></a>
@@ -689,10 +705,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <a href="#s05" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;" style-hover="background:#20252c">BOARD</a>
 <a href="#s07" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">STATS</a>
 <a href="#s08" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">PHOTOS</a>
-<a href="#s11" style="flex:1;text-align:center;padding:13px 0;background:#6390ff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">BODY</a>
+<a href="#s11" style="flex:1;text-align:center;padding:13px 0;background:#4f8dff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">BODY</a>
 </div>
 <div style="display:flex;gap:9px;margin-top:14px">
-<div style="flex:1.4;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">BODYWEIGHT</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ wNow }}<span style="font-size:15px;color:#8f9ab0"> {{ wUnit }}</span></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#6390ff;margin-top:4px">{{ wDelta }}</div></div>
+<div style="flex:1.4;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">BODYWEIGHT</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ wNow }}<span style="font-size:15px;color:#8f9ab0"> {{ wUnit }}</span></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4f8dff;margin-top:4px">{{ wDelta }}</div></div>
 <div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">WAIST : HIP</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ whr }}</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:4px">LIVE FROM TAPE</div></div>
 </div>
 </div>
@@ -700,7 +716,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:6px">
 <sc-for list="{{ measRows }}" as="m" hint-placeholder-count="12">
 <div style="display:flex;flex-direction:column">
-<div style="display:grid;grid-template-columns:minmax(0,1fr) 54px 54px 52px;gap:6px;align-items:stretch;background:#1e232a;border:1px solid {{ m.border }};padding:0 14px 0 0;min-height:52px;box-sizing:border-box" style-hover="border-color:#6390ff">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 54px 54px 52px;gap:6px;align-items:stretch;background:#1e232a;border:1px solid {{ m.border }};padding:0 14px 0 0;min-height:52px;box-sizing:border-box" style-hover="border-color:#4f8dff">
 <div sc-camel-on-click="{{ m.pickInfo }}" style="min-width:0;padding:10px 0 10px 14px;cursor:pointer;display:flex;flex-direction:column;justify-content:center"><div style="font:600 15px/1.2 Barlow,sans-serif;color:#eef0f4;text-decoration:underline dotted #3d4450;text-underline-offset:4px">{{ m.name }}</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.sub }}</div></div>
 <div sc-camel-on-click="{{ m.pick }}" style="display:contents;cursor:pointer">
 <div style="display:flex;align-items:center;justify-content:flex-end;cursor:pointer;font:500 13px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ m.start }}</div>
@@ -708,30 +724,30 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="display:flex;align-items:center;justify-content:flex-end;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;color:{{ m.deltaFg }}">{{ m.delta }}</div>
 </div>
 </div>
-<div style="display:{{ m.editVis }};background:#171a20;border:1px solid #6390ff;border-top:none;padding:14px">
+<div style="display:{{ m.editVis }};background:#171a20;border:1px solid #4f8dff;border-top:none;padding:14px">
 
-<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TODAY · DAY {{ dayNum }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ m.dec }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;text-align:center;padding:12px 0;font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ m.cur }}</div><div sc-camel-on-click="{{ m.inc }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div>
+<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TODAY · DAY {{ dayNum }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ m.dec }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;text-align:center;padding:12px 0;font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ m.cur }}</div><div sc-camel-on-click="{{ m.inc }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div>
 <div style="display:flex;align-items:flex-end;gap:6px;height:56px;margin-top:14px">
 <sc-for list="{{ m.trend }}" as="t" hint-placeholder-count="5"><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:5px"><div style="background:{{ t.tone }};height:{{ t.h }}"></div><div style="font:500 9px/1 'IBM Plex Mono',monospace;color:#8f9ab0;text-align:center">{{ t.day }}</div></div></sc-for>
 </div>
 <div style="display:flex;gap:7px;margin-top:14px">
-<div sc-camel-on-click="{{ m.remove }}" style="display:{{ m.deleteVis }};flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#f06a50;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE</div>
-<div sc-camel-on-click="{{ m.pick }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#6390ff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Save</div>
+<div sc-camel-on-click="{{ m.remove }}" style="display:{{ m.deleteVis }};flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#ff5a5f;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE</div>
+<div sc-camel-on-click="{{ m.pick }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#4f8dff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Save</div>
 </div>
 </div>
-<div style="display:{{ m.infoVis }};background:#171a20;border:1px solid #6390ff;border-top:none;padding:14px">
+<div style="display:{{ m.infoVis }};background:#171a20;border:1px solid #4f8dff;border-top:none;padding:14px">
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">NAME</div><input value="{{ m.rawName }}" sc-camel-on-change="{{ m.rename }}" placeholder="e.g. Forearm" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;font-weight:600">
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">WHERE TO MEASURE</div><input value="{{ m.where }}" sc-camel-on-change="{{ m.setWhere }}" placeholder="e.g. 2 cm above navel, exhale" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none"></div>
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">NOTES</div><textarea value="{{ m.note }}" sc-camel-on-change="{{ m.setNote }}" placeholder="Goal, context, anything worth remembering" rows="3" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;resize:none;display:block"></textarea></div>
-<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">DAY 1 BASELINE · {{ m.unit }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px"><div sc-camel-on-click="{{ m.decStart }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#6390ff">−</div><div style="flex:1;display:flex;align-items:center;justify-content:center;font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4">{{ m.start }}</div><div sc-camel-on-click="{{ m.incStart }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#6390ff">+</div></div></div>
+<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">DAY 1 BASELINE · {{ m.unit }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px"><div sc-camel-on-click="{{ m.decStart }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;display:flex;align-items:center;justify-content:center;font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4">{{ m.start }}</div><div sc-camel-on-click="{{ m.incStart }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 <div style="display:flex;gap:7px;margin-top:14px">
-<div sc-camel-on-click="{{ m.remove }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#f06a50;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE SITE</div>
-<div sc-camel-on-click="{{ m.pickInfo }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#6390ff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
+<div sc-camel-on-click="{{ m.remove }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#ff5a5f;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE SITE</div>
+<div sc-camel-on-click="{{ m.pickInfo }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#4f8dff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
 </div>
 </div>
 </div>
 </sc-for>
-<div sc-camel-on-click="{{ addSite }}" style="border:1px dashed #3d4450;padding:15px;text-align:center;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;cursor:pointer" style-hover="border-color:#6390ff;color:#6390ff">+ ADD SITE</div>
+<div sc-camel-on-click="{{ addSite }}" style="border:1px dashed #3d4450;padding:15px;text-align:center;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;cursor:pointer" style-hover="border-color:#4f8dff;color:#4f8dff">+ ADD SITE</div>
 </div>
 <div style="padding:12px 22px 24px;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#8f9ab0">RELAXED, TAPE LEVEL, SAME SPOT EACH WEEK · <a href="#s10">SET A WEEKLY REMINDER ›</a></div>
 </div>
@@ -739,7 +755,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
-<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">PROGRESS</span></a>
+<a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#4f8dff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">PROGRESS</span></a>
 <a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">COACH</span></a>
 </div>
 </div>
@@ -750,7 +766,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
 <a href="#s05" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">PROGRESS</span></a>
-<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">COACH</span></a>
+<a href="#s06" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">LOG</span></a><a href="#s12" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#4f8dff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">COACH</span></a>
 </div>
 </div></x-import></div>
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;dayNumber&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:27,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:1,&quot;max&quot;:70,&quot;section&quot;:&quot;Challenge&quot;}}">
@@ -768,7 +784,7 @@ const IDEAS = [
   { name: 'Skincare ×2', spec: 'AM + PM', g: 'MIND' }, { name: 'Meditate', spec: '10 MIN', g: 'MIND' }, { name: 'Cold shower', spec: '2 MIN', g: 'BODY' }
 ];
 const DEFREM = { on: true, t: 1200, days: [1, 1, 1, 1, 1, 1, 1] };
-const TONE = { BODY: '#6390ff', FUEL: '#f4b544', MIND: '#a3c46e' };
+const TONE = { BODY: '#4f8dff', FUEL: '#ffc233', MIND: '#a8f25c' };
 const PLAN = [
   { abbr: 'MON', tag: 'PUSH', name: 'Upper / Push', kind: 'STRENGTH · BLOCK B · WEEK 4', focus: 'CHEST · SHOULDERS · TRICEPS', metric: 'kg', elapsed: '41:06', mobility: 'Thoracic opener', mobPct: '40%', ex: [
     { name: 'Bench press', scheme: '4 × 5 @ RPE 8', u: 'kg', w: [72.5, 75, 77.5, 77.5], r: [5, 5, 5, 5] },
@@ -1396,7 +1412,7 @@ class Component extends DCLogic {
       if (recalc || !n.targetsTouched) r.targets = calcTargets(n);
       return r;
     });
-    const pick = (v, cur) => ({ bg: v === cur ? '#6390ff' : 'transparent', fg: v === cur ? '#081631' : '#9ca3b0', border: v === cur ? '#6390ff' : '#3d4450' });
+    const pick = (v, cur) => ({ bg: v === cur ? '#4f8dff' : 'transparent', fg: v === cur ? '#081631' : '#9ca3b0', border: v === cur ? '#4f8dff' : '#3d4450' });
     const hImp = cm => { const inch = Math.round(cm / 2.54); return Math.floor(inch / 12) + "' " + (inch % 12) + '"'; };
     const sp = SPLITS.find(x => x.k === o.split) || SPLITS[0];
     const inBed = (o.wake + 1440 - o.sleep) % 1440;
@@ -1409,7 +1425,7 @@ class Component extends DCLogic {
       ob0: step === 0 ? 'flex' : 'none', ob1: step === 1 ? 'flex' : 'none', ob2: step === 2 ? 'flex' : 'none', ob3: step === 3 ? 'flex' : 'none',
       ob4: step === 4 ? 'flex' : 'none', ob5: step === 5 ? 'flex' : 'none', ob6: step === 6 ? 'flex' : 'none',
       obStepLabel: 'STEP ' + step + ' / 6 · ' + ['', 'PROFILE', 'GOAL', 'RULES', 'TRAINING', 'SCHEDULE', 'REVIEW'][step],
-      obProgress: [1, 2, 3, 4, 5, 6].map(i => ({ bg: i <= step ? '#6390ff' : '#2b3039' })),
+      obProgress: [1, 2, 3, 4, 5, 6].map(i => ({ bg: i <= step ? '#4f8dff' : '#2b3039' })),
       obStart: () => up({ step: 1 }),
       obBack: () => up({ step: Math.max(0, step - 1) }),
       obNext: () => {
@@ -1432,16 +1448,16 @@ class Component extends DCLogic {
       obWeight: imp ? (o.weight * 2.20462).toFixed(1) + ' lb' : o.weight.toFixed(1) + ' kg',
       obWDec: () => up({ weight: Math.max(35, Math.round((o.weight - 0.5) * 10) / 10) }), obWInc: () => up({ weight: Math.round((o.weight + 0.5) * 10) / 10 }),
       obGoals: [['lose', 'Lose fat', '−500 KCAL / DAY · HIGH PROTEIN'], ['maintain', 'Recomp', 'MAINTENANCE · HOLD WEIGHT, BUILD HABITS'], ['build', 'Build muscle', '+300 KCAL / DAY · LEAN SURPLUS']].map(([v, n, sub]) => {
-        const on = o.goal === v; return { name: n, sub, bg: on ? '#171a20' : '#1e232a', border: on ? '#6390ff' : '#2b3039', dot: on ? '#6390ff' : 'transparent', pick: () => up({ goal: v }, true) };
+        const on = o.goal === v; return { name: n, sub, bg: on ? '#171a20' : '#1e232a', border: on ? '#4f8dff' : '#2b3039', dot: on ? '#4f8dff' : 'transparent', pick: () => up({ goal: v }, true) };
       }),
       obRecalc: () => up({}, true),
       obTargetNote: o.targetsTouched ? 'CUSTOM TARGETS · RECALCULATE TO USE THE ESTIMATE' : 'ESTIMATED FROM PROFILE + GOAL · ADJUST FREELY',
-      obTargetNoteFg: o.targetsTouched ? '#f4b544' : '#8f9ab0',
+      obTargetNoteFg: o.targetsTouched ? '#ffc233' : '#8f9ab0',
       obWaterL: (s.waterGoal / 1000).toFixed(2) + ' L', obWaterHint: 'SUGGESTED ' + (sugW / 1000).toFixed(2) + ' L',
       obWaterDec: () => this.setState(st => ({ waterGoal: Math.max(1000, st.waterGoal - 250) })), obWaterInc: () => this.setState(st => ({ waterGoal: Math.min(6000, st.waterGoal + 250) })),
       obSplits: SPLITS.map(x => {
         const on = x.k === o.split, tags = x.tags || PLAN.map(p => p.tag);
-        return { name: x.name, sub: x.sub, badge: x.badge, badgeFg: on ? '#a3c46e' : '#6b7382', bg: on ? '#171a20' : '#1e232a', border: on ? '#a3c46e' : '#2b3039',
+        return { name: x.name, sub: x.sub, badge: x.badge, badgeFg: on ? '#a8f25c' : '#6b7382', bg: on ? '#171a20' : '#1e232a', border: on ? '#a8f25c' : '#2b3039',
           week: tags.map((t, i) => ({ d: PLAN[i].abbr.charAt(0), t, bg: on && t !== 'REST' ? '#26331c' : 'transparent', fg: t === 'REST' ? '#6b7382' : '#eef0f4' })),
           pick: () => this.setState(st => ({ setup: { ...st.setup, split: x.k }, planEdit: x.tags ? Object.fromEntries(x.tags.map((t, i) => [i, { ...(DAY_PRESETS.find(p => p.tag === t) || {}) }])) : {} })) };
       }),
@@ -1450,7 +1466,7 @@ class Component extends DCLogic {
       obInBed: Math.floor(inBed / 60) + ' H ' + pad(inBed % 60) + ' IN BED' + (inBed < 420 ? ' · UNDER 7 H — CONSIDER AN EARLIER LIGHTS OUT' : ''),
       obStarts: ['TODAY', 'TOMORROW', 'NEXT MON'].map(v => ({ label: v, ...pick(v, o.start), pick: () => up({ start: v }) })),
       obToggleRem: () => up({ remindersOn: !o.remindersOn }),
-      obRemBg: o.remindersOn ? '#6390ff' : '#3d4450', obRemKnob: o.remindersOn ? '23px' : '3px',
+      obRemBg: o.remindersOn ? '#4f8dff' : '#3d4450', obRemKnob: o.remindersOn ? '23px' : '3px',
       obRemSub: o.remindersOn ? 'ONE PER RULE · LIGHTS-OUT NUDGE AT ' + ft((o.sleep + 1410) % 1440) : 'OFF · TURN ON ANY TIME IN HABITS',
       obReview: [
         { label: 'YOU', value: (o.name || 'No name') + ' · ' + unitsLab.toLowerCase() + ' · ' + (imp ? (o.weight * 2.20462).toFixed(1) + ' lb' : o.weight.toFixed(1) + ' kg'), go: go(1) },
@@ -1471,12 +1487,12 @@ class Component extends DCLogic {
     const DL = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     const daysLabel = d => { const n = d.filter(Boolean).length; if (n === 7) return 'DAILY'; if (n === 5 && d.slice(0, 5).every(Boolean)) return 'WEEKDAYS'; if (!n) return 'NO DAYS'; return n + ' DAYS / WK'; };
     const editor = (o, upd) => ({
-      swBg: o.on ? '#6390ff' : '#3d4450', knob: o.on ? '23px' : '3px',
+      swBg: o.on ? '#4f8dff' : '#3d4450', knob: o.on ? '23px' : '3px',
       time: fmtT(o.t), timeFg: o.on ? '#eef0f4' : '#6b7382',
       toggleOn: () => upd(x => ({ ...x, on: !x.on })),
       decT: () => upd(x => ({ ...x, t: (x.t + 1425) % 1440 })),
       incT: () => upd(x => ({ ...x, t: (x.t + 15) % 1440 })),
-      dayChips: DL.map((l, i) => ({ label: l, bg: o.days[i] ? '#6390ff' : 'transparent', fg: o.days[i] ? '#081631' : '#9ca3b0', border: o.days[i] ? '#6390ff' : '#3d4450',
+      dayChips: DL.map((l, i) => ({ label: l, bg: o.days[i] ? '#4f8dff' : 'transparent', fg: o.days[i] ? '#081631' : '#9ca3b0', border: o.days[i] ? '#4f8dff' : '#3d4450',
         toggle: () => upd(x => { const d = x.days.slice(); d[i] = d[i] ? 0 : 1; return { ...x, days: d }; }) })),
       status: o.on ? fmtT(o.t) : 'OFF', statusFg: o.on ? '#eef0f4' : '#6b7382', sub: o.on ? daysLabel(o.days) : 'NO REMINDER'
     });
@@ -1484,13 +1500,13 @@ class Component extends DCLogic {
     const pick = key => () => this.setState(st => ({ habSel: st.habSel === key ? null : key }));
     const ruleRows = s.ruleDefs.filter(h => h.on).map(h => {
       const key = 'r:' + h.k, open = sel === key;
-      return { name: this.hLabel(h).name || 'Untitled rule', group: h.g, tone: TONE[h.g], border: open ? '#6390ff' : '#2b3039', editVis: open ? 'block' : 'none', chev: open ? '−' : '+', pick: pick(key),
+      return { name: this.hLabel(h).name || 'Untitled rule', group: h.g, tone: TONE[h.g], border: open ? '#4f8dff' : '#2b3039', editVis: open ? 'block' : 'none', chev: open ? '−' : '+', pick: pick(key),
         ...editor(s.rem[h.k] || DEFREM, fn => this.setState(st => ({ rem: { ...st.rem, [h.k]: fn(st.rem[h.k] || DEFREM) } }))) };
     });
     const updX = id => fn => this.setState(st => ({ extras: st.extras.map(x => x.id === id ? fn(x) : x) }));
     const extraRows = s.extras.map(x => {
       const key = 'x:' + x.id, open = sel === key;
-      return { name: x.name || 'Untitled habit', rawName: x.name, group: 'EXTRA', tone: '#3d4450', border: open ? '#6390ff' : '#2b3039', editVis: open ? 'block' : 'none', chev: open ? '−' : '+', pick: pick(key),
+      return { name: x.name || 'Untitled habit', rawName: x.name, group: 'EXTRA', tone: '#3d4450', border: open ? '#4f8dff' : '#2b3039', editVis: open ? 'block' : 'none', chev: open ? '−' : '+', pick: pick(key),
         rename: e => { const v = e.target.value; updX(x.id)(o => ({ ...o, name: v })); },
         remove: () => this.setState(st => ({ extras: st.extras.filter(o => o.id !== x.id), habSel: null })),
         ...editor(x, updX(x.id)) };
@@ -1520,8 +1536,8 @@ class Component extends DCLogic {
       const pts = pd.map(x => x[1]), lo = Math.min(...pts), hi = Math.max(...pts);
       return { name: m.name || 'Untitled site', rawName: m.name, unit: ul(m.u), start: f1(cv(m.u, m.start)), cur: f1(cv(m.u, m.cur)),
         delta: Math.abs(d) < 0.05 ? '±0' : (d > 0 ? '+' : '−') + f1(Math.abs(d)),
-        deltaFg: Math.abs(d) < 0.05 ? '#6b7382' : d < 0 ? '#6390ff' : '#f4b544',
-        border: open || infoOpen ? '#6390ff' : '#2b3039', editVis: open ? 'block' : 'none', infoVis: infoOpen ? 'block' : 'none',
+        deltaFg: Math.abs(d) < 0.05 ? '#6b7382' : d < 0 ? '#4f8dff' : '#ffc233',
+        border: open || infoOpen ? '#4f8dff' : '#2b3039', editVis: open ? 'block' : 'none', infoVis: infoOpen ? 'block' : 'none',
         pick: () => this.setState(st => ({ measSel: st.measSel === m.k ? null : m.k, measInfo: null })),
         pickInfo: () => this.setState(st => ({ measInfo: st.measInfo === m.k ? null : m.k, measSel: null })),
         sub: ul(m.u) + (m.note ? ' · ' + m.note : where ? ' · ' + where : ' · TAP NAME TO ADD INFO'),
@@ -1534,7 +1550,7 @@ class Component extends DCLogic {
         customVis: m.custom ? 'block' : 'none', deleteVis: m.custom ? 'block' : 'none',
         rename: e => { const v = e.target.value; updM(m.k)(o => ({ ...o, name: v })); },
         remove: () => this.setState(st => ({ meas: st.meas.filter(o => o.k !== m.k), measSel: null, measInfo: null })),
-        trend: pd.map((x, i) => ({ h: (hi - lo < 0.01 ? 60 : 25 + 75 * (x[1] - lo) / (hi - lo)) + '%', day: 'D' + x[0], tone: i === pd.length - 1 ? '#6390ff' : '#3d4450' })) };
+        trend: pd.map((x, i) => ({ h: (hi - lo < 0.01 ? 60 : 25 + 75 * (x[1] - lo) / (hi - lo)) + '%', day: 'D' + x[0], tone: i === pd.length - 1 ? '#4f8dff' : '#3d4450' })) };
     });
     const get = k => s.meas.find(m => m.k === k);
     const w = get('weight'), wa = get('waist'), hp = get('hips');
@@ -1549,8 +1565,8 @@ class Component extends DCLogic {
       wNow: w ? f1(cv('kg', w.cur)) : '—', wUnit: ul('kg'),
       wDelta: w ? (wd < 0 ? '−' : '+') + f1(Math.abs(wd)) + ' ' + ul('kg') + ' SINCE DAY 1' : '',
       whr: wa && hp ? (wa.cur / hp.cur).toFixed(2) : '—',
-      unitMetricBg: imp ? 'transparent' : '#6390ff', unitMetricFg: imp ? '#9ca3b0' : '#081631',
-      unitImpBg: imp ? '#6390ff' : 'transparent', unitImpFg: imp ? '#081631' : '#9ca3b0',
+      unitMetricBg: imp ? 'transparent' : '#4f8dff', unitMetricFg: imp ? '#9ca3b0' : '#081631',
+      unitImpBg: imp ? '#4f8dff' : 'transparent', unitImpFg: imp ? '#081631' : '#9ca3b0',
       setMetric: () => this.setState({ imperial: false }), setImperial: () => this.setState({ imperial: true }),
       addSite: () => { const k = 'c' + Date.now(); this.setState(st => ({ meas: [...st.meas, { k, name: '', u: 'cm', start: 30, cur: 30, custom: true }], measInfo: k, measSel: null })); }
     };
@@ -1593,10 +1609,10 @@ class Component extends DCLogic {
     td_timed.sort((a, b) => a.t - b.t);
     const td_nextIdx = td_timed.findIndex(x => !d[x.h.k] && x.t > td_nowMin);
     const td_schedItems = td_timed.map(({ h, t }, i) => { const on = !!d[h.k], due = !on && t <= td_nowMin, next = i === td_nextIdx;
-      return { ...h, time: td_hm(t), timeTone: on ? '#6b7382' : due ? '#f4b544' : next ? '#6390ff' : '#8f9ab0',
+      return { ...h, time: td_hm(t), timeTone: on ? '#6b7382' : due ? '#ffc233' : next ? '#4f8dff' : '#8f9ab0',
         lineTop: i === 0 ? 'transparent' : '#2b3039', lineBottom: i === td_timed.length - 1 ? 'transparent' : '#2b3039',
         badge: on ? '✓ ' + ((this.state.doneAt || {})[h.k] || 'DONE') : due ? 'DUE' : next ? 'NEXT' : h.group,
-        badgeBg: on ? '#282d36' : due ? '#f4b544' : next ? '#6390ff' : 'transparent', badgeFg: on ? '#8f9ab0' : due ? '#231800' : next ? '#081631' : h.tone }; });
+        badgeBg: on ? '#282d36' : due ? '#ffc233' : next ? '#4f8dff' : 'transparent', badgeFg: on ? '#8f9ab0' : due ? '#231800' : next ? '#081631' : h.tone }; });
     const td_anyItems = td_anyR.map(h => ({ ...h, check: d[h.k] ? '✓' : '' }));
     const td_mealsT = (this.state.meals || []).reduce((a, m) => ({ kcal: a.kcal + (m.kcal || 0), p: a.p + (m.p || 0) }), { kcal: 0, p: 0 }), td_TG = this.state.targets || {};
     const td_pailF = Math.max(0, Math.min(1, this.state.waterMl / (goal || 1))), td_pailY = 108 - td_pailF * 70;
@@ -1607,9 +1623,9 @@ class Component extends DCLogic {
     const td_restDay = !td_tpl && (td_pe.tag === 'REST' || (PLAN[td_wdi] && PLAN[td_wdi].tag === 'REST'));
     const td_todayCards = { schedItems: td_schedItems, anyItems: td_anyItems, anyShow: td_anyItems.length ? 'block' : 'none',
       td_pailY: td_pailY.toFixed(1), pailWaveY: (td_pailY - 6).toFixed(1), pailWave: td_pailF > 0 && td_pailF < 1 ? 'inline' : 'none', pailPct: Math.round(td_pailF * 100) + '%',
-      pailStroke: td_pailF >= 1 ? '#6390ff' : '#3d4450', pailText: td_pailF > 0.45 ? '#ffffff' : '#eef0f4',
+      pailStroke: td_pailF >= 1 ? '#4f8dff' : '#3d4450', pailText: td_pailF > 0.45 ? '#ffffff' : '#eef0f4',
       kcalEaten: Math.round(td_mealsT.kcal).toLocaleString(), kcalGoal: (td_TG.kcal || 0).toLocaleString(), kcalPct: Math.min(100, td_TG.kcal ? td_mealsT.kcal / td_TG.kcal * 100 : 0) + '%',
-      kcalTone: td_TG.kcal && td_mealsT.kcal > td_TG.kcal * 1.1 ? '#f06a50' : '#f4b544',
+      kcalTone: td_TG.kcal && td_mealsT.kcal > td_TG.kcal * 1.1 ? '#ff5a5f' : '#ffc233',
       kcalLeft: !td_TG.kcal ? '' : td_mealsT.kcal <= td_TG.kcal ? Math.round(td_TG.kcal - td_mealsT.kcal).toLocaleString() + ' KCAL LEFT' : Math.round(td_mealsT.kcal - td_TG.kcal).toLocaleString() + ' KCAL OVER',
       protEaten: Math.round(td_mealsT.p), protGoal: td_TG.p || 0, protPct: Math.min(100, td_TG.p ? td_mealsT.p / td_TG.p * 100 : 0) + '%',
       protLeft: !td_TG.p ? '' : td_mealsT.p >= td_TG.p ? 'TARGET HIT' : Math.round(td_TG.p - td_mealsT.p) + ' G TO GO',
@@ -1634,7 +1650,7 @@ class Component extends DCLogic {
     const GEO = { 1: [[80, 26]], 2: [[84, 20], [60, 20]], 3: [[88, 15], [68, 15], [48, 15]] }[GR.length];
     const rings = GR.map((x, i) => {
       const r = GEO[i][0], c = 2 * Math.PI * r, dn = x.items.filter(y => d[y.k]).length;
-      return { label: GR.length === 1 ? 'DAY' : x.gs.join(' + '), tone: GR.length === 1 ? '#6390ff' : TONE[x.gs[0]], stat: dn + ' of ' + x.items.length,
+      return { label: GR.length === 1 ? 'DAY' : x.gs.join(' + '), tone: GR.length === 1 ? '#4f8dff' : TONE[x.gs[0]], stat: dn + ' of ' + x.items.length,
         r, sw: GEO[i][1], c, off: c * (1 - dn / x.items.length), display: 'inline' };
     });
     const rg = i => rings[i] || { r: 1, sw: 0, c: 0, off: 0, tone: 'none', display: 'none' };
@@ -1648,8 +1664,8 @@ class Component extends DCLogic {
     const ruleSetup = defs.map(x => {
       const on = x.on, open = this.state.ruleEdit === x.k && !locked, L = this.hLabel(x);
       return { name: L.name || 'Untitled rule', spec: (L.spec || 'TAP TO ADD A DETAIL') + ' · ' + x.g, rawName: x.name, rawSpec: x.spec,
-        tone: on ? TONE[x.g] : '#3d4450', swBg: on ? '#6390ff' : '#3d4450', knob: on ? '23px' : '3px', op: on ? 1 : 0.6,
-        border: open ? '#6390ff' : '#2b3039', editVis: open ? 'block' : 'none',
+        tone: on ? TONE[x.g] : '#3d4450', swBg: on ? '#4f8dff' : '#3d4450', knob: on ? '23px' : '3px', op: on ? 1 : 0.6,
+        border: open ? '#4f8dff' : '#2b3039', editVis: open ? 'block' : 'none',
         edit: () => { if (!locked) this.setState(s => ({ ruleEdit: s.ruleEdit === x.k ? null : x.k })); },
         toggle: () => { if (!locked) this.setState(s => { if (x.on && s.ruleDefs.filter(y => y.on).length <= 1) return null; return { ruleDefs: s.ruleDefs.map(r => r.k === x.k ? { ...r, on: !r.on } : r) }; }); },
         rename: e => { const v = e.target.value; updR(x.k, r => ({ ...r, name: v, auto: false })); },
@@ -1671,8 +1687,8 @@ class Component extends DCLogic {
     const pd = this.state.planDay;
     const plan = PLAN.map((p, i) => ({
       abbr: p.abbr, tag: (this.state.planEdit[i] || {}).tag != null ? (this.state.planEdit[i].tag || '—') : p.tag,
-      bg: i === pd ? '#a3c46e' : 'transparent',
-      border: i === pd ? '#a3c46e' : '#30363f',
+      bg: i === pd ? '#a8f25c' : 'transparent',
+      border: i === pd ? '#a8f25c' : '#30363f',
       fg: i === pd ? '#111a08' : '#eef0f4',
       sub: i === pd ? '#2e3d22' : '#6b7382',
       pick: () => this.setState({ planDay: i, sel: null, infoKey: null })
@@ -1698,7 +1714,7 @@ class Component extends DCLogic {
     const setTxt = (u, w, r) => { const c = (SETCHIP[u] || SETCHIP.kg)(w, r); return c.main + (String(c.sub).charAt(0) === '×' ? c.sub : ' ' + c.sub); };
     const topIdx = w => w.reduce((bi, x, i) => x > w[bi] ? i : bi, 0);
     const noop = () => {};
-    const EMPTY_ADJ = { setLabel: '', prev: '', w: '', r: '', wLabel: '', rLabel: '', wDim: '#eef0f4', wRead: true, fillVis: 'none', logLabel: '', logBg: 'transparent', logFg: '#a3c46e',
+    const EMPTY_ADJ = { setLabel: '', prev: '', w: '', r: '', wLabel: '', rLabel: '', wDim: '#eef0f4', wRead: true, fillVis: 'none', logLabel: '', logBg: 'transparent', logFg: '#a8f25c',
       decW: noop, incW: noop, decR: noop, incR: noop, setW: noop, setR: noop, fill: noop, removeSet: noop, log: noop };
     const exercises = dayEx.map(({ e: base, key, custom }) => {
       const e = this.state.exOver[key] || base;
@@ -1710,7 +1726,7 @@ class Component extends DCLogic {
       const isInfo = infoKey === key, hasSel = !!sel && sel.key === key;
       const vol = (w, r, on) => e.u === 'kg' ? w.reduce((a, x, i) => a + (on ? (on[i] ? x * r[i] : 0) : x * r[i]), 0).toLocaleString() + ' KG' : '';
       const loggedIdx = e.w.map((_, i) => i).filter(i => row[i]);
-      const history = (loggedIdx.length ? [{ day: 'TODAY', tone: '#a3c46e', sets: loggedIdx.map(i => setTxt(e.u, e.w[i], e.r[i])).join(' · '), vol: vol(e.w, e.r, row) }] : [])
+      const history = (loggedIdx.length ? [{ day: 'TODAY', tone: '#a8f25c', sets: loggedIdx.map(i => setTxt(e.u, e.w[i], e.r[i])).join(' · '), vol: vol(e.w, e.r, row) }] : [])
         .concat(hist.map(x => ({ day: 'DAY ' + x.day, tone: '#9ca3b0', sets: x.w.map((w, i) => setTxt(e.u, w, x.r[i])).join(' · '), vol: vol(x.w, x.r) })));
       let best = '';
       if (e.u === 'kg' && (hist.length || loggedIdx.length)) {
@@ -1748,7 +1764,7 @@ class Component extends DCLogic {
               this.setState(s => { const rr = (s.sets[key] || []).slice(); rr.splice(si, 1); return { sets: { ...s.sets, [key]: rr }, sel: null }; });
             },
             logLabel: on ? 'Un-log set' : 'Log set ' + (si + 1),
-            logBg: on ? 'transparent' : '#a3c46e', logFg: on ? '#a3c46e' : '#111a08',
+            logBg: on ? 'transparent' : '#a8f25c', logFg: on ? '#a8f25c' : '#111a08',
             log: () => {
               this.toggleSet(key, si, e.w.length);
               if (!on) { const nx = e.w.findIndex((_, j) => j > si && !row[j]); this.setState({ sel: nx >= 0 ? { key, si: nx } : null }); }
@@ -1757,8 +1773,8 @@ class Component extends DCLogic {
         }
         return {
           weight: c.main, reps: c.sub,
-          bg: on ? '#a3c46e' : 'transparent',
-          border: isSel ? '#6390ff' : on ? '#a3c46e' : '#3d4450',
+          bg: on ? '#a8f25c' : 'transparent',
+          border: isSel ? '#4f8dff' : on ? '#a8f25c' : '#3d4450',
           fg: on ? '#111a08' : '#eef0f4',
           sub: on ? '#2e3d22' : '#8f9ab0',
           toggle: () => this.setState({ sel: isSel ? null : { key, si }, infoKey: null })
@@ -1768,7 +1784,7 @@ class Component extends DCLogic {
       const lastTop = hist[0] ? (() => { const i = topIdx(hist[0].w); return 'LAST ' + setTxt(e.u, hist[0].w[i], hist[0].r[i]); })() : 'NO HISTORY';
       return {
         name: e.name || 'Untitled exercise', rawName: e.name, scheme: e.scheme, lastLabel: lastTop,
-        cardBorder: isInfo || adj ? '#6390ff' : '#2b3039',
+        cardBorder: isInfo || adj ? '#4f8dff' : '#2b3039',
         infoLabel: isInfo ? 'CLOSE' : 'HISTORY',
         toggleInfo: () => this.setState(s => ({ infoKey: s.infoKey === key ? null : key, sel: null })),
         infoVis: isInfo ? 'block' : 'none',
@@ -1780,7 +1796,7 @@ class Component extends DCLogic {
         addSet: () => { edit(o => { o.w.push(o.w[o.w.length - 1] || 0); o.r.push(o.r[o.r.length - 1] || 0); o.scheme = o.w.length + ' sets'; return o; }); this.setState({ sel: { key, si: e.w.length }, infoKey: null }); },
         rename: ev => { const v = ev.target.value; edit(o => ({ ...o, name: v })); },
         swaps: opts.map((n, i) => ({ name: i === 0 && n !== e.name ? '↺ ' + n : n,
-          bg: n === e.name ? '#a3c46e' : 'transparent', fg: n === e.name ? '#111a08' : '#eef0f4', border: n === e.name ? '#a3c46e' : '#3d4450',
+          bg: n === e.name ? '#a8f25c' : 'transparent', fg: n === e.name ? '#111a08' : '#eef0f4', border: n === e.name ? '#a8f25c' : '#3d4450',
           pick: () => edit(o => ({ ...o, name: n })) })),
         history, historyVis: history.length ? 'flex' : 'none', noHistVis: history.length ? 'none' : 'block', best
       };
@@ -1799,8 +1815,8 @@ class Component extends DCLogic {
       const past = n < dayNum, today = n === dayNum, isSel = n === gridSel;
       return {
         n,
-        bg: past ? (MISSED[n] ? '#f06a50' : '#6390ff') : today ? '#f4b544' : 'transparent',
-        border: isSel ? '#eef0f4' : past ? (MISSED[n] ? '#f06a50' : '#6390ff') : today ? '#f4b544' : '#30363f',
+        bg: past ? (MISSED[n] ? '#ff5a5f' : '#4f8dff') : today ? '#ffc233' : 'transparent',
+        border: isSel ? '#eef0f4' : past ? (MISSED[n] ? '#ff5a5f' : '#4f8dff') : today ? '#ffc233' : '#30363f',
         fg: past ? (MISSED[n] ? '#200c08' : '#081631') : today ? '#231800' : '#6b7382',
         pick: () => { this.setState({ selDay: n }); if (window.SHDay) window.SHDay.open(n); }
       };
@@ -1810,18 +1826,18 @@ class Component extends DCLogic {
     const selRec = selPast ? (H[gridSel] || { skipped: true, rules: ACT.map(h => h.k), done: {} }) : null;
     const selTags = (selRec ? this.state.ruleDefs.filter(h => selRec.rules.includes(h.k)) : ACT).map(h => {
       const ok = selRec ? !!selRec.done[h.k] : gridSel === dayNum ? !!d[h.k] : false;
-      if (selRec && !ok) return { label: (this.hLabel(h).name || 'Untitled rule').toUpperCase() + ' · MISSED', fg: '#f06a50', border: '#f06a50' };
+      if (selRec && !ok) return { label: (this.hLabel(h).name || 'Untitled rule').toUpperCase() + ' · MISSED', fg: '#ff5a5f', border: '#ff5a5f' };
       return { label: (this.hLabel(h).name || 'Untitled rule').toUpperCase(), fg: ok ? '#9ca3b0' : '#3d4450', border: ok ? '#3d4450' : '#282d36' };
     });
 
     const RD = this.state.ruleDefs, rdef = k => RD.find(h => h.k === k);
-    const TONEK = k => TONE[(rdef(k) || {}).g] || '#a3c46e';
+    const TONEK = k => TONE[(rdef(k) || {}).g] || '#a8f25c';
     const isToday = gridSel === dayNum;
     const rec = isToday ? { doneAt: this.state.doneAt, done: d, mealsList: this.state.meals, note: this.state.dayNote } : selRec ? { doneAt: selRec.doneAt || {}, done: selRec.done, mealsList: [], note: selRec.note || '' } : null;
     const timeline = [];
     if (rec) {
       Object.keys(rec.doneAt || {}).forEach(k => { const h = rdef(k); if (h && rec.doneAt[k] && rec.done[k]) { const L = this.hLabel(h); timeline.push({ time: rec.doneAt[k], tone: TONEK(k), title: L.name || 'Rule', note: 'Cleared' + (L.spec ? ' · ' + L.spec.toLowerCase() : '') }); } });
-      (rec.mealsList || []).forEach(m => timeline.push({ time: m.time, tone: '#f4b544', title: m.name, note: (((this.state.mealSlots || []).find(x => x.id === m.slot) || {}).name || ({ BREAKFAST: 'breakfast', LUNCH: 'lunch', DINNER: 'dinner', SNACK: 'snacks' })[m.slot] || 'meal').toLowerCase() + ' · ' + Math.round(m.kcal) + ' kcal · ' + Math.round(m.p) + ' g protein' }));
+      (rec.mealsList || []).forEach(m => timeline.push({ time: m.time, tone: '#ffc233', title: m.name, note: (((this.state.mealSlots || []).find(x => x.id === m.slot) || {}).name || ({ BREAKFAST: 'breakfast', LUNCH: 'lunch', DINNER: 'dinner', SNACK: 'snacks' })[m.slot] || 'meal').toLowerCase() + ' · ' + Math.round(m.kcal) + ' kcal · ' + Math.round(m.p) + ' g protein' }));
       timeline.sort((a, b) => a.time < b.time ? -1 : 1);
     }
     if (!timeline.length) timeline.push({ time: '—', tone: '#3d4450', title: gridSel > dayNum ? 'Not yet run' : 'Nothing logged', note: gridSel > dayNum ? 'This day is still ahead.' : 'Tick a rule or log a meal and it shows up here with the time.' });
@@ -1832,12 +1848,12 @@ class Component extends DCLogic {
       const pct = rel.length ? Math.round(100 * rel.filter(r => r.done[h.k]).length / rel.length) : null;
       return { name: h.name, pct };
     }).filter(x => x.pct != null).sort((a, b) => a.pct - b.pct).slice(0, 5)
-      .map(x => ({ name: x.name, rate: x.pct + '%', tone: x.pct < 75 ? '#f06a50' : x.pct < 90 ? '#f4b544' : x.pct < 100 ? '#a3c46e' : '#6390ff' }));
+      .map(x => ({ name: x.name, rate: x.pct + '%', tone: x.pct < 75 ? '#ff5a5f' : x.pct < 90 ? '#ffc233' : x.pct < 100 ? '#a8f25c' : '#4f8dff' }));
     if (!weakest.length) weakest.push({ name: 'Finish day 1 to see hit rates', rate: '0%', tone: '#3d4450' });
     const wDays = [];
     for (let n = Math.max(1, dayNum - 13); n <= dayNum; n++) wDays.push(n === dayNum ? this.state.waterMl / 1000 : ((H[n] || {}).waterMl || 0) / 1000);
     const wMax = Math.max(goal / 1000 * 1.2, ...wDays);
-    const waterBars = wDays.map(v => ({ h: Math.max(2, Math.round((v / wMax) * 100)) + '%', tone: v >= goal / 1000 ? '#6390ff' : '#f4b544' }));
+    const waterBars = wDays.map(v => ({ h: Math.max(2, Math.round((v / wMax) * 100)) + '%', tone: v >= goal / 1000 ? '#4f8dff' : '#ffc233' }));
     const wSorted = wDays.slice().sort((a, b) => a - b);
     const wMed = wSorted.length ? wSorted[Math.floor((wSorted.length - 1) / 2)] : 0;
     const waterSummary = 'MEDIAN ' + wMed.toFixed(1) + ' L · ' + wDays.filter(v => v < goal / 1000).length + ' OF ' + wDays.length + ' DAYS UNDER ' + (goal / 1000).toFixed(1) + ' L';
@@ -1847,7 +1863,7 @@ class Component extends DCLogic {
     const photoDays = Array.from({ length: dayNum }, (_, i) => {
       const n = dayNum - i;
       const u = PU['d' + n];
-      return { n, bg: photoBg(u), border: n === dayNum ? '#6390ff' : '#353b45', fg: u ? '#eef0f4' : n === dayNum ? '#6390ff' : '#4f5766' };
+      return { n, bg: photoBg(u), border: n === dayNum ? '#4f8dff' : '#353b45', fg: u ? '#eef0f4' : n === dayNum ? '#4f8dff' : '#4f5766' };
     });
     const photoCount = Object.keys(PU).length;
 
@@ -1897,14 +1913,14 @@ class Component extends DCLogic {
       dismissTips: () => this.setState(s => ({ aiTips: { ...(s.aiTips || {}), dismissed: true } })),
       aiOpts: [['on', 'ON'], ['off', 'OFF']].map(([k, label]) => { const cur = this.state.aiTipsOn === false ? 'off' : 'on';
         return { label, pick: () => { this.setState({ aiTipsOn: k === 'on' }); if (k === 'on' && window.SHTips) setTimeout(() => window.SHTips.maybe(this), 300); },
-          bg: cur === k ? '#6390ff' : 'transparent', fg: cur === k ? '#081631' : '#9ca3b0', border: cur === k ? '#6390ff' : '#3d4450' }; }),
+          bg: cur === k ? '#4f8dff' : 'transparent', fg: cur === k ? '#081631' : '#9ca3b0', border: cur === k ? '#4f8dff' : '#3d4450' }; }),
       aiNote: (() => { if (this.state.aiTipsOn === false) return 'OFF · NO AI CALLS ARE MADE FOR SUGGESTIONS';
         const t = this.state.aiTips, tk = t && t.tokens;
         return tk ? 'LAST CHECK USED ' + (tk.in + tk.out).toLocaleString() + ' TOKENS ≈ $' + (tk.in / 1e6 + tk.out * 5 / 1e6).toFixed(4) + ' · ABOUT $' + ((tk.in / 1e6 + tk.out * 5 / 1e6) * 30).toFixed(2) + ' A MONTH'
           : 'ONE SMALL AI CALL A DAY, ABOUT 2,000 TOKENS (≈ $0.10 A MONTH)'; })(),
       themeOpts: (() => { const cur = window.__themePref ? window.__themePref() : 'dark';
         return [['dark', 'DARK'], ['light', 'LIGHT'], ['system', 'MATCH PHONE']].map(([k, label]) => ({ label, pick: () => { if (window.__setTheme) window.__setTheme(k); this.setState({}); },
-          bg: cur === k ? '#6390ff' : 'transparent', fg: cur === k ? '#081631' : '#9ca3b0', border: cur === k ? '#6390ff' : '#3d4450' })); })(),
+          bg: cur === k ? '#4f8dff' : 'transparent', fg: cur === k ? '#081631' : '#9ca3b0', border: cur === k ? '#4f8dff' : '#3d4450' })); })(),
       vDay: vd || 0, vMissCount: vMiss.length, vRuleWord: vMiss.length === 1 ? 'RULE' : 'RULES',
       vText: !vRec ? '' : vRec.skipped ? 'No check-in was recorded for day ' + vd + ', so it is marked red on the board and your streak ends here. The challenge keeps running — day ' + dayNum + ' starts now.'
         : vNames.join(', ') + (vNames.length === 1 ? ' was' : ' were') + ' not cleared. Day ' + vd + ' is marked red on the board and your streak ends here. The challenge keeps running — day ' + dayNum + ' starts now.',
@@ -1916,13 +1932,13 @@ class Component extends DCLogic {
         const sup = !!(P && P.supported()), ios = !!(P && P.iosNeedsInstall()), perm = P ? P.permission() : 'unsupported';
         return {
           pushStatus: on ? 'ON' : !sup ? (ios ? 'INSTALL FIRST' : 'UNAVAILABLE') : perm === 'denied' ? 'BLOCKED' : 'OFF',
-          pushTone: on ? '#6390ff' : perm === 'denied' ? '#f06a50' : '#8f9ab0',
+          pushTone: on ? '#4f8dff' : perm === 'denied' ? '#ff5a5f' : '#8f9ab0',
           pushDetail: this.state.pushMsg || (on ? 'Reminders arrive at their set times, even with the app closed. Rules you’ve already cleared today are skipped.'
             : !sup ? (ios ? 'On iPhone, add the app to your home screen and open it from there (iOS 16.4 or later).' : 'This browser can’t receive push notifications.')
             : perm === 'denied' ? 'Notifications are blocked for this app. Allow them in your phone’s settings, then try again.'
             : 'Get a notification at each reminder time below, even when the app is closed.'),
           pushBtn: on ? 'TURN OFF' : 'TURN ON NOTIFICATIONS', pushBtnVis: sup ? 'block' : 'none', pushTestVis: on ? 'block' : 'none',
-          pushBtnBg: on ? 'transparent' : '#6390ff', pushBtnFg: on ? '#9ca3b0' : '#081631', pushBtnBorder: on ? '#3d4450' : '#6390ff',
+          pushBtnBg: on ? 'transparent' : '#4f8dff', pushBtnFg: on ? '#9ca3b0' : '#081631', pushBtnBorder: on ? '#3d4450' : '#4f8dff',
           pushAction: () => this.pushAction(), pushTest: () => this.pushTest()
         };
       })(),
@@ -1946,9 +1962,9 @@ class Component extends DCLogic {
       kcalPct: Math.min(100, (kcal / tg.kcal) * 100) + '%',
       kcalLeft: (tg.kcal - kcal >= 0 ? tg.kcal - kcal : 0) + ' LEFT',
       macros: [
-        { label: 'PROTEIN', value: r1(macroTotals.p), target: tg.p, pct: Math.min(100, (macroTotals.p / tg.p) * 100) + '%', tone: '#6390ff' },
-        { label: 'CARBS', value: r1(macroTotals.c), target: tg.c, pct: Math.min(100, (macroTotals.c / tg.c) * 100) + '%', tone: '#f4b544' },
-        { label: 'FAT', value: r1(macroTotals.f), target: tg.f, pct: Math.min(100, (macroTotals.f / tg.f) * 100) + '%', tone: '#a3c46e' }
+        { label: 'PROTEIN', value: r1(macroTotals.p), target: tg.p, pct: Math.min(100, (macroTotals.p / tg.p) * 100) + '%', tone: '#4f8dff' },
+        { label: 'CARBS', value: r1(macroTotals.c), target: tg.c, pct: Math.min(100, (macroTotals.c / tg.c) * 100) + '%', tone: '#ffc233' },
+        { label: 'FAT', value: r1(macroTotals.f), target: tg.f, pct: Math.min(100, (macroTotals.f / tg.f) * 100) + '%', tone: '#a8f25c' }
       ],
       targetsVis: this.state.editTargets ? 'block' : 'none',
       targetsLabel: this.state.editTargets ? 'DONE' : 'EDIT TARGETS',
@@ -1962,7 +1978,7 @@ class Component extends DCLogic {
       meals: this.state.meals.map((m, i) => ({
         time: m.time, name: m.name, kcal: m.kcal,
         detail: (m.slot || 'MEAL') + (m.g ? ' · ' + m.g + ' G' : '') + (m.est ? (m.est === 'pending' ? ' · ESTIMATING…' : ' · EST') : '') + ' · P ' + m.p + ' · C ' + m.c + ' · F ' + m.f,
-        border: i === mi ? '#f4b544' : '#2b3039',
+        border: i === mi ? '#ffc233' : '#2b3039',
         pick: () => this.setState(s => ({ mealSel: s.mealSel === i ? null : i }))
       })),
       mealCount: this.state.meals.length,
@@ -1970,14 +1986,14 @@ class Component extends DCLogic {
       mealName: mSel ? mSel.name : '',
       mealTime: mSel ? mSel.time : '',
       renameMeal: e => { const v = e.target.value; this.setState(s => { const meals = s.meals.slice(); meals[s.mealSel] = { ...meals[s.mealSel], name: v, named: true }; return { meals }; }); },
-      mealSlots: ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'].map(v => { const on = mSel && mSel.slot === v; return { label: v === 'BREAKFAST' ? 'BRKFST' : v, bg: on ? '#f4b544' : 'transparent', fg: on ? '#231800' : '#9ca3b0', border: on ? '#f4b544' : '#3d4450',
+      mealSlots: ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'].map(v => { const on = mSel && mSel.slot === v; return { label: v === 'BREAKFAST' ? 'BRKFST' : v, bg: on ? '#ffc233' : 'transparent', fg: on ? '#231800' : '#9ca3b0', border: on ? '#ffc233' : '#3d4450',
         pick: () => this.setState(s => { const meals = s.meals.slice(); meals[s.mealSel] = { ...meals[s.mealSel], slot: v, time: SLOT_TIME[v] }; return { meals }; }) }; }),
       mealScales: [[0.5, '×½'], [0.75, '×¾'], [1.5, '×1½'], [2, '×2']].map(([v, l]) => ({ label: l, pick: () => this.setState(s => { const meals = s.meals.slice(), m = meals[s.mealSel]; meals[s.mealSel] = m.per100 && m.g ? { ...m, ...fromPer100(m.per100, Math.round(m.g * v)), g: Math.round(m.g * v), serv: Math.round(m.g * v) + ' g' } : { ...m, touched: true, p: Math.round(m.p * v), c: Math.round(m.c * v), f: Math.round(m.f * v), kcal: Math.round(m.kcal * v) }; return { meals }; }) })),
       mealGramsVis: mSel && mSel.per100 ? 'flex' : 'none', mealGrams: mSel && mSel.g != null ? String(mSel.g) : '',
       decGrams: () => mSel && this.setMealGrams((mSel.g || 0) - 10), incGrams: () => mSel && this.setMealGrams((mSel.g || 0) + 10),
       setGrams: e => this.setMealGrams(e.target.value),
       mealNote: !mSel ? '' : mSel.per100 ? (mSel.src ? String(mSel.src).toUpperCase() + ' · ' : '') + 'EXACT PER-GRAM VALUES · CHANGE GRAMS TO RESCALE' : mSel.est === 'pending' ? 'ESTIMATING WITH AI… VALUES WILL UPDATE' : mSel.est === 'ai' ? 'AI ESTIMATE' + (mSel.serv ? ' · ' + String(mSel.serv).toUpperCase() : '') + ' · ADJUST IF NEEDED' : mSel.est === 'local' ? 'ROUGH ESTIMATE · ADJUST IF NEEDED' : 'CHANGING A MACRO RECALCULATES KCAL (4/4/9)',
-      mealNoteFg: mSel && mSel.est ? '#f4b544' : '#8f9ab0',
+      mealNoteFg: mSel && mSel.est ? '#ffc233' : '#8f9ab0',
       mealSteppers: mSel ? [
         { label: 'KCAL', value: mSel.kcal, dec: () => this.bumpMeal('kcal', -25), inc: () => this.bumpMeal('kcal', 25) },
         { label: 'PROTEIN', value: mSel.p, dec: () => this.bumpMeal('p', -5), inc: () => this.bumpMeal('p', 5) },
@@ -1998,7 +2014,7 @@ class Component extends DCLogic {
         const list = (hit && !q ? [hit] : []).concat(local, dbl);
         const la = s.lastAdd != null ? s.meals[s.lastAdd] : null;
         const exact = q && FOODS.some(f => f.name.toLowerCase() === q);
-        const sel = (v, cur) => ({ bg: v === cur ? '#f4b544' : 'transparent', fg: v === cur ? '#231800' : '#9ca3b0', border: v === cur ? '#f4b544' : '#3d4450' });
+        const sel = (v, cur) => ({ bg: v === cur ? '#ffc233' : 'transparent', fg: v === cur ? '#231800' : '#9ca3b0', border: v === cur ? '#ffc233' : '#3d4450' });
         return {
           foodQuery: s.foodQ, setFoodQuery: e => { const v = e.target.value; this.setState({ foodQ: v, lastAdd: null, lastBatch: null, regDraft: null, scanHit: null }); this.searchDb(v); },
           scanFood: () => this.scan(),
@@ -2047,7 +2063,7 @@ class Component extends DCLogic {
             return {
               regVis: q ? 'none' : 'block',
               regMeals: s.regulars.map(r => { const t = sum(r.items); return {
-                name: r.name || 'Untitled meal', kcal: t.kcal, border: dr && dr.id === r.id ? '#f4b544' : '#2b3039',
+                name: r.name || 'Untitled meal', kcal: t.kcal, border: dr && dr.id === r.id ? '#ffc233' : '#2b3039',
                 sub: r.slot + ' · ' + r.items.length + (r.items.length === 1 ? ' ITEM' : ' ITEMS') + ' · P ' + t.p + ' C ' + t.c + ' F ' + t.f,
                 log: () => this.setState(st => ({
                   meals: st.meals.concat(r.items.map(x => ({ ...x, time: nowHM(), slot: r.slot }))),
@@ -2057,11 +2073,11 @@ class Component extends DCLogic {
               regEditVis: dr ? 'block' : 'none',
               regEditTitle: dr && dr.id ? 'EDIT REGULAR MEAL' : 'NEW REGULAR MEAL',
               regName: dr ? dr.name : '', setRegName: e => { const v = e.target.value; updD(d => ({ ...d, name: v })); },
-              regSlots: SL.map(v => { const on = dr && dr.slot === v; return { label: v === 'BREAKFAST' ? 'BRKFST' : v, bg: on ? '#f4b544' : 'transparent', fg: on ? '#231800' : '#9ca3b0', border: on ? '#f4b544' : '#3d4450', pick: () => updD(d => ({ ...d, slot: v })) }; }),
-              regPool: dr ? dr.pool.map((x, i) => ({ name: x.name, kcal: x.kcal, check: x.on ? '✓' : '', box: x.on ? '#f4b544' : '#3d4450', boxBg: x.on ? '#f4b544' : 'transparent', fg: x.on ? '#eef0f4' : '#9ca3b0',
+              regSlots: SL.map(v => { const on = dr && dr.slot === v; return { label: v === 'BREAKFAST' ? 'BRKFST' : v, bg: on ? '#ffc233' : 'transparent', fg: on ? '#231800' : '#9ca3b0', border: on ? '#ffc233' : '#3d4450', pick: () => updD(d => ({ ...d, slot: v })) }; }),
+              regPool: dr ? dr.pool.map((x, i) => ({ name: x.name, kcal: x.kcal, check: x.on ? '✓' : '', box: x.on ? '#ffc233' : '#3d4450', boxBg: x.on ? '#ffc233' : 'transparent', fg: x.on ? '#eef0f4' : '#9ca3b0',
                 toggle: () => updD(d => ({ ...d, pool: d.pool.map((y, j) => j === i ? { ...y, on: !y.on } : y) })) })) : [],
               regTotal: chosen.length ? chosen.length + ' ITEMS · ' + tot.kcal + ' KCAL · P ' + tot.p + ' C ' + tot.c + ' F ' + tot.f : 'PICK AT LEAST ONE ITEM',
-              regDelLabel: dr && dr.id ? 'DELETE' : 'CANCEL', regDelFg: dr && dr.id ? '#f06a50' : '#9ca3b0', regDelBorder: dr && dr.id ? '#522a22' : '#3d4450',
+              regDelLabel: dr && dr.id ? 'DELETE' : 'CANCEL', regDelFg: dr && dr.id ? '#ff5a5f' : '#9ca3b0', regDelBorder: dr && dr.id ? '#522a22' : '#3d4450',
               regDelete: () => this.setState(st => ({ regulars: st.regDraft && st.regDraft.id ? st.regulars.filter(r => r.id !== st.regDraft.id) : st.regulars, regDraft: null })),
               regSave: () => this.setState(st => {
                 const d = st.regDraft, items = d.pool.filter(x => x.on).map(({ on, ...x }) => x);
@@ -2079,9 +2095,9 @@ class Component extends DCLogic {
       volumeUnit: day.metric === 'kg' ? 'kg' : 'min',
       elapsed: t.startedAt ? this.fmt(elapsedMs) : '—',
       timerLabel: t.running ? 'RUNNING' : t.endedAt ? 'PAUSED' : 'NOT STARTED',
-      timerTone: t.running ? '#a3c46e' : t.endedAt ? '#f4b544' : '#8f9ab0',
+      timerTone: t.running ? '#a8f25c' : t.endedAt ? '#ffc233' : '#8f9ab0',
       timerBtn: t.running ? 'End session' : t.startedAt ? 'Resume session' : 'Start session',
-      timerBtnBg: t.running ? '#f06a50' : '#a3c46e',
+      timerBtnBg: t.running ? '#ff5a5f' : '#a8f25c',
       timerBtnFg: t.running ? '#200c08' : '#111a08',
       toggleTimer: () => this.toggleTimer(),
       finishedVis: receiptVis,
@@ -2100,8 +2116,8 @@ class Component extends DCLogic {
       dayNote: this.state.dayNote, setNote: e => this.setState({ dayNote: e.target.value }),
       toggleNote: () => this.setState(s => ({ noteEditing: !s.noteEditing })),
       noteViewVis: this.state.noteEditing ? 'none' : 'block', noteEditVis: this.state.noteEditing ? 'block' : 'none',
-      noteBtn: this.state.noteEditing ? 'SAVE NOTE' : 'EDIT NOTE', noteBtnBg: this.state.noteEditing ? '#f4b544' : 'transparent',
-      noteBtnFg: this.state.noteEditing ? '#231800' : '#eef0f4', noteBtnBorder: this.state.noteEditing ? '#f4b544' : '#3d4450',
+      noteBtn: this.state.noteEditing ? 'SAVE NOTE' : 'EDIT NOTE', noteBtnBg: this.state.noteEditing ? '#ffc233' : 'transparent',
+      noteBtnFg: this.state.noteEditing ? '#231800' : '#eef0f4', noteBtnBorder: this.state.noteEditing ? '#ffc233' : '#3d4450',
       planMobility: day.mobility, planMobPct: day.mobPct,
       editLabel: editing ? 'DONE' : 'EDIT SPLIT',
       toggleEdit: () => this.setState(s => ({ editing: !s.editing })),
@@ -2117,7 +2133,7 @@ class Component extends DCLogic {
       greet: (this.state.setup.name ? 'MORNING, ' + this.state.setup.name.toUpperCase() : '06:12'),
       grid, selDay: gridSel, selTags,
       selVerdict: selMiss ? 'Missed · ' + (this.state.ruleDefs.find(x => x.k === selMiss) || { name: 'no check-in' }).name : selPast ? 'All ' + ACT.length + ' cleared' : gridSel === dayNum ? (open === 0 ? 'All ' + ACT.length + ' cleared' : open + ' still open') : 'Not yet run',
-      selTone: selMiss ? '#f06a50' : '#6390ff',
+      selTone: selMiss ? '#ff5a5f' : '#4f8dff',
       timeline, weakest, waterBars, photoDays,
       clearedTags
     };
