@@ -1199,7 +1199,7 @@ function findOddSets(st) {
     const val = s => e.type === 'wr' ? s.w : s.d;
     const work = e.sets.filter(s => s.done !== false && s.kind !== 'w' && val(s) > 0);
     if (!work.length) return;
-    (byEx[e.exId] = byEx[e.exId] || { name: e.name, type: e.type, list: [] }).list.push({ w, ei, top: median(work.map(val)), vals: e.sets.map(val), work: e.sets.map(s => s.done !== false && s.kind !== 'w' && val(s) > 0) });
+    (byEx[e.exId] = byEx[e.exId] || { name: e.name, type: e.type, list: [] }).list.push({ w, ei, top: median(work.map(val)), vals: e.sets.map(val), kinds: e.sets.map(s => s.kind), work: e.sets.map(s => s.done !== false && s.kind !== 'w' && val(s) > 0) });
   }));
   const near = (x, lo, hi) => x >= lo && x <= hi;
   for (const exId in byEx) {
@@ -1214,15 +1214,16 @@ function findOddSets(st) {
         if (near(r, 1.8, 2.8) && near(S.top * LB / ref, 0.75, 1.3)) fix = { f: LB, why: 'about 2.2× your usual — looks like pounds saved as kg' };
         else if (near(r, 0.33, 0.56) && near(S.top / LB / ref, 0.75, 1.3)) fix = { f: 1 / LB, why: 'about 0.45× your usual — looks like kg saved as pounds' };
         else if (near(r, 7, 13) && near(S.top / 10 / ref, 0.7, 1.3)) fix = { f: 0.1, why: 'about 10× your usual — looks like a slipped decimal' };
+        else if (near(r, 0.07, 0.14) && near(S.top * 10 / ref, 0.7, 1.3)) fix = { f: 10, why: 'about a tenth of your usual — looks like a missing digit' };
       } else {
         if (near(r, 500, 2000)) fix = { f: 0.001, why: 'about 1000× your usual — looks like metres saved as km' };
         else if (near(r, 1.45, 1.8) && near(S.top / 1.609344 / ref, 0.8, 1.25)) fix = { f: 1 / 1.609344, why: 'about 1.6× your usual — looks like km saved as miles' };
         else if (near(r, 0.55, 0.69) && near(S.top * 1.609344 / ref, 0.8, 1.25)) fix = { f: 1.609344, why: 'about 0.6× your usual — looks like miles saved as km' };
       }
       if (fix) { issues.push({ key: S.w.id + ':' + S.ei, wid: S.w.id, ei: S.ei, exId, name, type, date: S.w.date, top: S.top, ref, ...fix, kind: 'session' }); return; }
-      // one set way off from the rest of the same session (e.g. 850 among 85s)
+      // one set way off from the rest of the same session (e.g. 850 among 85s, or 38 among 85s)
       if (type === 'wr') S.vals.forEach((v, si) => {
-        if (!(v > 0)) return;
+        if (!(v > 0) || S.kinds[si] === 'd') return;   // drop sets are meant to be lighter
         if (!S.work[si]) return;
         const others = S.vals.filter((x, k) => k !== si && x > 0 && S.work[k]);
         if (others.length < 2) return;
@@ -1230,6 +1231,8 @@ function findOddSets(st) {
         let f = null, why = '';
         if (near(rr, 1.9, 2.6) && near(v * LB / m, 0.8, 1.2)) { f = LB; why = 'one set ~2.2× the rest — pounds saved as kg?'; }
         else if (near(rr, 8, 12) && near(v / 10 / m, 0.8, 1.2)) { f = 0.1; why = 'one set ~10× the rest — slipped decimal?'; }
+        else if (near(rr, 0.38, 0.52) && near(v / LB / m, 0.85, 1.15)) { f = 1 / LB; why = 'one set ~0.45× the rest — kg saved as pounds?'; }
+        else if (near(rr, 0.08, 0.12) && near(v * 10 / m, 0.85, 1.15)) { f = 10; why = 'one set ~a tenth of the rest — missing digit?'; }
         if (f) issues.push({ key: S.w.id + ':' + S.ei + ':' + si, wid: S.w.id, ei: S.ei, si, exId, name, type, date: S.w.date, top: v, ref: m, f, why, kind: 'set' });
       });
     });
@@ -1260,6 +1263,8 @@ function DataFix({ app, st, onClose }) {
         return { ...e, sets: e.sets.map((s, si) => {
           const hit = fx.find(i => i.kind === 'session' || i.si === si); if (!hit) return s;
           const k = e.type === 'wr' ? 'w' : 'd'; if (!(s[k] > 0)) return s;
+          // whole-session fix: only touch sets that land in a believable range (keeps a real 40 kg warm-up from becoming 400)
+          if (hit.kind === 'session' && !(s[k] * hit.f >= hit.ref * 0.15 && s[k] * hit.f <= hit.ref * 1.35)) return s;
           log.push({ wid: w.id, ei, si, k, from: s[k] });
           return { ...s, [k]: r2(s[k] * hit.f) };
         }) };

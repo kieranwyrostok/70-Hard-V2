@@ -6,6 +6,10 @@ const C = {
   text: '#eef0f4', dim: '#9ca3b0', mute: '#8f9ab0', faint: '#6b7382',
   blue: '#6390ff', blueInk: '#081631', amber: '#f4b544', amberInk: '#231800', olive: '#a3c46e', oliveInk: '#111a08', red: '#f06a50'
 };
+// custom app colours (see __SH_PALETTE in index.html): swap any matching token for the user's pick
+(() => { const P = window.__SH_PALETTE && window.__SH_PALETTE(); if (!P) return;
+  const low = {}; Object.keys(P.map).forEach(k => { low[k.toLowerCase()] = P.map[k]; });
+  Object.keys(C).forEach(k => { const v = low[String(C[k]).toLowerCase()]; if (v) C[k] = v; }); })();
 const F = {
   head: "'Saira Condensed',sans-serif", mono: "'IBM Plex Mono',monospace", body: 'Barlow,system-ui,sans-serif'
 };
@@ -527,3 +531,158 @@ window.PailWidget = PailWidget;
   document.addEventListener('pointerup', end, true);
   document.addEventListener('pointercancel', end, true);
 })();
+
+// ── Today's progress rings: 3D-tilted, glowing, and they spin when you flick them ──
+// Drag to turn them, flick to send them spinning (they slow down, then ease back to 12 o'clock); a tap gives one spin.
+function RingsWidget({ rings }) {
+  const list = (rings || []).filter(r => r && r.display !== 'none');
+  const g = useRef(null), st = useRef({ a: 0, v: 0, drag: null, raf: 0, mounted: false }), [drawn, setDrawn] = useState(false);
+  const uidRef = useRef('rg' + uid());
+  const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  useEffect(() => { const t = setTimeout(() => setDrawn(true), 60); return () => { clearTimeout(t); cancelAnimationFrame(st.current.raf); }; }, []);
+  const paint = () => { if (g.current) g.current.setAttribute('transform', `rotate(${st.current.a % 360} 100 100)`); };
+  const angleAt = e => { const r = e.currentTarget.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
+  const coast = () => {                               // momentum, then a soft return to the start position
+    const s = st.current; cancelAnimationFrame(s.raf);
+    const step = () => {
+      if (Math.abs(s.v) > 0.15) { s.a += s.v; s.v *= 0.975; paint(); s.raf = requestAnimationFrame(step); return; }
+      const target = Math.round(s.a / 360) * 360, d = target - s.a;
+      if (Math.abs(d) < 0.3) { s.a = 0; s.v = 0; paint(); return; }
+      s.a += d * 0.12; paint(); s.raf = requestAnimationFrame(step);
+    };
+    s.raf = requestAnimationFrame(step);
+  };
+  const down = e => { if (reduce) return; const s = st.current; cancelAnimationFrame(s.raf); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
+    s.drag = { last: angleAt(e), t: performance.now(), moved: 0 }; s.v = 0; };
+  const move = e => { const s = st.current, d = s.drag; if (!d) return;
+    const a = angleAt(e); let da = a - d.last; if (da > 180) da -= 360; if (da < -180) da += 360;
+    const now = performance.now(), dt = Math.max(1, now - d.t);
+    s.a += da; d.moved += Math.abs(da); s.v = s.v * 0.6 + (da / dt * 16) * 0.4; d.last = a; d.t = now; paint(); };
+  const up = () => { const s = st.current, d = s.drag; s.drag = null; if (!d) return;
+    if (d.moved < 4) s.v = 14;                          // a tap = one lively spin
+    s.v = Math.max(-40, Math.min(40, s.v)); if (Math.abs(s.v) > 2) vib(10); coast(); };
+  const id = uidRef.current;
+  return <div style={{ width: 176, height: 176, flex: 'none', perspective: 600 }}>
+    <svg viewBox="0 0 200 200" width="176" height="176" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+      style={{ overflow: 'visible', touchAction: 'none', cursor: 'grab', transform: 'rotateX(22deg)', transformOrigin: '50% 60%' }}>
+      <defs>
+        <filter id={id + 'glow'} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5" /></filter>
+        <radialGradient id={id + 'floor'} cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#000" stopOpacity=".45" /><stop offset="100%" stopColor="#000" stopOpacity="0" /></radialGradient>
+        {list.map((r, i) => <linearGradient key={i} id={id + 'g' + i} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity=".55" /><stop offset="18%" stopColor={r.tone} /><stop offset="100%" stopColor={r.tone} stopOpacity=".78" /></linearGradient>)}
+      </defs>
+      <ellipse cx="100" cy="196" rx="78" ry="10" fill={`url(#${id}floor)`} />
+      {list.map((r, i) => <circle key={'t' + i} cx="100" cy="100" r={r.r} fill="none" stroke="#282d36" strokeWidth={r.sw} />)}
+      {list.map((r, i) => <circle key={'s' + i} cx="100" cy="100" r={r.r} fill="none" stroke="#000" strokeOpacity=".35" strokeWidth={Math.max(1, r.sw * 0.28)} transform="translate(0 1.5)" />)}
+      <g ref={g} style={{ transformBox: 'fill-box' }}>
+        <g transform="rotate(-90 100 100)">
+          {list.map((r, i) => { const off = drawn ? r.off : r.c, frac = r.c ? 1 - r.off / r.c : 0, end = (frac * 360 - 90) * Math.PI / 180;
+            const ease = 'stroke-dashoffset 1.1s cubic-bezier(.2,.9,.25,1)';
+            return <g key={i}>
+              <circle cx="100" cy="100" r={r.r} fill="none" stroke={r.tone} strokeWidth={r.sw} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} filter={`url(#${id}glow)`} opacity={frac > 0 ? 0.75 : 0} style={{ transition: ease }} />
+              <circle cx="100" cy="100" r={r.r} fill="none" stroke={`url(#${id}g${i})`} strokeWidth={r.sw} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} opacity={frac > 0 ? 1 : 0} style={{ transition: ease }} />
+              <circle cx="100" cy="100" r={r.r - r.sw * 0.22} fill="none" stroke="#ffffff" strokeOpacity=".28" strokeWidth={Math.max(1, r.sw * 0.18)} strokeLinecap="round" strokeDasharray={2 * Math.PI * (r.r - r.sw * 0.22)} strokeDashoffset={drawn ? 2 * Math.PI * (r.r - r.sw * 0.22) * (1 - frac) : 2 * Math.PI * (r.r - r.sw * 0.22)} opacity={frac > 0 ? 1 : 0} style={{ transition: ease }} />
+              {drawn && frac > 0.02 ? <circle cx={100 + r.r * Math.cos(end + Math.PI / 2)} cy={100 + r.r * Math.sin(end + Math.PI / 2)} r={r.sw * 0.34} fill="#ffffff" opacity=".85" filter={`url(#${id}glow)`} style={{ transition: 'opacity .8s .9s' }} /> : null}
+            </g>; })}
+        </g>
+      </g>
+    </svg>
+  </div>;
+}
+window.RingsWidget = RingsWidget;
+
+// ── Last night's sleep (Today) ──
+// Saved under the date you woke up: st.sleepLog[date] = { bed: minutes, wake: minutes, q: 1-5 }.
+const hhmmOf = m => pad2(Math.floor(m / 60) % 24) + ':' + pad2(m % 60);
+const minOf = v => { const x = String(v || '').split(':'); return x.length === 2 ? (+x[0] % 24) * 60 + (+x[1] % 60) : null; };
+const sleepDur = e => e && e.bed != null && e.wake != null ? (e.wake - e.bed + 1440) % 1440 : null;
+const durText = m => Math.floor(m / 60) + 'h ' + pad2(m % 60) + 'm';
+const QUAL = ['😫', '😕', '😐', '🙂', '😴'];
+function SleepWidget({ app, st }) {
+  const today = st && st.curDate, log = (st && st.sleepLog) || {}, e = today && log[today];
+  const o = (st && st.setup) || {}, tBed = o.sleep != null ? o.sleep : 1350, tWake = o.wake != null ? o.wake : 390, target = (tWake - tBed + 1440) % 1440;
+  const [edit, setEdit] = useState(false), [bed, setBed] = useState(hhmmOf(e ? e.bed : tBed)), [wake, setWake] = useState(hhmmOf(e ? e.wake : tWake)), [q, setQ] = useState(e ? e.q || 0 : 0);
+  if (!app || !st) return null;
+  const save = () => { const b = minOf(bed), w = minOf(wake); if (b == null || w == null) return; app.setState(s => ({ sleepLog: { ...(s.sleepLog || {}), [s.curDate]: { bed: b, wake: w, q: q || undefined } } })); setEdit(false); vib(10); };
+  const nights = Array.from({ length: 7 }, (_, i) => { const d = addDaysIso(today, i - 6); return { d, m: sleepDur(log[d]) }; });
+  const logged = nights.filter(n => n.m != null), avg = logged.length ? Math.round(logged.reduce((a, n) => a + n.m, 0) / logged.length) : null;
+  const card = { background: C.card, border: '1px solid ' + C.line, borderRadius: 14, padding: 12 };
+  const timeIn = (label, v, set) => <label style={{ flex: 1, minWidth: 0 }}><div style={{ ...T.label, marginBottom: 4 }}>{label}</div>
+    <input type="time" value={v} onChange={ev => set(ev.target.value)} style={{ width: '100%', boxSizing: 'border-box', background: C.bg, border: '1px solid ' + C.line2, borderRadius: 10, color: C.text, font: `600 16px/1.2 ${F.body}`, padding: '9px 8px', outline: 'none' }} /></label>;
+  if (!e || edit) {
+    const b = minOf(bed), w = minOf(wake), dur = b != null && w != null ? (w - b + 1440) % 1440 : null;
+    return <div style={card}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span style={{ ...T.label, color: C.blue }}>🌙 LAST NIGHT'S SLEEP</span><span style={T.label}>{dur != null ? durText(dur) : ''}</span></div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>{timeIn('WENT TO BED', bed, setBed)}{timeIn('WOKE UP', wake, setWake)}</div>
+      <div style={{ display: 'flex', gap: 6, marginTop: 10, alignItems: 'center' }}><span style={{ ...T.label, marginRight: 2 }}>HOW WAS IT?</span>
+        {QUAL.map((em, i) => <span key={i} role="button" onClick={() => setQ(q === i + 1 ? 0 : i + 1)} style={{ font: `400 20px/1 ${F.body}`, padding: '4px 3px', cursor: 'pointer', opacity: q && q !== i + 1 ? 0.35 : 1, transform: q === i + 1 ? 'scale(1.2)' : 'none', transition: 'transform .15s' }}>{em}</span>)}</div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        {e ? <Btn kind="ghost" tone={C.dim} onClick={() => setEdit(false)} style={{ flex: 1, minHeight: 42 }}>CANCEL</Btn> : null}
+        <Btn tone={C.blue} ink={C.blueInk} onClick={save} style={{ flex: 2, minHeight: 42, fontSize: 15 }}>Save sleep</Btn>
+      </div>
+    </div>;
+  }
+  const dur = sleepDur(e), diff = dur - target, max = Math.max(target, ...logged.map(n => n.m)) * 1.1;
+  return <div style={card} role="button" onClick={() => { setBed(hhmmOf(e.bed)); setWake(hhmmOf(e.wake)); setQ(e.q || 0); setEdit(true); }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span style={{ ...T.label, color: C.blue }}>🌙 LAST NIGHT'S SLEEP</span><span style={{ ...T.label, color: C.blue }}>EDIT</span></div>
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginTop: 8 }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ font: `700 26px/1 ${F.head}` }}>{durText(dur)} {e.q ? <span style={{ fontSize: 20 }}>{QUAL[e.q - 1]}</span> : null}</div>
+        <div style={{ ...T.label, marginTop: 5 }}>{hhmmOf(e.bed)} → {hhmmOf(e.wake)} · <span style={{ color: Math.abs(diff) <= 20 ? C.olive : diff < 0 ? C.amber : C.dim }}>{diff === 0 ? 'ON TARGET' : (diff > 0 ? '+' : '−') + durText(Math.abs(diff)) + ' VS ' + durText(target)}</span></div>
+        {avg != null ? <div style={{ ...T.label, marginTop: 3 }}>7-NIGHT AVERAGE {durText(avg)} · {logged.length}/7 LOGGED</div> : null}
+      </div>
+      <svg width="104" height="46" viewBox="0 0 104 46" style={{ flex: 'none' }}>
+        <line x1="0" x2="104" y1={46 - 40 * target / max} y2={46 - 40 * target / max} stroke={C.dim} strokeDasharray="3 3" strokeWidth="1" />
+        {nights.map((n, i) => { const h = n.m != null ? Math.max(3, 40 * n.m / max) : 3; return <rect key={i} x={i * 15 + 1} y={46 - h} width="11" height={h} rx="3" fill={n.m == null ? C.line2 : i === 6 ? C.blue : C.blue} opacity={n.m == null ? 1 : i === 6 ? 1 : 0.55} />; })}
+      </svg>
+    </div>
+  </div>;
+}
+window.SleepWidget = SleepWidget;
+
+
+// ── App colours: pick the core, secondary and accent colours (Habits & reminders) ──
+const COLOR_PRESETS = [
+  ['Default', null],
+  ['Ocean', { core: '#3aa0ff', secondary: '#ffb347', accent: '#34d1bf' }],
+  ['Sunset', { core: '#ff6b6b', secondary: '#ffd166', accent: '#f78c6b' }],
+  ['Forest', { core: '#4caf7a', secondary: '#e9c46a', accent: '#8ecae6' }],
+  ['Grape', { core: '#9b72ff', secondary: '#ff8fab', accent: '#7bdff2' }],
+  ['Ember', { core: '#ff7a3d', secondary: '#ffcf5c', accent: '#c9e265' }],
+  ['Mono', { core: '#c9ced8', secondary: '#9aa3b2', accent: '#7c8698' }]
+];
+function CustomizeWidget() {
+  let saved = null; try { saved = JSON.parse(localStorage.getItem('sh.colors') || 'null'); } catch (e) { /* ignore */ }
+  const DEF = { core: '#6390ff', secondary: '#f4b544', accent: '#a3c46e' };
+  const [pick, setPick] = useState(saved || DEF), refs = { core: useRef(null), secondary: useRef(null), accent: useRef(null) };
+  const changed = JSON.stringify(pick) !== JSON.stringify(saved || DEF);
+  const apply = p => { try { if (p) localStorage.setItem('sh.colors', JSON.stringify(p)); else localStorage.removeItem('sh.colors'); } catch (e) { /* ignore */ } location.reload(); };
+  const ink = h => (window.__SH_PALETTE ? null : null) || (() => { const n = parseInt(h.slice(1), 16), l = (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; return l > 0.6 ? '#10131a' : '#ffffff'; })();
+  const row = (k, label, what) => <div key={k} role="button" onClick={() => refs[k].current && refs[k].current.click()} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid ' + C.line, cursor: 'pointer' }}>
+    <div style={{ width: 34, height: 34, borderRadius: 999, background: pick[k], boxShadow: `0 0 14px ${pick[k]}66`, flex: 'none', border: '2px solid ' + C.line2 }} />
+    <div style={{ flex: 1 }}><div style={T.name}>{label}</div><div style={{ ...T.label, marginTop: 2 }}>{what}</div></div>
+    <span style={{ ...T.mono, fontSize: 12, color: C.dim }}>{pick[k].toUpperCase()}</span>
+    <input ref={refs[k]} type="color" value={pick[k]} onChange={e => setPick(p => ({ ...p, [k]: e.target.value }))} style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} />
+  </div>;
+  return <div style={{ background: C.card, border: '1px solid ' + C.line, borderRadius: 14, padding: '6px 14px 14px' }}>
+    {row('core', 'Core', 'BUTTONS, TODAY, WATER, TABS')}
+    {row('secondary', 'Secondary', 'FOOD, HIGHLIGHTS, BANNERS')}
+    {row('accent', 'Accent', 'TRAINING, MIND, SUCCESS')}
+    <div style={{ ...T.label, margin: '12px 0 6px' }}>PRESETS</div>
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      {COLOR_PRESETS.map(([name, p]) => { const v = p || DEF, on = JSON.stringify(v) === JSON.stringify(pick);
+        return <div key={name} role="button" onClick={() => setPick(v)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', borderRadius: 999, border: '1px solid ' + (on ? C.text : C.line2), cursor: 'pointer' }}>
+          <span style={{ display: 'flex' }}>{[v.core, v.secondary, v.accent].map((h, i) => <span key={i} style={{ width: 12, height: 12, borderRadius: 99, background: h, marginLeft: i ? -3 : 0, border: '1px solid ' + C.bg }} />)}</span>
+          <span style={{ ...T.mono, fontSize: 10, color: on ? C.text : C.dim }}>{name.toUpperCase()}</span></div>; })}
+    </div>
+    <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
+      {[['core', 'START'], ['secondary', '+ FOOD'], ['accent', 'FINISH']].map(([k, l]) => <div key={k} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 12, background: pick[k], color: ink(pick[k]), font: `700 14px/1 ${F.head}`, letterSpacing: '.12em' }}>{l}</div>)}
+    </div>
+    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+      <Btn kind="ghost" tone={C.dim} onClick={() => apply(null)} style={{ flex: 1, minHeight: 42 }}>RESET</Btn>
+      <Btn tone={pick.core} ink={ink(pick.core)} disabled={!changed} onClick={() => apply(JSON.stringify(pick) === JSON.stringify(DEF) ? null : pick)} style={{ flex: 2, minHeight: 42, fontSize: 15 }}>{changed ? 'Apply colours' : 'Applied'}</Btn>
+    </div>
+    <div style={{ ...T.label, marginTop: 8, color: C.faint }}>WORKS IN BOTH LIGHT AND DARK · THE APP RELOADS TO APPLY</div>
+  </div>;
+}
+window.CustomizeWidget = CustomizeWidget;

@@ -17,6 +17,28 @@
     if (n < 4) location.replace((w === 'light' ? 'light.html' : './') + location.search + location.hash);
   }
   window.__themePref = pref;
+  window.__PAGE = PAGE;
+  // Custom app colours (Habits & reminders → App colours). Returns what to swap on this page, or null.
+  window.__SH_PALETTE = function () {
+    var c; try { c = JSON.parse(localStorage.getItem('sh.colors') || 'null'); } catch (e) { c = null; }
+    if (!c || !(c.core || c.secondary || c.accent)) return null;
+    var K = function (h) { return '#' + h; };
+    var rgb = function (h) { h = String(h).replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&'); var n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+    var hex = function (a) { return '#' + a.map(function (v) { return ('0' + Math.max(0, Math.min(255, Math.round(v))).toString(16)).slice(-2); }).join(''); };
+    var lum = function (h) { var a = rgb(h).map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * a[0] + .7152 * a[1] + .0722 * a[2]; };
+    var mix = function (h, w, t) { var a = rgb(h), b = rgb(w); return hex(a.map(function (v, i) { return v + (b[i] - v) * t; })); };
+    var contrast = function (x, y) { var a = lum(x), b = lum(y); return (Math.max(a, b) + .05) / (Math.min(a, b) + .05); };
+    var inkFor = function (h) { return contrast(h, K('ffffff')) >= contrast(h, K('10131a')) ? K('ffffff') : mix(h, K('000000'), .86); };
+    var light = PAGE === 'light';
+    var fitLight = function (h) { var i = 0; while (contrast(h, K('ffffff')) < 3 && i++ < 12) h = mix(h, K('000000'), .1); return h; };   // readable on white
+    var base = light ? { core: K('3b6df0'), coreInk: K('ffffff'), sec: K('e6a01e'), secInk: K('231800'), secDark: K('c9861a'), acc: K('5f9230'), accInk: K('ffffff'), accRgb: 'rgba(95,146,48' }
+      : { core: K('6390ff'), coreInk: K('081631'), sec: K('f4b544'), secInk: K('231800'), secDark: K('d99b2e'), acc: K('a3c46e'), accInk: K('111a08'), accRgb: 'rgba(163,196,110' };
+    var map = {};
+    if (c.core) { var cc = light ? fitLight(c.core) : c.core; map[base.core] = cc; if (!light) map[base.coreInk] = inkFor(cc); }
+    if (c.secondary) { map[base.sec] = c.secondary; map[base.secInk] = inkFor(c.secondary); map[base.secDark] = mix(c.secondary, K('000000'), .16); }
+    if (c.accent) { var ac = light ? fitLight(c.accent) : c.accent, a3 = rgb(ac); map[base.acc] = ac; if (!light) map[base.accInk] = inkFor(ac); map[base.accRgb] = 'rgba(' + a3.join(','); }
+    return { map: map, c: c, light: light, ink: inkFor };
+  };
   window.__setTheme = function (t) { try { localStorage.setItem('sh.theme', t); sessionStorage.removeItem('sh.themeHops'); } catch (e) { /* ignore */ } go(); };
   if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (pref() === 'system') go(); });
   go();
@@ -251,14 +273,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </div>
 <div style="display:flex;align-items:center;gap:20px;margin-top:14px">
-<svg width="176" height="176" sc-camel-view-box="0 0 200 200" style="flex:none;transform:rotate(-90deg)">
-<circle cx="100" cy="100" r="{{ rg0.r }}" fill="none" stroke="#282d36" stroke-width="{{ rg0.sw }}" display="{{ rg0.display }}"></circle>
-<circle cx="100" cy="100" r="{{ rg0.r }}" fill="none" stroke="{{ rg0.tone }}" stroke-width="{{ rg0.sw }}" stroke-linecap="round" stroke-dasharray="{{ rg0.c }}" stroke-dashoffset="{{ rg0.off }}" display="{{ rg0.display }}"></circle>
-<circle cx="100" cy="100" r="{{ rg1.r }}" fill="none" stroke="#282d36" stroke-width="{{ rg1.sw }}" display="{{ rg1.display }}"></circle>
-<circle cx="100" cy="100" r="{{ rg1.r }}" fill="none" stroke="{{ rg1.tone }}" stroke-width="{{ rg1.sw }}" stroke-linecap="round" stroke-dasharray="{{ rg1.c }}" stroke-dashoffset="{{ rg1.off }}" display="{{ rg1.display }}"></circle>
-<circle cx="100" cy="100" r="{{ rg2.r }}" fill="none" stroke="#282d36" stroke-width="{{ rg2.sw }}" display="{{ rg2.display }}"></circle>
-<circle cx="100" cy="100" r="{{ rg2.r }}" fill="none" stroke="{{ rg2.tone }}" stroke-width="{{ rg2.sw }}" stroke-linecap="round" stroke-dasharray="{{ rg2.c }}" stroke-dashoffset="{{ rg2.off }}" display="{{ rg2.display }}"></circle>
-</svg>
+<div style="flex:none;width:176px;height:176px"><x-import component-from-global-scope="RingsWidget" from="screens.js" dc-props="{{ ringsProps }}"></x-import></div>
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11px">
 <sc-for list="{{ rings }}" as="g" hint-placeholder-count="3">
 <div><div style="font:600 12px/1.2 'IBM Plex Mono',monospace;letter-spacing:.12em;color:{{ g.tone }}">{{ g.label }}</div><div style="font:600 20px/1.1 'Saira Condensed',sans-serif;letter-spacing:.06em;color:#eef0f4;text-transform:uppercase">{{ g.stat }}</div></div>
@@ -330,6 +345,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="height:6px;border-radius:99px;background:#282d36;overflow:hidden;margin-top:8px"><div style="height:100%;border-radius:99px;background:#6390ff;width:{{ protPct }}"></div></div>
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;margin-top:7px">{{ protLeft }}</div>
 </a>
+<div style="grid-column:span 2"><x-import component-from-global-scope="SleepWidget" from="screens.js" dc-props="{{ pailProps }}"></x-import></div>
 <a href="#s04" style="grid-column:span 2;background:#1e232a;border:1px solid #2b3039;border-radius:14px;padding:12px 14px;text-decoration:none;display:flex;align-items:center;gap:12px">
 <div style="font:400 24px/1 Barlow,system-ui,sans-serif">🏋️</div>
 <div style="flex:1;min-width:0"><div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#a3c46e">TRAINING</div><div style="font:600 15px/1.25 Barlow,system-ui,sans-serif;color:#eef0f4;margin-top:5px">{{ wkName }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px">{{ wkSub }}</div></div>
@@ -630,6 +646,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div sc-camel-on-click="{{ t.pick }}" style="flex:1;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.fg }};padding:14px 4px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;cursor:pointer">{{ t.label }}</div>
 </sc-for>
 </div>
+<div style="padding:22px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">App colours</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:right">MAKE IT YOURS</span></div>
+<div style="padding:0 22px"><x-import component-from-global-scope="CustomizeWidget" from="screens.js" dc-props="{{ pailProps }}"></x-import></div>
 <div style="padding:22px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">AI suggestions</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:right">ONCE A DAY ON TODAY</span></div>
 <div style="padding:0 22px;display:flex;gap:7px">
 <sc-for list="{{ aiOpts }}" as="t" hint-placeholder-count="2">
@@ -2092,6 +2110,7 @@ class Component extends DCLogic {
       })),
       ...this.extraVals(dayNum),
       pailProps: { app: this, st: this.state },
+      ringsProps: { rings: rings.map(r => ({ tone: r.tone, r: r.r, sw: r.sw, c: r.c, off: r.off, display: r.display })) },
       trainProps: { app: this, st: this.state }, fuelProps: { app: this, st: this.state }, coachProps: { app: this, st: this.state },
       ...this.obVals(ACT, rings),
       waterGoalL: (goal / 1000).toFixed(2).replace(/0$/, ''),
@@ -2106,5 +2125,15 @@ class Component extends DCLogic {
 }
 </script>
 </x-dc>
+<script>
+(function () {
+  var P = window.__SH_PALETTE && window.__SH_PALETTE(), x = document.querySelector('x-dc');
+  if (!P || !x) return;
+  var keys = Object.keys(P.map); if (!keys.length) return;
+  var rx = new RegExp(keys.map(function (k) { return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'), 'gi');
+  var low = {}; keys.forEach(function (k) { low[k.toLowerCase()] = P.map[k]; });
+  x.innerHTML = x.innerHTML.replace(rx, function (m) { return low[m.toLowerCase()] || m; });
+})();
+</script>
 </body>
 </html>

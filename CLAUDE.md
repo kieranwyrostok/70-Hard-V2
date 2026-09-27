@@ -83,6 +83,15 @@ tips (daily AI suggestions: coach.jsx `tipsMaybe` sends a ~1.8 KB 7-day summary 
 max 500 tokens out; state `aiTips`, toggle `aiTipsOn`; card on Today, setting in Habits & reminders).
 Env vars live in Netlify only: ANTHROPIC_API_KEY, USDA_API_KEY, COACH_CODE, ANTHROPIC_MODEL.
 
+**Today extras (ui.jsx):** `RingsWidget` (3D-tilted glowing SVG rings, flick to spin, eases back to 0°),
+`SleepWidget` (state `sleepLog[date] = {bed, wake, q}`, minutes after midnight; shown in DayDetail, weekly report, tips).
+**Custom colours:** localStorage `sh.colors` = {core, secondary, accent}, set in Habits & reminders → App colours
+(`CustomizeWidget`). `window.__SH_PALETTE()` (head script in index.html) returns a hex swap map for the current page;
+a script right after `</x-dc>` swaps it in the markup before boot and ui.jsx swaps the `C` tokens. Reset = remove the key.
+**Lift data check (train.jsx `findOddSets`):** flags sessions/sets that look ~2.2×, ~0.45×, ~10× or ~0.1× your usual
+(unit or decimal mistakes); whole-session fixes only scale sets that land in a believable range (warm-ups stay).
+Fixed or dismissed ones go in `dataFixIgnored`; `dataFixUndo` holds the last fix.
+
 ## Rules
 - Never break saved data: don't rename the storage key or existing state fields; migrate in `loadState()`.
 - Keep it working offline (the service worker caches everything in public/; build.mjs regenerates it).

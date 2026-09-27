@@ -220,7 +220,7 @@ function tipsContext(app, st) {
       carbs_g: t ? Math.round(t.c) : undefined, fat_g: t ? Math.round(t.f) : undefined, items_logged: diary ? diary.meals.length : h ? h.meals : 0,
       water_l: r1(((diary ? diary.waterMl : h && h.waterMl) || 0) / 1000),
       missed_rules: h ? (h.rules || []).filter(k => !(h.done || {})[k]).map(k => { const r = (st.ruleDefs || []).find(x => x.k === k); return r ? ((app.hLabel ? app.hLabel(r).name : r.name) || r.name) : k; }) : undefined,
-      workouts: ws.map(w => w.name + ' (' + doneSets(w) + ' sets)') });
+      workouts: ws.map(w => w.name + ' (' + doneSets(w) + ' sets)'), sleep_hours: sleepDur((st.sleepLog || {})[d]) != null ? r1(sleepDur(st.sleepLog[d]) / 60) : undefined });
   }
   const weight = (st.meas || []).find(m => m.k === 'weight'), wlog = ((st.measLog || {}).weight) || {}, wDays = Object.keys(wlog).map(Number).sort((a, b) => a - b);
   // strongest lifts: best estimated 1RM in the last 4 weeks vs the 4 weeks before
@@ -329,6 +329,7 @@ function DayDetail({ app, st, n, onClose, onNav }) {
           {(w.mobility || []).filter(m => m.done).length ? <div style={{ ...T.label, marginTop: 6, color: C.olive }}>MOBILITY · {w.mobility.filter(m => m.done).map(m => m.name).join(', ').toUpperCase()}</div> : null}
         </Card>) : <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>{rec && rec.sets ? rec.sets + ' sets logged.' : 'No workout logged.'}</div>}
 
+        {(st.sleepLog || {})[date] ? <>{section('Sleep')}<div style={{ ...T.body, marginBottom: 6 }}>{(() => { const e = st.sleepLog[date]; return durText(sleepDur(e)) + '  ·  ' + hhmmOf(e.bed) + ' → ' + hhmmOf(e.wake) + (e.q ? '  ' + QUAL[e.q - 1] : ''); })()}</div></> : null}
         {photo || wkg != null || note ? section('Notes & body') : null}
         {wkg != null ? <div style={{ ...T.body, marginBottom: 8 }}>Weight: <b>{st.imperial ? r1(wkg * 2.20462) + ' lb' : wkg + ' kg'}</b></div> : null}
         {note ? <div style={{ font: `italic 400 14px/1.45 ${F.body}`, color: C.text, marginBottom: 10 }}>“{note}”</div> : null}
@@ -406,6 +407,7 @@ function WeeklyReport({ app, st, s0, onClose }) {
         {row('Average protein', Math.round(R.p) + ' / ' + R.tg.p + ' g', R.p >= R.tg.p * 0.9 ? C.olive : C.amber)}
         {row('Days within 10% of calories', R.onTarget + ' of ' + R.logged)}</> : null}
       {row('Average water', (R.water / 1000).toFixed(2) + ' L · goal hit ' + R.waterDays + '/7', R.waterDays >= 5 ? C.olive : C.text)}
+      {(() => { const n = R.dates.map(d => sleepDur((st.sleepLog || {})[d])).filter(x => x != null); return n.length ? <>{h2('Sleep')}{row('Average sleep', durText(Math.round(n.reduce((a, b) => a + b, 0) / n.length)) + ' · ' + n.length + '/7 nights logged')}</> : null; })()}
       {R.wCount >= 2 ? <>{h2('Body')}{row('Weight', (st.imperial ? r1(R.wStart * 2.20462) + ' → ' + r1(R.wEnd * 2.20462) + ' lb' : R.wStart + ' → ' + R.wEnd + ' kg') + ' (' + (R.wEnd - R.wStart >= 0 ? '+' : '') + r1(st.imperial ? (R.wEnd - R.wStart) * 2.20462 : R.wEnd - R.wStart) + ')')}</> : null}
       <a href="#s12" onClick={onClose} style={{ display: 'block', marginTop: 20, ...T.mono, fontSize: 12, color: C.blue, textDecoration: 'none' }}>ASK COACH ABOUT THIS WEEK ›</a>
     </div>
