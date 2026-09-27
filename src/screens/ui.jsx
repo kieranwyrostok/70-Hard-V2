@@ -559,19 +559,80 @@ window.PailWidget = PailWidget;
   document.addEventListener('pointercancel', end, true);
 })();
 
-// ── Today's progress rings: neon ropes spinning around each other ──
+// ── Today's progress rings: neon tubes spinning around each other ──
 function RingsWidget({ rings }) {
-  // 3D rings: drag or flick to tumble them toward / away from you (up-down) or turn them (sideways). They coast,
-  // then settle back. Opening Today makes them fly in from deep in the screen with one forward flip.
+  // Drawn on a canvas as real 3D tubes: every frame each ring's centre line is rotated in 3D, projected with
+  // perspective, cut into short pieces and painted back-to-front, so crossings always overlap correctly (no flat
+  // layers for the phone to mis-sort, which is what made the old version flicker). A tube seen from any angle is a
+  // band of even width, so each piece is a thick line shaded dark edge → colour → highlight on top.
+  // Drag or flick to tumble them (up-down) or turn them (sideways); they coast, then settle back.
+  // Opening Today makes them fly in from deep in the screen with one forward flip.
   const list = (rings || []).filter(r => r && r.display !== 'none');
-  const puck = useRef(null), floor = useRef(null), [drawn, setDrawn] = useState(false);
-  const st = useRef({ ax: 0, ay: 0, z: 0, vx: 0, vy: 0, drag: null, raf: 0 });
-  const id = useRef('rg' + uid()).current, TILT = 16;
+  const cv = useRef(null), floor = useRef(null), live = useRef(list);
+  live.current = list;
+  const st = useRef({ ax: 0, ay: 0, z: 0, vx: 0, vy: 0, drag: null, raf: 0, loop: 0, shown: [], last: 0 });
+  const TILT = 16, SIZE = 176, PAD = 40, W = SIZE + PAD * 2;
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const paint = () => { const s = st.current, el = puck.current; if (!el) return;
-    el.style.transform = `translateZ(${s.z}px) rotateX(${TILT + s.ax}deg) rotateY(${s.ay}deg)`;
+  const draw = now => { const c = cv.current; if (!c) return;
+    const g = c.getContext('2d'), dpr = c.width / W, s = st.current, L = live.current;
+    const f = s.last ? Math.min(4, (now - s.last) / 16.67) : 1; s.last = now;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, W);
+    const GEO = { 1: [[78, 30]], 2: [[82, 26], [52, 26]], 3: [[86, 20], [62, 20], [38, 20]] }[L.length] || [];
+    const SPIN = [[[1, .35, 0], 11], [[-.3, 1, .15], 8.5], [[.7, .7, .2], 14]];
+    const K = SIZE / 200, P = 700, mid = W / 2, look = document.documentElement.getAttribute('data-look') || 'neon', pale = window.__PAGE === 'light';
+    const rx = (TILT + s.ax) * Math.PI / 180, ry = s.ay * Math.PI / 180, cX = Math.cos(rx), sX = Math.sin(rx), cY = Math.cos(ry), sY = Math.sin(ry);
+    const items = [], glows = [];
+    L.forEach((r, i) => {
+      const [rr, sw] = GEO[i] || [r.r, r.sw], R = rr * K, T = sw * K, target = r.c ? 1 - r.off / r.c : 0;
+      const sh = s.shown; sh[i] = sh[i] == null ? 0 : sh[i] + (target - sh[i]) * (1 - Math.pow(0.93, f));   // lit part grows in smoothly
+      const frac = sh[i], [ax0, dur] = SPIN[i % 3], al = Math.hypot(...ax0), ax = ax0.map(v => v / al);
+      const ang = reduce ? 0 : (now / 1000 / dur) * 2 * Math.PI * (i % 2 ? -1 : 1), ca = Math.cos(ang), sa = Math.sin(ang);
+      const N = 120, pts = [];
+      for (let j = 0; j <= N; j++) {
+        const phi = j / N * 2 * Math.PI, v = [R * Math.sin(phi), -R * Math.cos(phi), 0];
+        // spin about the ring's own axis (Rodrigues), then the view turn (rotateY, rotateX), push back, perspective
+        const kv = ax[0] * v[0] + ax[1] * v[1] + ax[2] * v[2], cr = [ax[1] * v[2] - ax[2] * v[1], ax[2] * v[0] - ax[0] * v[2], ax[0] * v[1] - ax[1] * v[0]];
+        const p = v.map((x, q) => x * ca + cr[q] * sa + ax[q] * kv * (1 - ca));
+        const x1 = p[0] * cY + p[2] * sY, z1 = -p[0] * sY + p[2] * cY, y2 = p[1] * cX - z1 * sX, z2 = p[1] * sX + z1 * cX + s.z;
+        const k = P / (P - z2); pts.push([mid + x1 * k, mid + y2 * k, z2, k]);
+      }
+      // colour ramps (index 0 = far side, 16 = near side), made once per ring per frame
+      const ramp = fn => Array.from({ length: 17 }, (_, q) => fn(q / 8 - 1));
+      const litC = { edge: ramp(d => shade(r.tone, -0.55 + d * 0.1)), body: ramp(d => d < 0 ? shade(r.tone, d * 0.35) : shade(r.tone, d * 0.18)), hi: ramp(d => shade(r.tone, 0.6 + d * 0.15)) };
+      const offC = pale ? { edge: ramp(d => shade(r.tone, 0.5 + d * 0.08)), body: ramp(d => shade(r.tone, 0.74 + d * 0.1)), hi: ramp(() => '#ffffff') }
+        : { edge: ramp(d => shade(r.tone, -0.85 + d * 0.05)), body: ramp(d => shade(r.tone, -0.68 + d * 0.1)), hi: ramp(d => shade(r.tone, -0.35 + d * 0.1)) };
+      const cut = frac * N, glow = [];
+      for (let j = 0; j < N; j++) {
+        const a = pts[j], b = pts[j + 1], lit = j + 0.5 < cut, z = (a[2] + b[2]) / 2, d = Math.max(-1, Math.min(1, (z - s.z) / R));
+        items.push({ z, a, b, w: T * (a[3] + b[3]) / 2, col: lit ? litC : offC, q: Math.round((d + 1) * 8) });
+        if (lit) glow.push(a, b);
+      }
+      if (cut > 0.5) { glows.push({ tone: r.tone, pts: glow, w: T });
+        const e = pts[Math.min(N, Math.round(cut))]; items.push({ z: e[2] + 0.01, dot: e, w: T * e[3] }); }
+    });
+    // soft glow behind everything (neon full, glass faint, matte none)
+    if (look !== 'matte') glows.forEach(G => { g.save(); g.shadowColor = G.tone; g.shadowBlur = 16 * dpr; g.globalAlpha = look === 'glass' ? 0.3 : 0.75;
+      g.strokeStyle = G.tone; g.lineWidth = G.w; g.lineCap = 'round'; g.beginPath(); G.pts.forEach((p, q) => q ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.restore(); });
+    items.sort((m, n) => m.z - n.z);
+    g.lineCap = 'butt';
+    const LX = -0.45, LY = -0.89;   // light comes from above, a little to the left
+    for (const it of items) {
+      if (it.dot) { g.save(); g.fillStyle = '#ffffff'; if (look !== 'matte') { g.shadowColor = '#ffffff'; g.shadowBlur = 10 * dpr; }
+        g.beginPath(); g.arc(it.dot[0], it.dot[1], it.w * 0.28, 0, 2 * Math.PI); g.fill(); g.restore(); continue; }
+      // one stroke per piece, shaded across its width like a lit cylinder: dark rim → colour → highlight on the lit side.
+      // Neighbouring pieces get (almost) the same shading, so the small overlap between them never shows as a seam.
+      const { a, b, w, col, q } = it, dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l;
+      const nx = -uy, ny = ux, lit = nx * LX + ny * LY, mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, h = w / 2;
+      const gr = g.createLinearGradient(mx - nx * h, my - ny * h, mx + nx * h, my + ny * h), hp = 0.5 + 0.28 * lit;   // highlight slides toward the light
+      gr.addColorStop(0, col.edge[q]); gr.addColorStop(Math.max(0.05, hp - 0.3), col.body[q]); gr.addColorStop(hp, col.hi[q]);
+      gr.addColorStop(Math.min(0.95, hp + 0.3), col.body[q]); gr.addColorStop(1, col.edge[q]);
+      g.strokeStyle = gr; g.lineWidth = w; g.beginPath(); g.moveTo(a[0] - ux * 0.7, a[1] - uy * 0.7); g.lineTo(b[0] + ux * 0.7, b[1] + uy * 0.7); g.stroke();
+    }
+  };
+  const paint = () => { const s = st.current;
     const k = Math.abs(Math.cos((TILT + s.ax) * Math.PI / 180) * Math.cos(s.ay * Math.PI / 180));
-    if (floor.current) { floor.current.style.transform = `scale(${0.45 + 0.55 * k}, ${0.6 + 0.4 * k})`; floor.current.style.opacity = String(0.35 + 0.65 * k * Math.max(0, 1 + s.z / 400)); } };
+    if (floor.current) { floor.current.style.transform = `scale(${0.45 + 0.55 * k}, ${0.6 + 0.4 * k})`; floor.current.style.opacity = String(0.35 + 0.65 * k * Math.max(0, 1 + s.z / 400)); }
+    if (reduce) draw(performance.now()); };
   const run = () => { const s = st.current; cancelAnimationFrame(s.raf);
     let last = performance.now(), dirX = Math.sign(s.vx), dirY = Math.sign(s.vy), tx = null, ty = null;
     const step = () => {
@@ -594,11 +655,17 @@ function RingsWidget({ rings }) {
       s.ax = -360 * (1 - k); s.z = -360 * (1 - k); paint(); if (k < 1) s.raf = requestAnimationFrame(step); else { s.ax = s.z = 0; paint(); } };
     step(); };
   useEffect(() => {
-    const t = setTimeout(() => setDrawn(true), 60); paint(); flyIn();
+    const c = cv.current, s = st.current, dpr = Math.min(3, window.devicePixelRatio || 1);
+    if (c) { c.width = Math.round(W * dpr); c.height = Math.round(W * dpr); }
+    // draw every frame while Today is on screen; skip while hidden (another tab, app in background) to save battery
+    const tick = t => { if (c && c.offsetParent && !document.hidden) draw(t); else s.last = 0; s.loop = requestAnimationFrame(tick); };
+    if (reduce) draw(performance.now()); else s.loop = requestAnimationFrame(tick);
+    paint(); flyIn();
     const onHash = () => { if ((location.hash || '#s02') === '#s02') flyIn(); };
     window.addEventListener('hashchange', onHash);
-    return () => { clearTimeout(t); cancelAnimationFrame(st.current.raf); window.removeEventListener('hashchange', onHash); };
+    return () => { cancelAnimationFrame(s.raf); cancelAnimationFrame(s.loop); window.removeEventListener('hashchange', onHash); };
   }, []);
+  useEffect(() => { if (reduce) { st.current.shown = live.current.map(r => r.c ? 1 - r.off / r.c : 0); draw(performance.now()); } });
   const down = e => { if (reduce) return; const s = st.current; cancelAnimationFrame(s.raf); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
     s.drag = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0 }; s.vx = s.vy = 0; };
   const move = e => { const s = st.current, d = s.drag; if (!d) return;
@@ -610,59 +677,12 @@ function RingsWidget({ rings }) {
     if (d.moved < 6) { s.vx = -17; s.vy = 0; }                  // a tap = one flip toward you
     const cap = v => Math.max(-45, Math.min(45, v)); s.vx = cap(s.vx); s.vy = cap(s.vy);
     if (Math.abs(s.vx) + Math.abs(s.vy) > 3) vib(10); run(); };
-  const ease = 'stroke-dashoffset 1.1s cubic-bezier(.2,.9,.25,1)';
-  const fracOf = r => r.c ? 1 - r.off / r.c : 0;
-  // Neon ropes: thicker rings on their own radii, each spinning on its own tilted axis (opposite directions, different
-  // speeds) so they swing through each other like a gyroscope. The lit part = your progress, with light strands running along it.
-  const GEO = { 1: [[78, 30]], 2: [[82, 26], [52, 26]], 3: [[86, 20], [62, 20], [38, 20]] }[list.length] || [];
-  const SPIN = [['ropeA', 11], ['ropeB', 8.5], ['ropeC', 14]];
-  const tube = (r0, i) => { const [rr, sw] = GEO[i] || [r0.r, r0.sw], frac = fracOf(r0), c = 2 * Math.PI * rr, r = { ...r0, r: rr, sw, c, off: c * (1 - frac) };
-    const off = drawn ? r.off : r.c, lit = frac > 0, light = shade(r.tone, 0.7), hi = -r.sw * 0.2;
-    const arc = (stroke, w, extra = {}) => <circle cx="100" cy="100" r={r.r} fill="none" stroke={stroke} strokeWidth={w} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} style={{ transition: ease }} {...extra} />;
-    const ring = (stroke, w, extra = {}) => <circle cx="100" cy="100" r={r.r} fill="none" stroke={stroke} strokeWidth={w} {...extra} />;
-    const [anim, dur] = SPIN[i % 3];
-    // Real 3D thickness: the tube is built from thin slices stacked through its depth, like slicing a doughnut.
-    // Each slice's width follows a circle (widest in the middle, narrow at front and back), so turned edge-on the
-    // ring shows a round cross-section. Front slices are lighter and back ones darker, which reads as a lit tube.
-    const PX = 176 / 200, t = r.sw / 2, N = 11;
-    const slices = Array.from({ length: N }, (_, k) => { const a = (k + 0.5) * Math.PI / N;
-      return { z: -t * Math.cos(a) * PX, w: 2 * t * Math.sin(a) + 0.8, lite: -Math.cos(a) }; });   // back → front
-    const svg = (z, kids, key) => <svg key={key} viewBox="0 0 200 200" width="176" height="176" style={{ position: 'absolute', inset: 0, overflow: 'visible', transform: `translateZ(${z.toFixed(2)}px)` }}>{kids}</svg>;
-    const front = slices[N - 1];
-    // the empty part of the ring: a solid, muted tube (see-through slices would show as stripes when tilted)
-    const pale = window.__PAGE === 'light', track = lite => pale ? shade(r.tone, 0.72 + lite * 0.12) : shade(r.tone, -0.72 + lite * 0.1);
-    return <div key={i} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', animation: reduce ? 'none' : `${anim} ${dur}s linear infinite${i % 2 ? ' reverse' : ''}` }}>
-      {slices.map((sl, k) => { const tone = sl.lite < 0 ? shade(r.tone, sl.lite * 0.6) : shade(r.tone, sl.lite * 0.35);
-        return svg(sl.z, <>
-          {ring(track(sl.lite), sl.w)}
-          {k === (N - 1) / 2 ? <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>{arc(r.tone, r.sw + 14, { filter: `url(#${id}glow)`, opacity: 0.8, className: "rglow" })}</g> : null}
-          <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>{arc(tone, sl.w, { strokeLinecap: "butt" })}</g>
-        </>, k); })}
-      {svg(front.z + 0.3, <>
-        <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>
-          <g mask={`url(#${id}m${i})`}>
-            <circle cx="100" cy="100" r={r.r} fill="none" stroke={light} strokeWidth={r.sw * 0.5} strokeDasharray="3 9" opacity=".5" style={{ animation: reduce ? 'none' : `ropeFlow ${1.6 + i * 0.4}s linear infinite` }} />
-          </g>
-        </g>
-        <g transform={`translate(0 ${hi})`} opacity={lit ? 1 : 0}><g transform="rotate(-90 100 100)">
-          {arc(light, r.sw * 0.2, { opacity: 0.75 })}
-          {arc('#ffffff', Math.max(1, r.sw * 0.07), { opacity: 0.9, transform: `translate(0 ${hi * 0.4})` })}
-        </g></g>
-        {drawn && frac > 0.02 ? <circle cx={100 + r.r * Math.sin(frac * 2 * Math.PI)} cy={100 - r.r * Math.cos(frac * 2 * Math.PI) + hi * 0.5} r={r.sw * 0.3} fill="#ffffff" opacity=".9" filter={`url(#${id}glow)`} style={{ transition: 'opacity .8s .9s' }} /> : null}
-        <defs><mask id={`${id}m${i}`} maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">{arc('#fff', front.w + 2, {})}</mask></defs>
-      </>, 'top')}
-    </div>; };
   return <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
-    style={{ width: 176, height: 176, flex: 'none', position: 'relative', perspective: 700, touchAction: 'none', cursor: 'grab' }}>
-    <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true"><defs>
-      <filter id={id + 'glow'} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6" /></filter>
-      <filter id={id + 'soft'} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5" /></filter>
-    </defs></svg>
+    style={{ width: SIZE, height: SIZE, flex: 'none', position: 'relative', touchAction: 'none', cursor: 'grab' }}>
     <div ref={floor} style={{ position: 'absolute', left: 18, right: 18, bottom: -16, height: 22, borderRadius: '50%', background: `radial-gradient(closest-side, ${(list[0] && list[0].tone) || '#000'}66, transparent)`, filter: 'blur(5px)', pointerEvents: 'none' }} />
-    <div style={{ position: 'absolute', inset: 0, animation: reduce ? 'none' : 'ringFloat 5s ease-in-out infinite', transformStyle: 'preserve-3d' }}>
-      <div ref={puck} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', willChange: 'transform' }}>
-        {list.map(tube)}
-      </div>
+    <div style={{ position: 'absolute', inset: 0, animation: reduce ? 'none' : 'ringFloat 5s ease-in-out infinite' }}>
+      <canvas ref={cv} aria-label={list.map(r => Math.round((r.c ? 1 - r.off / r.c : 0) * 100) + '%').join(', ')} role="img"
+        style={{ position: 'absolute', left: -PAD, top: -PAD, width: W, height: W, pointerEvents: 'none' }} />
     </div>
   </div>;
 }
