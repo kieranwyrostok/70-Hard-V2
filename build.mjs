@@ -56,7 +56,9 @@ if (LABEL) {
 const DEFAULT_THEME = CTX === 'branch-deploy' || process.env.THEME === 'light' ? 'light' : 'dark';
 page = page.replace('__DEFAULT_THEME__', DEFAULT_THEME);
 fs.writeFileSync(path.join(OUT, 'index.html'), page.replace('__PAGE_THEME__', 'dark'));
-fs.writeFileSync(path.join(OUT, 'light.html'), toLight(page.replace('__PAGE_THEME__', 'light')).replaceAll('from="screens.js"', 'from="screens-light.js"'));
+// iOS draws the clock/battery in white over the top of the app, so the light page keeps a dark strip behind them.
+const STATUS_STRIP = '@media (display-mode: standalone){body::before{content:"";position:fixed;z-index:98;top:0;left:0;right:0;height:env(safe-area-inset-top, 0px);background:#1b2130;pointer-events:none}}\n</style>';
+fs.writeFileSync(path.join(OUT, 'light.html'), toLight(page.replace('__PAGE_THEME__', 'light')).replace('</style>', STATUS_STRIP).replaceAll('from="screens.js"', 'from="screens-light.js"'));
 fs.writeFileSync(path.join(OUT, 'screens-light.js'), toLight(fs.readFileSync(path.join(OUT, 'screens.js'), 'utf8')));
 
 // 3. Service worker: caches every file for offline use; the cache name changes whenever any file changes
