@@ -87,7 +87,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div sc-camel-on-click="{{ obStart }}" style="background:#eef0f4;color:#15181d;text-align:center;padding:17px;cursor:pointer;font:700 16px/1 'Saira Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase">Get started</div>
 </div>
 <label style="display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:8px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;text-decoration:none">HAVE A BACKUP? <span style="color:#6390ff;margin-left:6px">RESTORE ›</span><input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
-<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#6b7382;text-align:center;margin-top:4px">SETUP TAKES ~2 MIN · SAVED ON THIS PHONE · EVERYTHING BUT THE RULES STAYS EDITABLE<br>APP VERSION 2026-09-26 20:10</div>
+<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#6b7382;text-align:center;margin-top:4px">SETUP TAKES ~2 MIN · SAVED ON THIS PHONE · EVERYTHING BUT THE RULES STAYS EDITABLE<br>APP VERSION __APP_VERSION__</div>
 </div>
 <div style="display:{{ ob1 }};flex-direction:column;padding:18px 22px 24px">
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Who's running it?</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Used for calorie and water estimates. Change any of it later in settings.</div>
@@ -568,7 +568,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <label style="display:block;border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4;cursor:pointer">RESTORE FROM BACKUP<input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
 <a href="#s01" style="display:block;border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;text-decoration:none">VIEW CHALLENGE RULES</a>
 <div sc-camel-on-click="{{ restart }}" style="border:1px solid #6e3638;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#f06a50;cursor:pointer">RESTART CHALLENGE</div>
-<div style="padding:6px 0 0;text-align:center;font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382">APP VERSION 2026-09-26 20:10</div>
+<div style="padding:6px 0 0;text-align:center;font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382">APP VERSION __APP_VERSION__</div>
 </div>
 <div style="height:24px"></div>
 </div>

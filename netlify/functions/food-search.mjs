@@ -7,12 +7,17 @@ const TYPES = ['Foundation', 'SR Legacy', 'Survey (FNDDS)', 'Branded'];
 export default async (req) => {
   const q = (new URL(req.url).searchParams.get('q') || '').trim().slice(0, 80);
   if (q.length < 2) return Response.json({ foods: [] });
-  const key = process.env.USDA_API_KEY || 'DEMO_KEY';
+  const key = String(process.env.USDA_API_KEY || '').trim() || 'DEMO_KEY';
+  const usingDemo = key === 'DEMO_KEY';
   const url = `${USDA}?query=${encodeURIComponent(q)}&pageSize=30&dataType=${TYPES.map(encodeURIComponent).join(',')}&api_key=${encodeURIComponent(key)}`;
   try {
     const r = await fetch(url, { headers: { accept: 'application/json' } });
     if (!r.ok) {
-      const hint = r.status === 429 || r.status === 403 ? 'USDA rate limit — add your own USDA_API_KEY in Netlify' : 'USDA error ' + r.status;
+      let code = ''; try { const e = await r.json(); code = (e.error && e.error.code) || ''; } catch (e) { /* not json */ }
+      const hint = code === 'API_KEY_INVALID' || code === 'API_KEY_MISSING' ? 'USDA says the USDA_API_KEY in Netlify is invalid — re-paste it (no spaces)'
+        : code === 'API_KEY_DISABLED' || code === 'API_KEY_UNAUTHORIZED' ? 'USDA key is disabled — get a new one at api.data.gov/signup'
+        : code === 'OVER_RATE_LIMIT' || r.status === 429 ? (usingDemo ? 'USDA demo key limit reached — no USDA_API_KEY set for this deploy' : 'USDA key hourly limit reached — try again later')
+        : 'USDA error ' + r.status + (code ? ' (' + code + ')' : '');
       return Response.json({ foods: [], error: hint }, { status: 502 });
     }
     const j = await r.json();
