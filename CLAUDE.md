@@ -54,6 +54,8 @@ ui → library → train → fuel → coach and compiled into one IIFE, so later
 food-search (Health Canada CNF via netlify/lib/cnf.mjs + Open Food Facts products sold in Canada + USDA, merged
 Canadian-first), food-barcode (Open Food Facts, then USDA), coach + food-photo (Anthropic Messages API with tools;
 model via ANTHROPIC_MODEL, default claude-haiku-4-5-20251001), push-* (web-push + Netlify Blobs, cron every 5 min).
+tips (daily AI suggestions: coach.jsx `tipsMaybe` sends a ~1.8 KB 7-day summary once per day, forced `give_tips` tool,
+max 500 tokens out; state `aiTips`, toggle `aiTipsOn`; card on Today, setting in Habits & reminders).
 Env vars live in Netlify only: ANTHROPIC_API_KEY, USDA_API_KEY, COACH_CODE, ANTHROPIC_MODEL.
 
 ## Rules

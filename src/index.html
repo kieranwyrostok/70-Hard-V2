@@ -264,6 +264,15 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="margin-top:14px;transform:rotate(-.6deg);background:repeating-linear-gradient(45deg,#f4b544,#f4b544 7px,#d99b2e 7px,#d99b2e 14px);color:#231800;font:600 12px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;padding:9px 12px;text-align:center">{{ orders }}</div>
 </div>
+<div style="display:{{ tipsShow }};padding:16px 22px 0">
+<div style="background:#1e232a;border:1px solid #2b3039;border-left:3px solid #a3c46e;padding:12px 14px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#a3c46e">COACH · TODAY'S SUGGESTIONS</span><span sc-camel-on-click="{{ dismissTips }}" style="font:600 14px/1 'IBM Plex Mono',monospace;color:#6b7382;padding:6px 2px 6px 14px;cursor:pointer">✕</span></div>
+<sc-for list="{{ tipsList }}" as="t" hint-placeholder-count="3">
+<div style="margin-top:10px"><div style="font:600 15px/1.25 Barlow,system-ui,sans-serif;color:#eef0f4">{{ t.title }}</div><div style="font:400 13px/1.4 Barlow,system-ui,sans-serif;color:#9ca3b0;margin-top:2px">{{ t.detail }}</div></div>
+</sc-for>
+<a href="#s12" style="display:inline-block;margin-top:10px;padding:4px 0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff;text-decoration:none">ASK COACH ›</a>
+</div>
+</div>
 <div style="padding:18px 22px 8px;display:flex;align-items:center;justify-content:space-between">
 <span style="font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Today's orders</span>
 <span style="font:500 12px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ doneCount }}/{{ ruleCount }} CLEARED</span>
@@ -591,6 +600,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div sc-camel-on-click="{{ t.pick }}" style="flex:1;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.fg }};padding:14px 4px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;cursor:pointer">{{ t.label }}</div>
 </sc-for>
 </div>
+<div style="padding:22px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">AI suggestions</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:right">ONCE A DAY ON TODAY</span></div>
+<div style="padding:0 22px;display:flex;gap:7px">
+<sc-for list="{{ aiOpts }}" as="t" hint-placeholder-count="2">
+<div sc-camel-on-click="{{ t.pick }}" style="flex:1;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.fg }};padding:14px 4px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;cursor:pointer">{{ t.label }}</div>
+</sc-for>
+</div>
+<div style="padding:7px 22px 0;font:500 10px/1.5 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6b7382">{{ aiNote }}</div>
 <div style="padding:22px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Your data</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:right">SAVED ON THIS PHONE<br>BACK IT UP NOW AND THEN</span></div>
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
 <div sc-camel-on-click="{{ exportData }}" style="border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4;cursor:pointer">EXPORT BACKUP (.JSON)</div>
@@ -1785,6 +1801,16 @@ class Component extends DCLogic {
       photo1Bg: photoBg(PU.d1), photoNowBg: photoBg(PU['d' + dayNum]),
       addPhoto: ev => this.addPhoto(ev),
       exportData: () => this.exportData(), importData: ev => this.importData(ev), restart: () => this.restart(),
+      tipsShow: (() => { const t = this.state.aiTips; return this.state.aiTipsOn !== false && t && t.date === this.state.curDate && !t.dismissed && ((t.items && t.items.length) || t.needsCode) ? 'block' : 'none'; })(),
+      tipsList: (() => { const t = this.state.aiTips || {}; return t.needsCode ? [{ title: 'Coach passcode needed', detail: 'Open the Coach tab and send one message so the app remembers your passcode.' }] : (t.items || []); })(),
+      dismissTips: () => this.setState(s => ({ aiTips: { ...(s.aiTips || {}), dismissed: true } })),
+      aiOpts: [['on', 'ON'], ['off', 'OFF']].map(([k, label]) => { const cur = this.state.aiTipsOn === false ? 'off' : 'on';
+        return { label, pick: () => { this.setState({ aiTipsOn: k === 'on' }); if (k === 'on' && window.SHTips) setTimeout(() => window.SHTips.maybe(this), 300); },
+          bg: cur === k ? '#6390ff' : 'transparent', fg: cur === k ? '#081631' : '#9ca3b0', border: cur === k ? '#6390ff' : '#3d4450' }; }),
+      aiNote: (() => { if (this.state.aiTipsOn === false) return 'OFF · NO AI CALLS ARE MADE FOR SUGGESTIONS';
+        const t = this.state.aiTips, tk = t && t.tokens;
+        return tk ? 'LAST CHECK USED ' + (tk.in + tk.out).toLocaleString() + ' TOKENS ≈ $' + (tk.in / 1e6 + tk.out * 5 / 1e6).toFixed(4) + ' · ABOUT $' + ((tk.in / 1e6 + tk.out * 5 / 1e6) * 30).toFixed(2) + ' A MONTH'
+          : 'ONE SMALL AI CALL A DAY, ABOUT 2,000 TOKENS (≈ $0.10 A MONTH)'; })(),
       themeOpts: (() => { const cur = window.__themePref ? window.__themePref() : 'dark';
         return [['dark', 'DARK'], ['light', 'LIGHT'], ['system', 'MATCH PHONE']].map(([k, label]) => ({ label, pick: () => { if (window.__setTheme) window.__setTheme(k); this.setState({}); },
           bg: cur === k ? '#6390ff' : 'transparent', fg: cur === k ? '#081631' : '#9ca3b0', border: cur === k ? '#6390ff' : '#3d4450' })); })(),

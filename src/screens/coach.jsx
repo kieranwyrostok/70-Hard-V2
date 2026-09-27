@@ -205,3 +205,68 @@ function CoachScreen({ app, st }) {
   </div>;
 }
 window.CoachScreen = CoachScreen;
+
+// ── Daily AI suggestions ──
+// Once a day (first time the app is opened with a connection) a small summary of the last 7 days goes to
+// /api/tips and up to 3 suggestions come back; they show on the Today screen. Turned off in Habits & reminders.
+function tipsContext(app, st) {
+  const today = st.curDate, days = [];
+  for (let i = 7; i >= 1; i--) {
+    const d = addDaysIso(today, -i), diary = (st.diary || {})[d], h = Object.values(st.history || {}).find(x => x.date === d);
+    const ws = (st.workouts || []).filter(w => w.date === d);
+    if (!diary && !h && !ws.length) continue;
+    const t = diary ? sumN(diary.meals) : null;
+    days.push({ date: d, kcal: t ? Math.round(t.kcal) : h && h.kcal != null ? Math.round(h.kcal) : null, protein_g: t ? Math.round(t.p) : h && h.p != null ? Math.round(h.p) : null,
+      carbs_g: t ? Math.round(t.c) : undefined, fat_g: t ? Math.round(t.f) : undefined, items_logged: diary ? diary.meals.length : h ? h.meals : 0,
+      water_l: r1(((diary ? diary.waterMl : h && h.waterMl) || 0) / 1000),
+      missed_rules: h ? (h.rules || []).filter(k => !(h.done || {})[k]).map(k => { const r = (st.ruleDefs || []).find(x => x.k === k); return r ? ((app.hLabel ? app.hLabel(r).name : r.name) || r.name) : k; }) : undefined,
+      workouts: ws.map(w => w.name + ' (' + doneSets(w) + ' sets)') });
+  }
+  const weight = (st.meas || []).find(m => m.k === 'weight'), wlog = ((st.measLog || {}).weight) || {}, wDays = Object.keys(wlog).map(Number).sort((a, b) => a - b);
+  // strongest lifts: best estimated 1RM in the last 4 weeks vs the 4 weeks before
+  const cut = Date.now() - 28 * 864e5, cut2 = cut - 28 * 864e5, lifts = {};
+  for (const w of st.workouts || []) for (const e of w.exercises) if (e.type === 'wr') for (const s of e.sets) {
+    const v = est1rm(s); if (!v) continue;
+    const L = lifts[e.name] || (lifts[e.name] = { recent: 0, before: 0, n: 0 });
+    if (w.start >= cut) { L.recent = Math.max(L.recent, v); L.n++; } else if (w.start >= cut2) L.before = Math.max(L.before, v);
+  }
+  const top = Object.entries(lifts).filter(([, L]) => L.recent).sort((a, b) => b[1].n - a[1].n).slice(0, 4)
+    .map(([name, L]) => ({ exercise: name, best_e1rm_kg_last_4wk: r1(L.recent), best_e1rm_kg_prior_4wk: L.before ? r1(L.before) : null }));
+  return {
+    day_of_challenge: app.dayNum ? app.dayNum() : undefined, today: niceDate(today),
+    profile: st.setup ? { sex: st.setup.sex, age: st.setup.age, height_cm: st.setup.height, goal: st.setup.goal } : undefined,
+    targets: { kcal: st.targets.kcal, protein_g: st.targets.p, carbs_g: st.targets.c, fat_g: st.targets.f, water_l: r1((st.waterGoal || 0) / 1000) },
+    rules: (st.ruleDefs || []).filter(r => r.on).map(r => (app.hLabel ? app.hLabel(r).name : r.name) || r.name),
+    last_days: days,
+    weight_kg: weight ? { start: weight.start, latest: wDays.length ? wlog[wDays[wDays.length - 1]] : weight.cur } : undefined,
+    workouts_last_14_days: (st.workouts || []).filter(w => w.start >= Date.now() - 14 * 864e5).length,
+    lifts: top.length ? top : undefined
+  };
+}
+let tipsBusy = false;
+async function tipsMaybe(app, force) {
+  const st = app && app.state;
+  if (!st || tipsBusy || st.aiTipsOn === false || !(st.setup && st.setup.done)) return;
+  if (!force && st.aiTips && st.aiTips.date === st.curDate) return;          // already done today
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  let last = 0; try { last = +localStorage.getItem('sh.tipsTry') || 0; } catch (e) { /* ignore */ }
+  if (!force && Date.now() - last < 3 * 3600e3) return;                      // failed/empty recently: wait 3 h
+  const ctx = tipsContext(app, st);
+  if (!force && !ctx.last_days.length && !(st.workouts || []).length) return; // nothing to go on yet
+  tipsBusy = true;
+  try { localStorage.setItem('sh.tipsTry', String(Date.now())); } catch (e) { /* ignore */ }
+  try {
+    let code = null; try { code = localStorage.getItem('coachCode'); } catch (e) { /* ignore */ }
+    const r = await fetch('/api/tips', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ctx, code }) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) app.setState({ aiTips: { date: app.state.curDate, items: j.items || [], at: Date.now(), tokens: j.tokens, dismissed: false } });
+    else if (j.error === 'code') app.setState({ aiTips: { date: app.state.curDate, items: [], at: Date.now(), needsCode: true } });
+  } catch (e) { /* offline or server down: try again later */ }
+  tipsBusy = false;
+}
+window.SHTips = { maybe: tipsMaybe };
+if (!window.__tipsHooked) {
+  window.__tipsHooked = true;
+  setTimeout(() => window.__app && tipsMaybe(window.__app), 4000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(() => window.__app && tipsMaybe(window.__app), 2500); });
+}
