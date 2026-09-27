@@ -177,7 +177,13 @@ function FuelScreen({ app, st }) {
 
     {adding ? <AddFood app={app} st={st} slot={adding} setSlot={setAdding} dateLabel={dayLabel} onClose={() => setAdding(null)} addEntries={addEntries} flash={flash} /> : null}
     {editEntryObj ? <FoodDetail st={st} app={app} nf={normFood(editEntryObj)} entry={editEntryObj} slot={slotKey(editEntryObj)} onClose={() => setEditing(null)}
-      onSave={(amount, unit, slot) => { editEntry(editEntryObj.id, m => { const nf = normFood(m), v = calcAmount(nf, amount, unit); return { ...m, food: nf, amount: Number(amount) || 0, unit, slot, g: v.g, kcal: v.kcal, p: v.p, c: v.c, f: v.f, per100: nf.per100, serv: undefined }; }); setEditing(null); }}
+      onSave={(amount, unit, slot, macros) => { editEntry(editEntryObj.id, m => {
+        if (unit === 'quick') return { ...m, slot, ...(macros || {}) };
+        let nf = normFood(m); const v = calcAmount(nf, amount, unit);
+        if (macros) nf = withMacros(nf, Number(amount) || 0, unit, v.g, macros);
+        const out = macros ? { ...macros, g: v.g } : { g: v.g, kcal: v.kcal, p: v.p, c: v.c, f: v.f };
+        return { ...m, food: nf, amount: Number(amount) || 0, unit, slot, ...out, per100: nf.per100, serv: undefined, edited: macros ? true : m.edited };
+      }); setEditing(null); }}
       onDelete={() => { delEntry(editEntryObj.id); setEditing(null); }} /> : null}
     {menu ? <ActionSheet title={menu.title} actions={menu.actions} onClose={() => setMenu(null)} /> : null}
     {mealEdit ? <MealSlotsEditor app={app} st={st} onClose={() => setMealEdit(false)} /> : null}
@@ -310,13 +316,26 @@ function AddFood({ app, st, slot, setSlot, dateLabel, onClose, addEntries, flash
   </Sheet>;
 }
 
+// Re-base a food on the calories/macros the user typed for this amount, so reopening the entry shows the same numbers.
+function withMacros(nf, amount, unit, g, M) {
+  const per100 = g > 0 ? { kcal: M.kcal * 100 / g, p: M.p * 100 / g, c: M.c * 100 / g, f: M.f * 100 / g } : null;
+  const perServ = unit === 'serv' && amount > 0 ? { kcal: M.kcal / amount, p: M.p / amount, c: M.c / amount, f: M.f / amount }
+    : per100 ? scaleN(per100, (nf.servG || 100) / 100) : nf.perServ;
+  return { ...nf, per100: per100 || nf.per100, perServ };
+}
 function FoodDetail({ st, app, nf, entry, slot: slot0, onClose, onSave, onDelete }) {
   const units = [['serv', nf.servLabel]].concat(nf.per100 ? [['g', 'g'], ['oz', 'oz']] : []);
   const [unit, setUnit] = useState(entry && entry.unit && units.some(u => u[0] === entry.unit) ? entry.unit : 'serv');
   const [amt, setAmt] = useState(entry && entry.unit !== 'quick' ? String(entry.amount != null ? entry.amount : 1) : '1');
   const [slot, setSlot] = useState(slot0);
   const quickEntry = entry && entry.unit === 'quick';
-  const v = quickEntry ? { kcal: entry.kcal, p: entry.p, c: entry.c, f: entry.f, g: null } : calcAmount(nf, num(amt) || 0, unit);
+  const calc = quickEntry ? { kcal: entry.kcal, p: entry.p, c: entry.c, f: entry.f, g: null } : calcAmount(nf, num(amt) || 0, unit);
+  // logged entries: calories and macros can be typed over (ov); they scale with the amount afterwards
+  const [ov, setOv] = useState(null);
+  const v = ov ? { kcal: num(ov.kcal) || 0, p: num(ov.p) || 0, c: num(ov.c) || 0, f: num(ov.f) || 0, g: calc.g } : calc;
+  const editOv = (k, val) => setOv(o => ({ ...(o || { kcal: String(Math.round(calc.kcal)), p: String(r1(calc.p)), c: String(r1(calc.c)), f: String(r1(calc.f)) }), [k]: val.replace(/[^\d.,]/g, '').replace(',', '.') }));
+  const setAmtScaled = nv => { if (ov) { const a0 = num(amt) || 0, a1 = num(nv) || 0; if (a0 > 0) { const k = a1 / a0; setOv(o => ({ kcal: String(Math.round((num(o.kcal) || 0) * k)), p: String(r1((num(o.p) || 0) * k)), c: String(r1((num(o.c) || 0) * k)), f: String(r1((num(o.f) || 0) * k)) })); } } setAmt(nv); };
+  const sum449 = Math.round(4 * v.p + 4 * v.c + 9 * v.f);
   const tg = st.targets;
   const fav = (st.favFoods || []).some(f => f.key === nf.key);
   const toggleFav = () => app.setState(s => ({ favFoods: fav ? (s.favFoods || []).filter(f => f.key !== nf.key) : [nf].concat(s.favFoods || []) }));
@@ -330,16 +349,41 @@ function FoodDetail({ st, app, nf, entry, slot: slot0, onClose, onSave, onDelete
   return <Sheet z={65} title={nf.name} sub={[nf.src, nf.brand].filter(Boolean).join(' · ').toUpperCase()} left={<TopLink tone={C.amber} onClick={onClose}>‹ BACK</TopLink>}
     right={<span role="button" onClick={toggleFav} style={{ font: `400 24px/1 ${F.body}`, color: fav ? C.red : C.dim, cursor: 'pointer', padding: '4px 6px' }}>{fav ? '♥' : '♡'}</span>}
     footer={<div style={{ display: 'flex', gap: 8 }}>{onDelete ? <Btn kind="danger" onClick={() => { if (confirm('Remove this entry?')) onDelete(); }} style={{ flex: 1 }}>DELETE</Btn> : null}
-      <Btn tone={C.amber} ink={C.amberInk} onClick={() => onSave(quickEntry ? 1 : num(amt) || 0, quickEntry ? 'quick' : unit, slot)} style={{ flex: 2 }}>{entry ? 'Save' : 'Add to ' + (SLOTS.find(s => s[0] === slot) || SLOTS[SLOTS.length - 1])[1]}</Btn></div>}>
+      <Btn tone={C.amber} ink={C.amberInk} onClick={() => onSave(quickEntry ? 1 : num(amt) || 0, quickEntry ? 'quick' : unit, slot, ov ? { kcal: Math.round(v.kcal), p: r1(v.p), c: r1(v.c), f: r1(v.f) } : null)} style={{ flex: 2 }}>{entry ? 'Save' : 'Add to ' + (SLOTS.find(s => s[0] === slot) || SLOTS[SLOTS.length - 1])[1]}</Btn></div>}>
     <div style={{ padding: '18px 18px 26px' }}>
+      {entry ? <>
+        <div style={{ textAlign: 'center' }}>
+          <input inputMode="numeric" aria-label="Calories" value={ov ? ov.kcal : String(Math.round(calc.kcal))} onChange={e => editOv('kcal', e.target.value)}
+            style={{ width: 54, zoom: 3.4, background: 'transparent', border: 'none', borderBottom: '1px dashed ' + C.line2, borderRadius: 0, color: C.amber, textAlign: 'center', font: `800 16px/1 ${F.head}`, outline: 'none', padding: 0 }} />
+          <div style={{ ...T.label, marginTop: 6 }}>KCAL · {tg.kcal ? Math.round(100 * v.kcal / tg.kcal) : 0}% OF DAILY GOAL{v.g ? ' · ' + r1(v.g) + ' G' : ''}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 7, marginTop: 16 }}>
+          {[['c', 'CARBS', tg.c, C.amber], ['p', 'PROTEIN', tg.p, C.blue], ['f', 'FAT', tg.f, C.olive]].map(([k, l, goal, tone]) => <Card key={k} style={{ padding: '10px 10px', flex: 1 }}>
+            <div style={{ ...T.label, color: tone }}>{l}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 3 }}>
+              <input inputMode="decimal" aria-label={l} value={ov ? ov[k] : String(r1(calc[k]))} onChange={e => editOv(k, e.target.value)}
+                style={{ width: '100%', minWidth: 0, background: C.bg, border: '1px solid ' + C.line2, borderRadius: 8, color: C.text, font: `700 20px/1.1 ${F.head}`, padding: '5px 6px', outline: 'none' }} />
+              <span style={{ fontSize: 12, color: C.mute }}>g</span></div>
+            <div style={{ ...T.label, marginTop: 4 }}>{goal ? Math.round(100 * v[k] / goal) : 0}% OF GOAL</div>
+          </Card>)}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 8, ...T.label }}>
+          <span style={{ color: ov ? C.amber : C.faint }}>{ov ? 'EDITED · ' : 'TAP A NUMBER TO EDIT · '}MACROS = {sum449.toLocaleString()} KCAL</span>
+          <span style={{ display: 'flex', gap: 12 }}>
+            {ov && Math.abs(sum449 - v.kcal) > 5 ? <span role="button" onClick={() => editOv('kcal', String(sum449))} style={{ color: C.amber, cursor: 'pointer' }}>USE {sum449}</span> : null}
+            {ov ? <span role="button" onClick={() => setOv(null)} style={{ color: C.blue, cursor: 'pointer' }}>RESET</span> : null}
+          </span>
+        </div>
+      </> : <>
       <div style={{ textAlign: 'center' }}><div style={{ font: `800 56px/0.9 ${F.head}`, color: C.amber }}>{Math.round(v.kcal)}</div><div style={{ ...T.label, marginTop: 6 }}>KCAL · {tg.kcal ? Math.round(100 * v.kcal / tg.kcal) : 0}% OF DAILY GOAL{v.g ? ' · ' + r1(v.g) + ' G' : ''}</div></div>
       <div style={{ display: 'flex', gap: 7, marginTop: 16 }}>{tile('CARBS', v.c, tg.c, C.amber)}{tile('PROTEIN', v.p, tg.p, C.blue)}{tile('FAT', v.f, tg.f, C.olive)}</div>
+      </>}
       {!quickEntry ? <>
         <div style={{ ...T.label, margin: '20px 0 6px' }}>AMOUNT</div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-          <Btn kind="ghost" tone={C.text} onClick={() => setAmt(String(Math.max(0, r2((num(amt) || 0) - (unit === 'serv' ? 0.5 : unit === 'g' ? 10 : 1)))))} style={{ minHeight: 48, padding: '0 16px' }}>−</Btn>
-          <input inputMode="decimal" value={amt} onChange={e => setAmt(e.target.value)} style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', background: C.card, border: '1px solid ' + C.line2, color: C.text, textAlign: 'center', font: `700 24px/1 ${F.head}`, outline: 'none' }} />
-          <Btn kind="ghost" tone={C.text} onClick={() => setAmt(String(r2((num(amt) || 0) + (unit === 'serv' ? 0.5 : unit === 'g' ? 10 : 1))))} style={{ minHeight: 48, padding: '0 16px' }}>+</Btn>
+          <Btn kind="ghost" tone={C.text} onClick={() => setAmtScaled(String(Math.max(0, r2((num(amt) || 0) - (unit === 'serv' ? 0.5 : unit === 'g' ? 10 : 1)))))} style={{ minHeight: 48, padding: '0 16px' }}>−</Btn>
+          <input inputMode="decimal" value={amt} onChange={e => setAmtScaled(e.target.value)} style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', background: C.card, border: '1px solid ' + C.line2, color: C.text, textAlign: 'center', font: `700 24px/1 ${F.head}`, outline: 'none' }} />
+          <Btn kind="ghost" tone={C.text} onClick={() => setAmtScaled(String(r2((num(amt) || 0) + (unit === 'serv' ? 0.5 : unit === 'g' ? 10 : 1))))} style={{ minHeight: 48, padding: '0 16px' }}>+</Btn>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>{units.map(([u, l]) => <Chip key={u} on={unit === u} tone={C.amber} ink={C.amberInk} onClick={() => switchUnit(u)}>{u === 'serv' ? l.toUpperCase() : l.toUpperCase()}</Chip>)}</div>
         {nf.per100 ? <div style={{ ...T.label, marginTop: 10, color: C.faint }}>PER 100 G · {Math.round(nf.per100.kcal)} KCAL · P {r1(nf.per100.p)} · C {r1(nf.per100.c)} · F {r1(nf.per100.f)}</div> : <div style={{ ...T.label, marginTop: 10, color: C.faint }}>VALUES PER SERVING</div>}
