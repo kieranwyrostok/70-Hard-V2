@@ -559,7 +559,7 @@ window.PailWidget = PailWidget;
   document.addEventListener('pointercancel', end, true);
 })();
 
-// ── Today's progress rings: a glowing 3D disc ──
+// ── Today's progress rings: floating neon tubes ──
 function RingsWidget({ rings }) {
   // 3D rings: drag or flick to tumble them toward / away from you (up-down) or turn them (sideways). They coast,
   // then settle back. Opening Today makes them fly in from deep in the screen with one forward flip.
@@ -612,35 +612,54 @@ function RingsWidget({ rings }) {
     if (Math.abs(s.vx) + Math.abs(s.vy) > 3) vib(10); run(); };
   const ease = 'stroke-dashoffset 1.1s cubic-bezier(.2,.9,.25,1)';
   const fracOf = r => r.c ? 1 - r.off / r.c : 0;
-  // one flat slice of the disc; the back slices are plain and dim, the front one glows
-  const slice = (z, front) => <svg key={z} viewBox="0 0 200 200" width="176" height="176"
-    style={{ position: 'absolute', inset: 0, overflow: 'visible', transform: `translateZ(${z}px)`, opacity: front ? 1 : 0.5 + z / 30 }}>
-    {front ? <defs>
-      <filter id={id + 'glow'} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6" /></filter>
-      {list.map((r, i) => <linearGradient key={i} id={id + 'g' + i} x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#ffffff" stopOpacity=".7" /><stop offset="20%" stopColor={r.tone} /><stop offset="100%" stopColor={r.tone} stopOpacity=".8" /></linearGradient>)}
-    </defs> : null}
-    {list.map((r, i) => <circle key={'t' + i} cx="100" cy="100" r={r.r} fill="none" stroke={r.tone} strokeOpacity={front ? '.14' : '.1'} strokeWidth={r.sw} />)}
-    <g transform="rotate(-90 100 100)">
-      {list.map((r, i) => { const off = drawn ? r.off : r.c, frac = fracOf(r), end = (frac * 360 - 90) * Math.PI / 180, ri = r.r - r.sw * 0.22, ci = 2 * Math.PI * ri;
-        if (!front) return <circle key={i} cx="100" cy="100" r={r.r} fill="none" stroke={r.tone} strokeWidth={r.sw} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} opacity={frac > 0 ? 0.55 : 0} style={{ transition: ease, filter: 'brightness(.45)' }} />;
-        return <g key={i}>
-          <circle cx="100" cy="100" r={r.r} fill="none" stroke={r.tone} strokeWidth={r.sw + 4} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} filter={`url(#${id}glow)`} opacity={frac > 0 ? 0.9 : 0} style={{ transition: ease }} />
-          <circle cx="100" cy="100" r={r.r} fill="none" stroke={`url(#${id}g${i})`} strokeWidth={r.sw} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} opacity={frac > 0 ? 1 : 0} style={{ transition: ease }} />
-          <circle cx="100" cy="100" r={ri} fill="none" stroke="#ffffff" strokeOpacity=".4" strokeWidth={Math.max(1, r.sw * 0.16)} strokeLinecap="round" strokeDasharray={ci} strokeDashoffset={drawn ? ci * (1 - frac) : ci} opacity={frac > 0 ? 1 : 0} style={{ transition: ease }} />
-          {drawn && frac > 0.02 ? <circle cx={100 + r.r * Math.cos(end + Math.PI / 2)} cy={100 + r.r * Math.sin(end + Math.PI / 2)} r={r.sw * 0.38} fill="#ffffff" opacity=".95" filter={`url(#${id}glow)`} style={{ transition: 'opacity .8s .9s' }} /> : null}
-        </g>; })}
-    </g>
-  </svg>;
+  // one floating tube per ring: its own layer (spaced apart in depth) with a gentle bob of its own.
+  // The tube look comes from stacked strokes: dark edges → colour → a bright highlight nudged up (light from above).
+  const tube = (r, i) => { const frac = fracOf(r), off = drawn ? r.off : r.c, lit = frac > 0;
+    const dark = shade(r.tone, -0.45), light = shade(r.tone, 0.65), hi = -r.sw * 0.2;
+    const arc = (stroke, w, extra = {}) => <circle cx="100" cy="100" r={r.r} fill="none" stroke={stroke} strokeWidth={w} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} style={{ transition: ease }} {...extra} />;
+    const ring = (stroke, w, extra = {}) => <circle cx="100" cy="100" r={r.r} fill="none" stroke={stroke} strokeWidth={w} {...extra} />;
+    return <div key={i} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', transform: `translateZ(${i * 14}px)` }}>
+      <div style={{ position: 'absolute', inset: 0, animation: reduce ? 'none' : `ringBob ${3.6 + i * 0.7}s ease-in-out ${-i * 1.1}s infinite` }}>
+        <svg viewBox="0 0 200 200" width="176" height="176" style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
+          {/* the empty glass tube */}
+          {ring(r.tone, r.sw, { strokeOpacity: 0.12 })}
+          {ring('#000', r.sw, { strokeOpacity: 0.25, transform: 'translate(0 2)', style: { mixBlendMode: 'multiply' }, strokeWidth: r.sw * 0.4 })}
+          {ring('#ffffff', Math.max(1, r.sw * 0.14), { strokeOpacity: 0.16, transform: `translate(0 ${hi})` })}
+          {/* shadow it casts, so it looks like it's floating */}
+          <g transform="translate(0 7)" opacity={lit ? 0.55 : 0}><g transform="rotate(-90 100 100)">{arc('#000', r.sw, { filter: `url(#${id}soft)` })}</g></g>
+          {/* the lit neon tube */}
+          <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>
+            {arc(r.tone, r.sw + 8, { filter: `url(#${id}glow)`, opacity: 0.75 })}
+            {arc(dark, r.sw)}
+            {arc(r.tone, r.sw * 0.7)}
+          </g>
+          <g transform={`translate(0 ${hi})`} opacity={lit ? 1 : 0}><g transform="rotate(-90 100 100)">
+            {arc(light, r.sw * 0.26, { opacity: 0.9 })}
+            {arc('#ffffff', Math.max(1, r.sw * 0.09), { opacity: 0.9, transform: `translate(0 ${hi * 0.4})` })}
+          </g></g>
+          {drawn && frac > 0.02 ? <circle cx={100 + r.r * Math.sin(frac * 2 * Math.PI)} cy={100 - r.r * Math.cos(frac * 2 * Math.PI) + hi * 0.5} r={r.sw * 0.3} fill="#ffffff" opacity=".9" filter={`url(#${id}glow)`} style={{ transition: 'opacity .8s .9s' }} /> : null}
+        </svg>
+      </div>
+    </div>; };
   return <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
-    style={{ width: 176, height: 176, flex: 'none', position: 'relative', perspective: 640, touchAction: 'none', cursor: 'grab' }}>
-    <div ref={floor} style={{ position: 'absolute', left: 16, right: 16, bottom: -14, height: 22, borderRadius: '50%', background: `radial-gradient(closest-side, ${(list[0] && list[0].tone) || '#000'}55, transparent)`, filter: 'blur(4px)', pointerEvents: 'none' }} />
+    style={{ width: 176, height: 176, flex: 'none', position: 'relative', perspective: 700, touchAction: 'none', cursor: 'grab' }}>
+    <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true"><defs>
+      <filter id={id + 'glow'} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6" /></filter>
+      <filter id={id + 'soft'} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5" /></filter>
+    </defs></svg>
+    <div ref={floor} style={{ position: 'absolute', left: 18, right: 18, bottom: -16, height: 22, borderRadius: '50%', background: `radial-gradient(closest-side, ${(list[0] && list[0].tone) || '#000'}66, transparent)`, filter: 'blur(5px)', pointerEvents: 'none' }} />
     <div style={{ position: 'absolute', inset: 0, animation: reduce ? 'none' : 'ringFloat 5s ease-in-out infinite', transformStyle: 'preserve-3d' }}>
       <div ref={puck} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', willChange: 'transform' }}>
-        {[-9, -6, -3].map(z => slice(z, false))}{slice(0, true)}
+        {list.map(tube)}
       </div>
     </div>
   </div>;
+}
+// lighten (amt > 0) or darken (amt < 0) a #rrggbb colour; anything else is returned as-is
+function shade(h, amt) {
+  const m = /^#([0-9a-f]{6})$/i.exec(String(h || '')); if (!m) return h;
+  const n = parseInt(m[1], 16), t = amt < 0 ? 0 : 255, k = Math.abs(amt);
+  return '#' + [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => ('0' + Math.round(v + (t - v) * k).toString(16)).slice(-2)).join('');
 }
 window.RingsWidget = RingsWidget;
 

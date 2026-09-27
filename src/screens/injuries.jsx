@@ -316,7 +316,7 @@ function InjuriesTab({ app, st }) {
       <Field value={q} onChange={setQ} placeholder="🔍  Search (e.g. knee, shoulder, strain)" />
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '10px -22px 10px', padding: '0 22px' }}>{INJ_AREAS.map(a => <Chip key={a} on={area === a} tone={C.olive} ink={C.oliveInk} onClick={() => setArea(a)}>{a.toUpperCase()}</Chip>)}</div>
       {libList.map(x => <div key={x.k} role="button" onClick={() => setGuide(x)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: '1px solid ' + C.line, cursor: 'pointer' }}>
-        <div style={{ flex: 1, minWidth: 0 }}><div style={T.name}>{x.name}</div><div style={{ ...T.label, marginTop: 3, color: x.mine ? C.blue : C.mute }}>{x.mine ? '★ YOURS · FROM YOUR MRI RESULTS' : x.area.toUpperCase() + ' · USUALLY ' + x.time[0] + '–' + x.time[1] + ' WEEKS'}</div></div>
+        <div style={{ flex: 1, minWidth: 0 }}><div style={T.name}>{x.name}</div><div style={{ ...T.label, marginTop: 3 }}>{x.area.toUpperCase() + (x.mine ? ' · LONG-TERM · FROM YOUR MRI' : ' · USUALLY ' + x.time[0] + '–' + x.time[1] + ' WEEKS')}</div></div>
         <span style={{ color: C.faint }}>›</span></div>)}
       {!libList.length ? <Empty>NOTHING MATCHES — ADD IT AS YOUR OWN BELOW</Empty> : null}
       <Btn kind="ghost" tone={C.dim} onClick={() => setAdding({ key: null, name: q || '', area: area === 'All' ? '' : area })} style={{ marginTop: 12 }}>+ SOMETHING ELSE (ADD YOUR OWN)</Btn>
