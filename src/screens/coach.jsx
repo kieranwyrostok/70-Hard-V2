@@ -270,3 +270,83 @@ if (!window.__tipsHooked) {
   setTimeout(() => window.__app && tipsMaybe(window.__app), 4000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(() => window.__app && tipsMaybe(window.__app), 2500); });
 }
+
+// ── Board → tap a day → full stats for that day ──
+// Mounted once on its own; the board's day squares call window.SHDay.open(dayNumber).
+function DayDetail({ app, st, n, onClose, onNav }) {
+  const dayNum = app.dayNum(), date = st.startDate ? addDaysIso(st.startDate, n - 1) : st.curDate;
+  const isToday = n === dayNum, ahead = n > dayNum, rec = !isToday && !ahead ? (st.history || {})[n] : null, skipped = !isToday && !ahead && !rec;
+  const TONES = { BODY: C.blue, FUEL: C.amber, MIND: C.olive };
+  const defs = st.ruleDefs || [], defOf = k => defs.find(d => d.k === k);
+  const nameOf = k => { const d = defOf(k); return d ? ((app.hLabel ? app.hLabel(d).name : d.name) || d.name || 'Rule') : k; };
+  const keys = isToday ? defs.filter(d => d.on).map(d => d.k) : rec ? (rec.rules || []) : [];
+  const done = isToday ? (st.done || {}) : rec ? (rec.done || {}) : {}, doneAt = isToday ? (st.doneAt || {}) : rec ? (rec.doneAt || {}) : {};
+  const cleared = keys.filter(k => done[k]).length;
+  const diary = isToday ? { meals: st.meals || [], waterMl: st.waterMl || 0 } : (st.diary || {})[date];
+  const meals = diary ? diary.meals : [], tot = sumN(meals), tg = st.targets || {};
+  const kcal = diary ? tot.kcal : rec ? rec.kcal || 0 : 0, prot = diary ? tot.p : rec ? rec.p || 0 : 0;
+  const water = diary ? diary.waterMl : rec ? rec.waterMl || 0 : 0, goalW = st.waterGoal || 3500;
+  const ws = (st.workouts || []).filter(w => w.date === date);
+  const photo = app.photoUrls && app.photoUrls['d' + n];
+  const wkg = (((st.measLog || {}).weight) || {})[n];
+  const note = isToday ? st.dayNote : rec ? rec.note : '';
+  const status = ahead ? ['STILL AHEAD', C.faint] : isToday ? [cleared + ' OF ' + keys.length + ' CLEARED SO FAR', C.amber] : skipped ? ['NO CHECK-IN · MISSED', C.red]
+    : cleared === keys.length ? ['ALL ' + keys.length + ' CLEARED', C.blue] : ['MISSED · ' + (keys.length - cleared) + ' OPEN', C.red];
+  const tile = (l, v, sub, tone) => <Card style={{ flex: 1, padding: '10px 11px' }}><div style={{ ...T.label, color: tone || C.mute }}>{l}</div>
+    <div style={{ font: `700 21px/1.1 ${F.head}`, marginTop: 4 }}>{v}</div>{sub ? <div style={{ ...T.label, marginTop: 3 }}>{sub}</div> : null}</Card>;
+  const section = t => <div style={{ ...T.h2, margin: '22px 0 8px' }}>{t}</div>;
+  return <Sheet z={70} title={'Day ' + n} sub={niceDate(date).toUpperCase()} left={<TopLink onClick={onClose}>‹ BOARD</TopLink>}
+    right={<div style={{ display: 'flex' }}>{[[-1, '‹', n > 1], [1, '›', n < 70]].map(([d, l, ok]) => <span key={d} role="button" onClick={() => ok && onNav(n + d)} style={{ font: `600 22px/1 ${F.mono}`, color: ok ? C.blue : C.faint, padding: '6px 12px', cursor: 'pointer' }}>{l}</span>)}</div>}>
+    <div style={{ padding: '14px 18px 30px' }}>
+      <div style={{ ...T.mono, fontSize: 12, color: status[1] }}>{status[0]}</div>
+      {ahead ? <Empty>THIS DAY HASN’T HAPPENED YET</Empty> : <>
+        <div style={{ display: 'flex', gap: 7, marginTop: 12 }}>
+          {tile('KCAL', Math.round(kcal).toLocaleString(), 'OF ' + (tg.kcal || 0).toLocaleString(), C.amber)}
+          {tile('PROTEIN', r1(prot) + ' g', 'OF ' + (tg.p || 0) + ' G', C.blue)}
+          {tile('WATER', (water / 1000).toFixed(2) + ' L', 'OF ' + (goalW / 1000).toFixed(1) + ' L', C.blue)}
+        </div>
+
+        {section('Rules')}
+        {skipped ? <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>The app wasn’t opened this day, so nothing was checked off.</div> : null}
+        {keys.map(k => { const d = defOf(k), ok = !!done[k]; return <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #272c34' }}>
+          <span style={{ width: 22, height: 22, flex: 'none', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: ok ? (TONES[d && d.g] || C.blue) : 'transparent', border: '1.5px solid ' + (ok ? (TONES[d && d.g] || C.blue) : C.line2), color: C.bg, font: `700 12px/1 ${F.mono}` }}>{ok ? '✓' : ''}</span>
+          <span style={{ ...T.name, flex: 1, color: ok ? C.text : C.dim }}>{nameOf(k)}</span>
+          <span style={{ ...T.mono, fontSize: 11, color: ok ? C.dim : C.red }}>{ok ? (doneAt[k] || '✓') : isToday ? 'OPEN' : 'MISSED'}</span>
+        </div>; })}
+
+        {section('Food')}
+        {diary && meals.length ? <>
+          <div style={{ ...T.label, marginBottom: 6 }}>C {r1(tot.c)} G · F {r1(tot.f)} G · {meals.length} ITEMS</div>
+          {(typeof slotsOf === 'function' ? slotsOf(st) : [['', '', 0]]).map(([id, label]) => { const items = meals.filter(m => (typeof slotKey === 'function' ? slotKey(m) : m.slot) === id); if (!items.length) return null;
+            return <div key={id} style={{ marginBottom: 8 }}><div style={{ ...T.label, color: C.amber, marginBottom: 2 }}>{label.toUpperCase()} · {Math.round(sumN(items).kcal)} KCAL</div>
+              {items.map(m => <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '4px 0', font: `400 14px/1.35 ${F.body}` }}><span style={{ color: C.text }}>{m.name}</span><span style={{ color: C.dim, flex: 'none' }}>{Math.round(m.kcal)}</span></div>)}</div>; })}
+        </> : <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>{rec && rec.meals ? rec.meals + ' items logged · ' + Math.round(kcal) + ' kcal' : 'Nothing logged.'}</div>}
+
+        {section('Training')}
+        {ws.length ? ws.map(w => <Card key={w.id} style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><span style={{ font: `700 17px/1.1 ${F.head}`, textTransform: 'uppercase' }}>{w.name}</span><span style={T.label}>{fmtMin((w.end - w.start) / 1000)}</span></div>
+          {w.exercises.map((e, i) => <div key={i} style={{ font: `400 13px/1.4 ${F.body}`, color: C.dim, marginTop: 4 }}>{e.sets.length} × {e.name} · <span style={{ color: C.text }}>{e.sets.map(s => setText(st, e.type, s)).slice(0, 4).join(', ')}{e.sets.length > 4 ? '…' : ''}</span></div>)}
+          {(w.mobility || []).filter(m => m.done).length ? <div style={{ ...T.label, marginTop: 6, color: C.olive }}>MOBILITY · {w.mobility.filter(m => m.done).map(m => m.name).join(', ').toUpperCase()}</div> : null}
+        </Card>) : <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>{rec && rec.sets ? rec.sets + ' sets logged.' : 'No workout logged.'}</div>}
+
+        {photo || wkg != null || note ? section('Notes & body') : null}
+        {wkg != null ? <div style={{ ...T.body, marginBottom: 8 }}>Weight: <b>{st.imperial ? r1(wkg * 2.20462) + ' lb' : wkg + ' kg'}</b></div> : null}
+        {note ? <div style={{ font: `italic 400 14px/1.45 ${F.body}`, color: C.text, marginBottom: 10 }}>“{note}”</div> : null}
+        {photo ? <img src={photo} alt={'Day ' + n} style={{ width: '100%', borderRadius: 14, display: 'block' }} /> : null}
+      </>}
+    </div>
+  </Sheet>;
+}
+function DayHost() {
+  const [n, setN] = useState(null);
+  useEffect(() => { window.SHDay = { open: d => setN(d) }; }, []);
+  useTick(n != null, 1000);   // keep in step with changes made elsewhere while open
+  const app = window.__app;
+  if (n == null || !app) return null;
+  return <DayDetail app={app} st={app.state} n={n} onClose={() => setN(null)} onNav={setN} />;
+}
+if (!window.__dayHost) {
+  window.__dayHost = document.createElement('div');
+  document.body.appendChild(window.__dayHost);
+  ReactDOM.createRoot(window.__dayHost).render(<DayHost />);
+}

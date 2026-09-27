@@ -85,6 +85,10 @@ function setText(st, type, s) {
 const est1rm = s => s.w && s.r ? s.w * (1 + Math.min(s.r, 12) / 30) : 0;
 // what a set's empty boxes suggest: the template's own targets win, otherwise last time's numbers
 function phOf(prev, target) { const o = { ...(prev || {}) }; if (target) ['w', 'r', 't', 'd'].forEach(k => { if (target[k] != null) o[k] = target[k]; }); return o; }
+// Finished workouts can be edited (or added for a missed day) for this many days after the date.
+const EDIT_DAYS = 14;
+const daysAgo = (st, iso) => Math.round((dOf(st.curDate) - dOf(iso)) / 864e5);
+const canEdit = (st, w) => daysAgo(st, w.date) <= EDIT_DAYS;
 function workoutVolume(w) { let v = 0; w.exercises.forEach(e => e.sets.forEach(s => { if (s.done && s.w && s.r) v += s.w * s.r; })); return Math.round(v); }
 function doneSets(w) { let n = 0; w.exercises.forEach(e => e.sets.forEach(s => { if (s.done) n++; })); return n; }
 
@@ -176,7 +180,7 @@ function TrainScreen({ app, st }) {
     app.setState({ activeWorkout: { id: 'w' + uid(), name: items.title || 'Mobility', templateId: null, start: Date.now(), date: today, exercises: [], mobility: items.list.map(m => ({ ...m, done: false })) } });
     setMobPick(false); setMinimized(false);
   };
-  const startWorkout = (tpl) => {
+  const startWorkout = (tpl, forDate) => {
     if (aw) { setMinimized(false); return; }
     const h = new Date().getHours();
     const w = {
@@ -185,6 +189,7 @@ function TrainScreen({ app, st }) {
       mobility: tpl ? mobOf(tpl).map(m => ({ name: m.name, min: m.min, cue: m.cue, done: false })) : [],
       exercises: tpl ? tpl.exercises.map(e => ({ uid: uid(), exId: e.exId, rest: e.rest, note: e.note || '', sets: e.sets.map(s => ({ w: null, r: null, t: null, d: null, target: { w: s.w, r: s.r, t: s.t, d: s.d }, kind: s.kind || 'n', done: false })) })) : []
     };
+    if (forDate) Object.assign(w, { date: forDate, start: dOf(forDate).getTime(), end: dOf(forDate).getTime() + 3600e3, editOf: w.id, name: tpl ? tpl.name : 'Workout' });
     app.setState({ activeWorkout: w }); setMinimized(false); setPreview(null);
   };
   const editHistory = (w) => {
@@ -270,6 +275,13 @@ function TrainScreen({ app, st }) {
     body = <div style={{ padding: '14px 22px 24px' }}>
       <div role="button" onClick={() => setStrongImp(true)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 14px', marginBottom: 14, background: '#20252c', borderRadius: 12, cursor: 'pointer' }}>
         <span style={{ ...T.name, fontSize: 14 }}>Have workouts in Strong?</span><span style={{ ...T.mono, fontSize: 11, color: C.olive }}>IMPORT ›</span></div>
+      <WorkoutCalendar st={st} onDay={(iso, list) => {
+        if (list.length === 1) { setHistOpen(list[0].id); return; }
+        const old = daysAgo(st, iso) > EDIT_DAYS, future = iso > st.curDate;
+        setMenu({ title: niceDate(iso), actions: list.map(w => ({ label: w.name + ' · ' + fmtMin((w.end - w.start) / 1000), run: () => setHistOpen(w.id) }))
+          .concat(old || future || aw ? [] : [{ label: '+ Log a workout for this day', run: () => startWorkout(null, iso) }].concat(templates.slice(0, 6).map(t => ({ label: '+ Log “' + t.name + '” for this day', run: () => startWorkout(t, iso) }))))
+          .concat(!list.length && (old || future) ? [{ label: future ? 'This day is still ahead' : 'Older than ' + EDIT_DAYS + ' days — can’t add workouts', run: () => {} }] : []) });
+      }} />
       {ws.length ? <HistoryProgress st={st} onExercise={setExOpen} /> : null}
       {ws.length ? <div style={{ ...T.h2, margin: '22px 0 4px' }}>All workouts</div> : null}
       {!ws.length ? <Empty>FINISHED WORKOUTS SHOW UP HERE</Empty> : null}
@@ -345,11 +357,13 @@ function TrainScreen({ app, st }) {
 
     {histW ? <Sheet title={histW.name} sub={niceDate(histW.date).toUpperCase() + ' · ' + fmtMin((histW.end - histW.start) / 1000)} left={<TopLink onClick={() => setHistOpen(null)}>‹ BACK</TopLink>}
       right={<TopLink tone={C.olive} onClick={() => setMenu({ title: histW.name, actions: [
-        { label: 'Edit workout', run: () => editHistory(histW) },
+        canEdit(st, histW) ? { label: 'Edit workout', run: () => editHistory(histW) } : null,
         { label: 'Save as template', run: () => { app.setState(s => ({ templates: (s.templates || []).concat({ id: 't' + uid(), name: histW.name, day: null, mobility: (histW.mobility || []).map(m => ({ name: m.name, min: m.min })), exercises: histW.exercises.map(e => ({ exId: e.exId, rest: e.rest, sets: e.sets.map(x => ({ w: x.w, r: x.r, t: x.t, d: x.d })) })) }) })); alert('Saved as a template.'); } },
         { label: 'Delete workout', danger: true, run: () => { if (confirm('Delete this workout from your history?')) { app.setState(s => ({ workouts: s.workouts.filter(w => w.id !== histW.id) })); setHistOpen(null); } } }
       ] })}>•••</TopLink>}>
       <div style={{ padding: '12px 18px 24px' }}>
+        {canEdit(st, histW) ? <div role="button" onClick={() => editHistory(histW)} style={{ ...T.mono, fontSize: 11, color: C.olive, marginBottom: 10, cursor: 'pointer' }}>EDITABLE FOR {EDIT_DAYS - daysAgo(st, histW.date)} MORE {EDIT_DAYS - daysAgo(st, histW.date) === 1 ? 'DAY' : 'DAYS'} · EDIT ›</div>
+          : <div style={{ ...T.label, color: C.faint, marginBottom: 10 }}>LOCKED · WORKOUTS CAN BE EDITED FOR {EDIT_DAYS} DAYS</div>}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 7, marginBottom: 14 }}>
           {[['DURATION', fmtMin((histW.end - histW.start) / 1000)], ['VOLUME', histW.volume ? wDisp(st, histW.volume) + ' ' + wUnit(st) : '—'], ['PRS', String((histW.prs || []).length)]].map(([l, v]) =>
             <Card key={l} style={{ padding: '10px 11px' }}><div style={T.label}>{l}</div><div style={{ font: `700 20px/1.1 ${F.head}`, marginTop: 4 }}>{v}</div></Card>)}
@@ -987,4 +1001,40 @@ function StrongImport({ app, st, onClose }) {
       </> : null}
     </div>
   </Sheet>;
+}
+
+
+// Month calendar of completed workouts (History tab). Tap a day to open its workout, or add one within 14 days.
+function WorkoutCalendar({ st, onDay }) {
+  const [month, setMonth] = useState(() => st.curDate.slice(0, 7));   // 'YYYY-MM'
+  const byDate = {};
+  for (const w of st.workouts || []) (byDate[w.date] = byDate[w.date] || []).push(w);
+  const [y, m] = month.split('-').map(Number), first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate();
+  const lead = (first.getDay() + 6) % 7;                                // Monday first
+  const cells = Array.from({ length: lead }, () => null).concat(Array.from({ length: days }, (_, i) => y + '-' + pad2(m) + '-' + pad2(i + 1)));
+  const shift = d => { const t = new Date(y, m - 1 + d, 1); setMonth(t.getFullYear() + '-' + pad2(t.getMonth() + 1)); };
+  const count = cells.filter(c => c && byDate[c]).length;
+  const earliest = Object.keys(byDate).sort()[0];
+  return <Card style={{ marginBottom: 16, padding: '12px 12px 10px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <span role="button" onClick={() => (!earliest || month > earliest.slice(0, 7)) && shift(-1)} style={{ ...T.mono, fontSize: 16, color: earliest && month > earliest.slice(0, 7) ? C.olive : C.faint, padding: '6px 12px', cursor: 'pointer' }}>‹</span>
+      <div style={{ textAlign: 'center' }}><div style={{ font: `700 16px/1 ${F.head}`, letterSpacing: '.12em', textTransform: 'uppercase' }}>{MON[m - 1]} {y}</div>
+        <div style={{ ...T.label, marginTop: 4 }}>{count} {count === 1 ? 'WORKOUT DAY' : 'WORKOUT DAYS'}</div></div>
+      <span role="button" onClick={() => month < st.curDate.slice(0, 7) && shift(1)} style={{ ...T.mono, fontSize: 16, color: month < st.curDate.slice(0, 7) ? C.olive : C.faint, padding: '6px 12px', cursor: 'pointer' }}>›</span>
+    </div>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginTop: 10 }}>
+      {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => <div key={i} style={{ ...T.label, textAlign: 'center', fontSize: 9 }}>{d}</div>)}
+      {cells.map((c, i) => {
+        if (!c) return <div key={i} />;
+        const list = byDate[c] || [], isToday = c === st.curDate, future = c > st.curDate, editable = !future && daysAgo(st, c) <= EDIT_DAYS;
+        return <div key={i} role="button" onClick={() => !future && onDay(c, list)} style={{ aspectRatio: '1', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, cursor: future ? 'default' : 'pointer',
+          background: list.length ? C.olive : 'transparent', border: '1px solid ' + (isToday ? C.amber : list.length ? C.olive : editable ? C.line2 : 'transparent'),
+          color: list.length ? C.oliveInk : future ? C.line2 : editable ? C.text : C.faint, font: `600 13px/1 ${F.mono}` }}>
+          {Number(c.slice(8))}
+          {list.length > 1 ? <span style={{ font: `700 8px/1 ${F.mono}` }}>×{list.length}</span> : null}
+        </div>;
+      })}
+    </div>
+    <div style={{ ...T.label, marginTop: 9, color: C.faint, lineHeight: 1.5 }}>FILLED = WORKOUT DONE · OUTLINED DAYS (LAST {EDIT_DAYS}) CAN STILL BE EDITED OR ADDED TO</div>
+  </Card>;
 }

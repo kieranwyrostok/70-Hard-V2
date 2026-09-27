@@ -1721,7 +1721,7 @@ class Component extends DCLogic {
         bg: past ? (MISSED[n] ? '#f06a50' : '#6390ff') : today ? '#f4b544' : 'transparent',
         border: isSel ? '#eef0f4' : past ? (MISSED[n] ? '#f06a50' : '#6390ff') : today ? '#f4b544' : '#30363f',
         fg: past ? (MISSED[n] ? '#200c08' : '#081631') : today ? '#231800' : '#6b7382',
-        pick: () => this.setState({ selDay: n })
+        pick: () => { this.setState({ selDay: n }); if (window.SHDay) window.SHDay.open(n); }
       };
     });
     const selPast = gridSel < dayNum;
