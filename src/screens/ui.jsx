@@ -57,10 +57,15 @@ function Card({ children, style, onClick, accent }) {
 }
 // Full-screen layer above the whole app (tab bar included).
 function Sheet({ title, sub, left, right, children, footer, z = 40, bg = C.bg, onTitle }) {
+  const leftRef = useRef(null), edge = useRef(null);
+  // swipe right from the left edge of the screen = the ‹ BACK button (like iOS)
+  const edgeDown = e => { edge.current = e.clientX < 30 ? { x: e.clientX, y: e.clientY } : null; };
+  const edgeUp = e => { const s = edge.current; edge.current = null; if (!s) return;
+    if (e.clientX - s.x > 80 && Math.abs(e.clientY - s.y) < 70) { const b = leftRef.current && leftRef.current.querySelector('[role=button]'); if (b) b.click(); } };
   return ReactDOM.createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: z, background: bg, display: 'flex', flexDirection: 'column', fontFamily: F.body, color: C.text }}>
+    <div onPointerDownCapture={edgeDown} onPointerUpCapture={edgeUp} style={{ position: 'fixed', inset: 0, zIndex: z, background: bg, display: 'flex', flexDirection: 'column', fontFamily: F.body, color: C.text }}>
       <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 16px 12px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'center', gap: 10, minHeight: 44 }}>
-        <div style={{ minWidth: 70 }}>{left}</div>
+        <div ref={leftRef} style={{ minWidth: 70 }}>{left}</div>
         <div onClick={onTitle} style={{ flex: 1, minWidth: 0, textAlign: 'center', cursor: onTitle ? 'pointer' : 'default' }}>
           <div style={{ font: `700 18px/1.1 ${F.head}`, letterSpacing: '.1em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
           {sub ? <div style={{ ...T.label, marginTop: 3 }}>{sub}</div> : null}
@@ -78,7 +83,7 @@ function TopLink({ children, onClick, tone = C.blue }) {
 function ActionSheet({ title, actions, onClose }) {
   return ReactDOM.createPortal(
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#1a1e24', borderTop: '1px solid ' + C.line2, borderRadius: '18px 18px 0 0', padding: '8px 0 calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
+      <div onClick={e => e.stopPropagation()} {...(() => { let y0 = null; return { onPointerDown: e => { y0 = e.clientY; }, onPointerUp: e => { if (y0 != null && e.clientY - y0 > 70) onClose(); y0 = null; } }; })()} style={{ width: '100%', background: '#1a1e24', borderTop: '1px solid ' + C.line2, borderRadius: '18px 18px 0 0', padding: '8px 0 calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
         {title ? <div style={{ ...T.label, padding: '10px 18px 8px' }}>{title}</div> : null}
         {actions.filter(Boolean).map((a, i) => <div key={i} role="button" onClick={() => { onClose(); a.run(); }} style={{ padding: '15px 18px', cursor: 'pointer', font: `500 16px/1.2 ${F.body}`, color: a.danger ? C.red : C.text, borderTop: i ? '1px solid #272c34' : 'none' }}>{a.label}</div>)}
         <div role="button" onClick={onClose} style={{ margin: '8px 16px 0', padding: 14, textAlign: 'center', border: '1px solid ' + C.line2, borderRadius: 12, cursor: 'pointer', ...T.mono, color: C.dim }}>CANCEL</div>
@@ -304,4 +309,75 @@ function DragList({ items, keyOf, onMove, render, onActive }) {
 }
 function Grip({ h, color }) {
   return <span {...h} role="button" aria-label="Drag to reorder" style={{ ...h.style, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 36, flex: 'none', color: color || C.faint, font: `400 20px/1 ${F.body}` }}>≡</span>;
+}
+
+// ── Swipe gestures ──
+// SwipeRow: slide a row left to reveal actions (like iOS Mail); a long swipe runs the first action straight away.
+function SwipeRow({ actions, children, bg = C.card, radius = 0, disabled, style }) {
+  const [dx, setDx] = useState(0), [drag, setDrag] = useState(false);
+  const s = useRef(null), justSwiped = useRef(0);
+  const acts = (actions || []).filter(Boolean), W = acts.length * 78;
+  if (disabled || !acts.length) return <div style={style}>{children}</div>;
+  const down = e => { if (e.button > 0) return; s.current = { x: e.clientX, y: e.clientY, base: dx, lock: null }; };
+  const move = e => {
+    const t = s.current; if (!t) return;
+    const mx = e.clientX - t.x, my = e.clientY - t.y;
+    if (t.lock == null) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; t.lock = Math.abs(mx) > Math.abs(my) * 1.3 ? 'x' : 'y'; if (t.lock === 'x') { setDrag(true); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ } } }
+    if (t.lock !== 'x') return;
+    e.stopPropagation();
+    setDx(Math.min(0, Math.max(-W - 150, t.base + mx)));
+  };
+  const up = e => {
+    const t = s.current; s.current = null; setDrag(false);
+    if (!t || t.lock !== 'x') return;
+    e.stopPropagation(); justSwiped.current = Date.now();
+    if (dx < -W - 90) { setDx(0); vib(20); acts[0].run(); } else setDx(dx < -W / 2 ? -W : 0);
+  };
+  return <div style={{ position: 'relative', overflow: 'hidden', borderRadius: radius, ...style }}>
+    {dx < 0 || drag ? <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, display: 'flex', width: Math.max(W, -dx) }}>
+      {acts.map((a, i) => <div key={i} role="button" onClick={() => { setDx(0); a.run(); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: a.tone || C.red, color: a.ink || '#fff', ...T.mono, fontSize: 11, cursor: 'pointer' }}>{a.label}</div>)}
+    </div> : null}
+    <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+      onClickCapture={e => { if (Date.now() - justSwiped.current < 350) { e.stopPropagation(); e.preventDefault(); } else if (dx) { e.stopPropagation(); setDx(0); } }}
+      style={{ position: 'relative', background: bg, transform: `translateX(${dx}px)`, transition: drag ? 'none' : 'transform .2s ease', touchAction: 'pan-y' }}>{children}</div>
+  </div>;
+}
+// Horizontal swipe anywhere on an area → onLeft / onRight (e.g. next / previous day). Spread the result on an element.
+function swipeNav(onLeft, onRight) {
+  let st = null;
+  return {
+    onPointerDown: e => { if (e.button > 0) return; st = { x: e.clientX, y: e.clientY, t: Date.now() }; },
+    onPointerUp: e => { if (!st) return; const dx = e.clientX - st.x, dy = e.clientY - st.y, fast = Date.now() - st.t < 700; st = null;
+      if (fast && Math.abs(dx) > 60 && Math.abs(dy) < Math.abs(dx) * 0.6) { if (dx < 0 && onLeft) onLeft(); else if (dx > 0 && onRight) onRight(); } },
+    onPointerCancel: () => { st = null; },
+    style: { touchAction: 'pan-y' }
+  };
+}
+
+// ── Celebration: confetti burst + banner (used for new PRs) ──
+function celebrate(title, lines) {
+  vib([30, 60, 30]);
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top,0px) + 14px);z-index:120;pointer-events:none;background:' + C.amber + ';color:' + C.amberInk + ';border-radius:16px;padding:14px 16px;box-shadow:0 12px 34px rgba(0,0,0,.35);transform:translateY(-140%);transition:transform .35s cubic-bezier(.2,1.3,.4,1)';
+  banner.innerHTML = '<div style="font:800 22px/1.05 ' + F.head + ';letter-spacing:.06em;text-transform:uppercase">🏆 ' + title + '</div>' + (lines || []).slice(0, 4).map(l => '<div style="font:600 12px/1.4 ' + F.mono + ';letter-spacing:.04em;margin-top:4px">' + String(l).replace(/[<>&]/g, '') + '</div>').join('');
+  document.body.appendChild(banner);
+  requestAnimationFrame(() => { banner.style.transform = 'translateY(0)'; });
+  setTimeout(() => { banner.style.transform = 'translateY(-140%)'; setTimeout(() => banner.remove(), 400); }, 2800);
+  if (reduce) return;
+  const cv = document.createElement('canvas'), dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:119;pointer-events:none';
+  document.body.appendChild(cv);
+  const g = cv.getContext('2d'); g.scale(dpr, dpr);
+  const cols = [C.amber, C.blue, C.olive, C.red, '#ffffff'];
+  const bits = Array.from({ length: 140 }, (_, i) => ({ x: W / 2 + (Math.random() - .5) * 60, y: H * 0.32, vx: (Math.random() - .5) * 11, vy: -Math.random() * 12 - 4,
+    r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3, w: 5 + Math.random() * 5, h: 8 + Math.random() * 6, c: cols[i % cols.length] }));
+  const t0 = performance.now();
+  const step = now => {
+    const t = now - t0; g.clearRect(0, 0, W, H);
+    for (const b of bits) { b.vy += 0.32; b.vx *= 0.99; b.x += b.vx; b.y += b.vy; b.r += b.vr;
+      g.save(); g.translate(b.x, b.y); g.rotate(b.r); g.globalAlpha = Math.max(0, 1 - t / 2200); g.fillStyle = b.c; g.fillRect(-b.w / 2, -b.h / 2, b.w, b.h); g.restore(); }
+    if (t < 2200) requestAnimationFrame(step); else cv.remove();
+  };
+  requestAnimationFrame(step);
 }

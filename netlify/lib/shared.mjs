@@ -81,6 +81,7 @@ export function dayNumber(startDate, today) {
 
 export function reminderPayload(r, dev, now) {
   const n = dayNumber(dev.startDate, now.date);
+  if (r.id === 'weekly') return { title: 'Your weekly report is ready 📊', body: 'Workouts, PRs, food, water and rules from last week. Tap to see it.', tag: 'weekly', url: './?report=1#s02' };
   return {
     title: r.name || 'Seventy Hard',
     body: r.rule

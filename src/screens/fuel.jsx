@@ -106,7 +106,7 @@ function FuelScreen({ app, st }) {
 
   return <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: C.bg, fontFamily: F.body, color: C.text }}>
     <div style={{ flex: 1, overflow: 'auto' }}>
-      <div style={{ padding: '58px 22px 16px', borderBottom: '1px solid ' + C.line }}>
+      <div {...swipeNav(() => !isToday && setDate(addDaysIso(date, 1)), () => setDate(addDaysIso(date, -1)))} style={{ padding: '58px 22px 16px', borderBottom: '1px solid ' + C.line, touchAction: 'pan-y' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <TopLink tone={C.amber} onClick={() => setDate(addDaysIso(date, -1))}>‹ PREV</TopLink>
           <div role="button" onClick={() => setDate(st.curDate)} style={{ font: `700 20px/1 ${F.head}`, letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer' }}>{dayLabel}</div>
@@ -126,7 +126,7 @@ function FuelScreen({ app, st }) {
       <div style={{ padding: '14px 22px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {SLOTS.map(([slot, label, share]) => {
           const items = day.meals.filter(m => slotKey(m) === slot), t = sumN(items), goal = Math.round(tg.kcal * share);
-          return <Card key={slot} style={{ padding: 0 }}>
+          return <Card key={slot} style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 12px 12px 14px' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ font: `700 18px/1.1 ${F.head}`, letterSpacing: '.08em', textTransform: 'uppercase' }}>{label}</div>
@@ -142,11 +142,12 @@ function FuelScreen({ app, st }) {
               ] })} style={{ ...T.mono, color: C.dim, padding: '8px 6px', cursor: 'pointer' }}>•••</span>
               <div role="button" onClick={() => setAdding(slot)} style={{ width: 40, height: 40, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.amber, color: C.amberInk, font: `700 24px/1 ${F.mono}`, cursor: 'pointer' }}>+</div>
             </div>
-            {items.map(m => <div key={m.id} role="button" onClick={() => setEditing(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderTop: '1px solid #272c34', cursor: 'pointer' }}>
+            {items.map(m => <SwipeRow key={m.id} bg={C.card} actions={[{ label: 'DELETE', run: () => { delEntry(m.id); flash('REMOVED ' + m.name.toUpperCase()); } }, { label: 'COPY', tone: C.blue, run: () => { addEntries([{ ...m, id: 'm' + uid(), time: SH.nowHM() }], 'ADDED ANOTHER ' + m.name.toUpperCase()); } }]}>
+            <div role="button" onClick={() => setEditing(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderTop: '1px solid #272c34', cursor: 'pointer' }}>
               <div style={{ flex: 1, minWidth: 0 }}><div style={{ ...T.name, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</div>
                 <div style={{ ...T.label, marginTop: 3, letterSpacing: '.06em' }}>{[m.brand, amountText(m)].filter(Boolean).join(' · ').toUpperCase()}</div></div>
               <div style={{ font: `700 17px/1 ${F.head}`, color: C.amber }}>{Math.round(m.kcal)}</div>
-            </div>)}
+            </div></SwipeRow>)}
           </Card>;
         })}
 

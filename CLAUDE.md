@@ -49,6 +49,13 @@ ui → library → train → fuel → coach and compiled into one IIFE, so later
 - Board → tap a day: `DayDetail` (coach.jsx, own React root, `window.SHDay.open(n)`) shows rules, food, water,
   training, weight, note and photo for that day. History tab has `WorkoutCalendar`; finished workouts are editable
   (and missed days can be back-logged) for `EDIT_DAYS` = 14 days after the date. Back-logged workouts don't change rules.
+- 🏆 on the History tab → `AllTime` (totals, milestones, per-exercise records, recent PRs, links to weekly reports).
+- Weekly report (coach.jsx `WeeklyReport`/`weekStats`, opened via `window.SHReport.open(sundayIso)`): covers Sun–Sat
+  that just ended; Today shows a card on Sundays (`reportHidden` = dismissed week); push schedule has a fixed
+  `weekly` entry (Sun 9:00) and shared.mjs opens `./?report=1#s02`.
+- PRs: `celebrate(title, lines)` (ui.jsx, confetti + banner) fires when a checked set beats history + today's sets
+  (set gets `pr: true`) and again on finish. Gestures (ui.jsx): `SwipeRow` (swipe left for actions, long swipe runs
+  the first), `swipeNav(onLeft,onRight)`, Sheet edge-swipe = back, ActionSheet swipe-down = close.
 - Strong import (train.jsx, `StrongImport`): reads Strong's CSV export (columns found by name; kg/lb and m/km/mi in
   headers or per row; rest-timer rows skipped), matches exercise names to the list, adds unknown ones to `exLib`,
   skips workouts already present (same name within 90 s), computes volume + PRs in date order. Ids `strong-<start>`.

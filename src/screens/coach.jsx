@@ -297,7 +297,7 @@ function DayDetail({ app, st, n, onClose, onNav }) {
   const section = t => <div style={{ ...T.h2, margin: '22px 0 8px' }}>{t}</div>;
   return <Sheet z={70} title={'Day ' + n} sub={niceDate(date).toUpperCase()} left={<TopLink onClick={onClose}>‹ BOARD</TopLink>}
     right={<div style={{ display: 'flex' }}>{[[-1, '‹', n > 1], [1, '›', n < 70]].map(([d, l, ok]) => <span key={d} role="button" onClick={() => ok && onNav(n + d)} style={{ font: `600 22px/1 ${F.mono}`, color: ok ? C.blue : C.faint, padding: '6px 12px', cursor: 'pointer' }}>{l}</span>)}</div>}>
-    <div style={{ padding: '14px 18px 30px' }}>
+    <div {...swipeNav(() => n < 70 && onNav(n + 1), () => n > 1 && onNav(n - 1))} style={{ padding: '14px 18px 30px', minHeight: '70vh', touchAction: 'pan-y' }}>
       <div style={{ ...T.mono, fontSize: 12, color: status[1] }}>{status[0]}</div>
       {ahead ? <Empty>THIS DAY HASN’T HAPPENED YET</Empty> : <>
         <div style={{ display: 'flex', gap: 7, marginTop: 12 }}>
@@ -338,15 +338,76 @@ function DayDetail({ app, st, n, onClose, onNav }) {
   </Sheet>;
 }
 function DayHost() {
-  const [n, setN] = useState(null);
-  useEffect(() => { window.SHDay = { open: d => setN(d) }; }, []);
-  useTick(n != null, 1000);   // keep in step with changes made elsewhere while open
+  const [n, setN] = useState(null), [rep, setRep] = useState(null);
+  useEffect(() => {
+    window.SHDay = { open: d => setN(d) };
+    window.SHReport = { open: s0 => setRep(s0 || (window.__app && lastWeekStart(window.__app.state))) };
+    // opened from the Sunday notification (…/?report=1)
+    if (/[?&]report=1/.test(location.search)) { setTimeout(() => window.__app && setRep(lastWeekStart(window.__app.state)), 900); try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* ignore */ } }
+  }, []);
+  useTick(n != null || rep != null, 1000);   // keep in step with changes made elsewhere while open
   const app = window.__app;
-  if (n == null || !app) return null;
-  return <DayDetail app={app} st={app.state} n={n} onClose={() => setN(null)} onNav={setN} />;
+  if (!app) return null;
+  return <>
+    {n != null ? <DayDetail app={app} st={app.state} n={n} onClose={() => setN(null)} onNav={setN} /> : null}
+    {rep ? <WeeklyReport app={app} st={app.state} s0={rep} onClose={() => setRep(null)} /> : null}
+  </>;
 }
 if (!window.__dayHost) {
   window.__dayHost = document.createElement('div');
   document.body.appendChild(window.__dayHost);
   ReactDOM.createRoot(window.__dayHost).render(<DayHost />);
+}
+
+// ── Weekly report (Sunday → the 7 days Sunday–Saturday that just ended) ──
+const lastWeekStart = st => { const d = dOf(st.curDate); d.setDate(d.getDate() - ((d.getDay() + 1) % 7 || 7) - 6); return isoOf(d); };
+function weekStats(app, st, s0) {
+  const dates = Array.from({ length: 7 }, (_, i) => addDaysIso(s0, i)), inWk = d => d >= s0 && d <= dates[6];
+  const prevS = addDaysIso(s0, -7), inPrev = d => d >= prevS && d < s0;
+  const ws = (st.workouts || []).filter(w => inWk(w.date)), prevWs = (st.workouts || []).filter(w => inPrev(w.date));
+  const vol = list => list.reduce((a, w) => a + (w.volume != null ? w.volume : workoutVolume(w)), 0);
+  const days = dates.map(d => { const diary = d === st.curDate ? { meals: st.meals || [], waterMl: st.waterMl || 0 } : (st.diary || {})[d];
+    const n = st.startDate ? Math.round((dOf(d) - dOf(st.startDate)) / 864e5) + 1 : null, h = n ? (st.history || {})[n] : null;
+    return { d, n, h, diary, t: diary && diary.meals.length ? sumN(diary.meals) : null, water: diary ? diary.waterMl : h ? h.waterMl || 0 : 0 }; });
+  const logged = days.filter(x => x.t), avg = k => logged.length ? logged.reduce((a, x) => a + x.t[k], 0) / logged.length : 0;
+  const ch = days.filter(x => x.n >= 1 && x.n <= 70 && x.d < st.curDate);
+  const cleared = ch.filter(x => x.h && (x.h.rules || []).every(k => (x.h.done || {})[k])).length;
+  const missedNames = {}; ch.forEach(x => { if (!x.h) missedNames['No check-in'] = (missedNames['No check-in'] || 0) + 1; else (x.h.rules || []).filter(k => !(x.h.done || {})[k]).forEach(k => { const r = (st.ruleDefs || []).find(q => q.k === k); const nm = r ? ((app.hLabel ? app.hLabel(r).name : r.name) || r.name) : k; missedNames[nm] = (missedNames[nm] || 0) + 1; }); });
+  const wlog = ((st.measLog || {}).weight) || {}, wIn = days.filter(x => x.n && wlog[x.n] != null).map(x => wlog[x.n]);
+  const tg = st.targets || {}, goalW = st.waterGoal || 3500;
+  return { s0, dates, ws, prevWs, vol: vol(ws), prevVol: vol(prevWs), sets: ws.reduce((a, w) => a + doneSets(w), 0), time: ws.reduce((a, w) => a + (w.end - w.start) / 1000, 0),
+    prs: ws.flatMap(w => (w.prs || []).map(p => ({ ...p, date: w.date }))), logged: logged.length, kcal: avg('kcal'), p: avg('p'),
+    onTarget: logged.filter(x => tg.kcal && Math.abs(x.t.kcal - tg.kcal) <= tg.kcal * 0.1).length, water: days.reduce((a, x) => a + (x.water || 0), 0) / 7, waterDays: days.filter(x => x.water >= goalW).length,
+    chDays: ch.length, cleared, missed: Object.entries(missedNames).sort((a, b) => b[1] - a[1]), wStart: wIn[0], wEnd: wIn[wIn.length - 1], wCount: wIn.length, tg, goalW };
+}
+function WeeklyReport({ app, st, s0, onClose }) {
+  const R = weekStats(app, st, s0), unit = wUnit(st), W = kg => Math.round(st.imperial ? kg * 2.20462 : kg).toLocaleString();
+  const pct = (a, b) => b ? Math.round((a - b) / b * 100) : null, vp = pct(R.vol, R.prevVol);
+  const tile = (l, v, sub, tone) => <Card style={{ flex: 1, padding: '10px 11px' }}><div style={{ ...T.label, color: tone || C.mute }}>{l}</div><div style={{ font: `700 22px/1.1 ${F.head}`, marginTop: 4 }}>{v}</div>{sub ? <div style={{ ...T.label, marginTop: 3 }}>{sub}</div> : null}</Card>;
+  const row = (l, v, tone) => <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '9px 0', borderBottom: '1px solid #272c34' }}><span style={{ ...T.body, fontSize: 14, color: C.dim }}>{l}</span><span style={{ ...T.mono, fontSize: 13, color: tone || C.text, textAlign: 'right' }}>{v}</span></div>;
+  const h2 = t => <div style={{ ...T.h2, margin: '22px 0 6px' }}>{t}</div>;
+  return <Sheet z={72} title="Weekly report" sub={weekLabel(s0).toUpperCase()} left={<TopLink onClick={onClose}>‹ BACK</TopLink>}>
+    <div style={{ padding: '14px 18px 30px' }}>
+      <div style={{ display: 'flex', gap: 7 }}>
+        {tile('WORKOUTS', R.ws.length, R.prevWs.length !== R.ws.length ? (R.ws.length > R.prevWs.length ? '▲ ' : '▼ ') + Math.abs(R.ws.length - R.prevWs.length) + ' VS WEEK BEFORE' : 'SAME AS WEEK BEFORE', C.olive)}
+        {tile('PRS', R.prs.length, R.prs.length ? 'NEW BESTS' : 'NONE THIS WEEK', C.amber)}
+      </div>
+      {R.chDays ? <>{h2('Challenge')}
+        {row('Days fully cleared', R.cleared + ' of ' + R.chDays, R.cleared === R.chDays ? C.blue : C.text)}
+        {R.missed.slice(0, 4).map(([nm, c]) => row('Missed: ' + nm, c + (c === 1 ? ' day' : ' days'), C.red))}</> : null}
+      {h2('Training')}
+      {row('Volume lifted', W(R.vol) + ' ' + unit + (vp != null ? '  ' + (vp >= 0 ? '▲' : '▼') + ' ' + Math.abs(vp) + '%' : ''), vp == null ? C.text : vp >= 0 ? C.olive : C.red)}
+      {row('Sets · time', R.sets + ' sets · ' + fmtMin(R.time))}
+      {R.ws.map(w => row(niceDate(w.date), w.name + ((w.prs || []).length ? ' · 🏆' + w.prs.length : '')))}
+      {R.prs.map((p, i) => <div key={i} style={{ ...T.mono, fontSize: 11, color: C.amber, marginTop: 6 }}>🏆 {p.ex.toUpperCase()} · {p.what.toUpperCase()} {p.val}</div>)}
+      {h2('Food & water')}
+      {row('Days logged', R.logged + ' of 7')}
+      {R.logged ? <>{row('Average calories', Math.round(R.kcal).toLocaleString() + ' / ' + (R.tg.kcal || 0).toLocaleString(), Math.abs(R.kcal - R.tg.kcal) <= R.tg.kcal * 0.1 ? C.olive : C.amber)}
+        {row('Average protein', Math.round(R.p) + ' / ' + R.tg.p + ' g', R.p >= R.tg.p * 0.9 ? C.olive : C.amber)}
+        {row('Days within 10% of calories', R.onTarget + ' of ' + R.logged)}</> : null}
+      {row('Average water', (R.water / 1000).toFixed(2) + ' L · goal hit ' + R.waterDays + '/7', R.waterDays >= 5 ? C.olive : C.text)}
+      {R.wCount >= 2 ? <>{h2('Body')}{row('Weight', (st.imperial ? r1(R.wStart * 2.20462) + ' → ' + r1(R.wEnd * 2.20462) + ' lb' : R.wStart + ' → ' + R.wEnd + ' kg') + ' (' + (R.wEnd - R.wStart >= 0 ? '+' : '') + r1(st.imperial ? (R.wEnd - R.wStart) * 2.20462 : R.wEnd - R.wStart) + ')')}</> : null}
+      <a href="#s12" onClick={onClose} style={{ display: 'block', marginTop: 20, ...T.mono, fontSize: 12, color: C.blue, textDecoration: 'none' }}>ASK COACH ABOUT THIS WEEK ›</a>
+    </div>
+  </Sheet>;
 }

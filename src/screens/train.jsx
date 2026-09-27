@@ -162,6 +162,7 @@ function TrainScreen({ app, st }) {
   const [presets, setPresets] = useState(false);
   const [mobPick, setMobPick] = useState(false);
   const [strongImp, setStrongImp] = useState(false);
+  const [allTime, setAllTime] = useState(false);
   const SH = window.SH;
   const today = st.curDate;
   const aw = st.activeWorkout;
@@ -230,6 +231,7 @@ function TrainScreen({ app, st }) {
     }));
     setMinimized(false);
     if (!w.editOf) setSummary({ w: clean, fromTpl: w.templateId, changed: w });
+    if (!w.editOf && clean.prs && clean.prs.length) setTimeout(() => celebrate(clean.prs.length + (clean.prs.length === 1 ? ' new PR' : ' new PRs'), clean.prs.map(p => p.ex + ' · ' + p.what.toLowerCase() + ' ' + p.val)), 350);
   };
   const updateTemplateFrom = (sum) => {
     app.setState(s => ({ templates: (s.templates || []).map(t => t.id !== sum.fromTpl ? t : { ...t, mobility: (sum.w.mobility || []).map(m => ({ name: m.name, min: m.min })), exercises: sum.w.exercises.map(e => ({ exId: e.exId, rest: e.rest, sets: e.sets.map(x => ({ w: x.w, r: x.r, t: x.t, d: x.d })) })) }) }));
@@ -239,14 +241,17 @@ function TrainScreen({ app, st }) {
   // ── pieces ──
   const tplCard = (t, highlight) => {
     const last = (st.workouts || []).slice().reverse().find(w => w.templateId === t.id);
-    return <Card key={t.id} onClick={() => setPreview(t.id)} accent={highlight ? C.olive : null} style={{ marginBottom: 8 }}>
+    return <SwipeRow key={t.id} radius={14} bg={C.card} style={{ marginBottom: 8 }} actions={[
+      { label: 'DELETE', run: () => { if (confirm('Delete the template “' + (t.name || 'Untitled') + '”? Past workouts stay.')) app.setState(s => ({ templates: (s.templates || []).filter(x => x.id !== t.id) })); } },
+      { label: 'EDIT', tone: C.olive, ink: C.oliveInk, run: () => setTplEdit(JSON.parse(JSON.stringify(t))) }]}>
+    <Card onClick={() => setPreview(t.id)} accent={highlight ? C.olive : null}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
         <div style={{ font: `700 19px/1.1 ${F.head}`, textTransform: 'uppercase', letterSpacing: '.04em' }}>{t.name || 'Untitled'}</div>
         <div style={{ ...T.label, flex: 'none' }}>{t.day != null ? SH.PLAN[t.day].abbr : ''}{last ? ' · ' + agoText(last.date, today).toUpperCase() : ''}</div>
       </div>
       <div style={{ font: `400 13px/1.45 ${F.body}`, color: C.dim, marginTop: 6 }}>{t.exercises.map(e => e.sets.length + ' × ' + exById(st, e.exId).name).join(' · ') || 'No exercises yet'}</div>
       {mobOf(t).length ? <div style={{ ...T.label, marginTop: 6, color: C.olive }}>MOBILITY · {mobOf(t).map(m => m.name + ' ' + m.min + ' MIN').join(' · ')}</div> : null}
-    </Card>;
+    </Card></SwipeRow>;
   };
 
   let body;
@@ -289,7 +294,10 @@ function TrainScreen({ app, st }) {
         const d = dOf(w.date), m = MON[d.getMonth()].toUpperCase() + ' ' + d.getFullYear(), head = m !== lastMonth; lastMonth = m;
         return <div key={w.id}>
           {head ? <div style={{ ...T.label, margin: '10px 0 8px' }}>{m}</div> : null}
-          <Card onClick={() => setHistOpen(w.id)} style={{ marginBottom: 8 }}>
+          <SwipeRow radius={14} bg={C.card} style={{ marginBottom: 8 }} actions={[
+            { label: 'DELETE', run: () => { if (confirm('Delete “' + w.name + '” (' + niceDate(w.date) + ') from your history?')) app.setState(s => ({ workouts: s.workouts.filter(x => x.id !== w.id) })); } },
+            canEdit(st, w) ? { label: 'EDIT', tone: C.olive, ink: C.oliveInk, run: () => editHistory(w) } : null]}>
+          <Card onClick={() => setHistOpen(w.id)}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <div style={{ font: `700 18px/1.1 ${F.head}`, textTransform: 'uppercase' }}>{w.name}</div>
               {w.prs && w.prs.length ? <div style={{ ...T.mono, fontSize: 11, color: C.amber }}>🏆 {w.prs.length} PR</div> : null}
@@ -299,7 +307,7 @@ function TrainScreen({ app, st }) {
               {w.exercises.map((e, i) => { const best = e.sets.reduce((b, s) => (est1rm(s) > est1rm(b || {}) ? s : b), e.sets[0]);
                 return <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, font: `400 13px/1.35 ${F.body}`, color: C.dim }}><span>{e.sets.length} × {e.name}</span><span style={{ color: C.text, flex: 'none' }}>{setText(st, e.type, best)}</span></div>; })}
             </div>
-          </Card>
+          </Card></SwipeRow>
         </div>;
       })}
     </div>;
@@ -322,7 +330,8 @@ function TrainScreen({ app, st }) {
     <div style={{ flex: 1, overflow: 'auto' }}>
       <div style={{ padding: '58px 22px 14px', borderBottom: '1px solid ' + C.line }}>
         <div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · TRAIN</div>
-        <div style={T.h1}>Workout</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}><div style={T.h1}>Workout</div>
+          {tab === 'history' ? <div role="button" aria-label="All-time stats and records" onClick={() => setAllTime(true)} style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid ' + C.line2, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `400 21px/1 ${F.body}`, cursor: 'pointer' }}>🏆</div> : null}</div>
         <div style={{ marginTop: 14 }}><Seg items={[['start', 'START'], ['history', 'HISTORY'], ['exercises', 'EXERCISES']]} value={tab} onChange={setTab} tone={C.olive} ink={C.oliveInk} /></div>
       </div>
       {body}
@@ -382,6 +391,7 @@ function TrainScreen({ app, st }) {
     {exOpen ? <ExerciseDetail st={st} app={app} exId={exOpen} onClose={() => setExOpen(null)} /> : null}
     {tplEdit ? <TemplateEditor app={app} st={st} draft={tplEdit} setDraft={setTplEdit} onClose={() => setTplEdit(null)} /> : null}
     {creating ? <CreateExercise app={app} draft={creating} setDraft={setCreating} onDone={() => setCreating(null)} /> : null}
+    {allTime ? <AllTime st={st} onClose={() => setAllTime(false)} onExercise={setExOpen} /> : null}
     {strongImp ? <StrongImport app={app} st={st} onClose={() => setStrongImp(false)} /> : null}
     {presets ? <PresetBrowser st={st} app={app} onClose={() => setPresets(false)} onStart={t => { setPresets(false); startWorkout(t); }} /> : null}
     {mobPick ? <MobilityPicker title="Mobility session" routinesOnly onClose={() => setMobPick(false)} onAdd={(list, title) => startMobility({ list, title })} /> : null}
@@ -430,8 +440,20 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
     const filled = { ...s, w: s.w != null ? s.w : ph.w != null ? ph.w : null, r: s.r != null ? s.r : ph.r != null ? ph.r : null, t: s.t != null ? s.t : ph.t != null ? ph.t : null, d: s.d != null ? s.d : ph.d != null ? ph.d : null };
     const ok = ex.type === 'wr' ? filled.r != null : ex.type === 'r' ? filled.r != null : ex.type === 'd' ? filled.t != null : (filled.d != null || filled.t != null);
     if (!ok) { alert('Enter ' + (ex.type === 'd' ? 'a time' : ex.type === 'dt' ? 'a distance or time' : 'the reps') + ' first.'); return; }
-    updSet(e.uid, i, () => ({ ...filled, done: true }));
-    vib(30);
+    // new personal record? compare with every finished workout plus the sets already done today
+    const hist = records(st, e.exId, aw.editOf || '__none__'), sess = { heavy: 0, e1rm: 0, reps: 0, time: 0, dist: 0 };
+    e.sets.forEach((x, j) => { if (j !== i && x.done) { sess.heavy = Math.max(sess.heavy, x.w || 0); sess.e1rm = Math.max(sess.e1rm, est1rm(x)); sess.reps = Math.max(sess.reps, x.r || 0); sess.time = Math.max(sess.time, x.t || 0); sess.dist = Math.max(sess.dist, x.d || 0); } });
+    const had = hist.heavy || hist.reps || hist.time || hist.dist, lines = [];
+    if (had && filled.kind !== 'w') {
+      if (ex.type === 'wr') {
+        if ((filled.w || 0) > Math.max(hist.heavy, sess.heavy)) lines.push(ex.name + ' · heaviest ' + wDisp(st, filled.w) + ' ' + wUnit(st));
+        else if (est1rm(filled) > Math.max(hist.e1rm, sess.e1rm) + 0.01) lines.push(ex.name + ' · est. 1RM ' + wDisp(st, r1(est1rm(filled))) + ' ' + wUnit(st));
+      } else if (ex.type === 'r' && (filled.r || 0) > Math.max(hist.reps, sess.reps)) lines.push(ex.name + ' · ' + filled.r + ' reps');
+      else if (ex.type === 'd' && (filled.t || 0) > Math.max(hist.time, sess.time)) lines.push(ex.name + ' · ' + fmtDur(filled.t));
+      else if (ex.type === 'dt' && (filled.d || 0) > Math.max(hist.dist, sess.dist)) lines.push(ex.name + ' · ' + r2(filled.d) + ' km');
+    }
+    updSet(e.uid, i, () => ({ ...filled, done: true, pr: lines.length ? true : undefined }));
+    if (lines.length) celebrate('New PR!', lines); else vib(30);
     if (!aw.editOf && e.rest) app.setState({ restUntil: { end: Date.now() + e.rest * 1000, total: e.rest, ex: ex.name } });
   };
   const addExercises = ids => upd(w => ({ ...w, exercises: w.exercises.concat(ids.map(id => { const ex = exById(st, id), lp = lastPerformance(st, id, aw.editOf); const n = lp ? lp.sets.length : 3;
@@ -457,7 +479,7 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
       <input value={aw.name} onChange={e => { const v = e.target.value; upd(w => ({ ...w, name: v })); }} style={{ width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none', borderBottom: '1px dotted ' + C.line2, color: C.text, font: `800 28px/1.1 ${F.head}`, textTransform: 'uppercase', padding: '4px 0 6px', outline: 'none' }} />
       {aw.exercises.length > 1 ? <div style={{ ...T.label, color: C.faint, marginTop: 8 }}>{reorder ? 'DROP IT WHERE IT SHOULD GO' : 'HOLD AN EXERCISE NAME OR DRAG ≡ TO REORDER'}</div> : null}
       <DragList items={aw.exercises} keyOf={e => e.uid} onActive={setReorder} onMove={(a, b) => upd(w => { const x = w.exercises.slice(); const [m] = x.splice(a, 1); x.splice(b, 0, m); return { ...w, exercises: x }; })} render={(e, ei, dg) => {
-        const ex = exById(st, e.exId), lp = lastPerformance(st, e.exId, aw.editOf), cs = cols(ex.type);
+        const ex = exById(st, e.exId), lp = lastPerformance(st, e.exId, aw.editOf), cs = cols(ex.type), gridCols = `34px 1fr ${cs.map(() => '64px').join(' ')} 44px`;
         if (reorder) return <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, background: dg.dragging ? '#2a3037' : C.card, border: '1px solid ' + (dg.dragging ? C.olive : C.line), borderRadius: 14, padding: '6px 12px 6px 4px' }}>
           <Grip h={dg.handle} color={C.olive} /><div style={{ flex: 1, minWidth: 0, font: `700 16px/1.2 ${F.body}`, color: C.olive }}>{ex.name}</div><span style={T.label}>{e.sets.length} SETS</span></div>;
         return <div style={{ marginTop: 20 }}>
@@ -475,16 +497,18 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
             ] })} style={{ ...T.mono, color: C.olive, padding: '6px 4px 6px 12px', cursor: 'pointer' }}>•••</span>
           </div>
           {e.note ? <div style={{ font: `italic 400 13px/1.4 ${F.body}`, color: C.dim, marginTop: 2 }}>{e.note}</div> : null}
-          <div style={{ display: 'grid', gridTemplateColumns: `34px 1fr ${cs.map(() => '64px').join(' ')} 44px`, gap: 6, alignItems: 'center', marginTop: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 6, alignItems: 'center', marginTop: 8 }}>
             <div style={{ ...T.label, textAlign: 'center' }}>SET</div><div style={T.label}>PREVIOUS</div>
             {cs.map(c => <div key={c} style={{ ...T.label, textAlign: 'center' }}>{c}</div>)}<div style={{ ...T.label, textAlign: 'center' }}>✓</div>
+          </div>
             {e.sets.map((s, i) => {
               const prev = lp && lp.sets[i] ? lp.sets[i] : null, ph = phOf(prev, s.target);
               const kindCol = s.kind === 'w' ? C.amber : s.kind === 'd' ? C.blue : s.kind === 'f' ? C.red : C.text;
               const rowBg = s.done ? 'rgba(163,196,110,.18)' : 'transparent';
               const inStyle = { ...cellIn, background: s.done ? 'transparent' : '#282d36' };
               const numIdx = e.sets.slice(0, i + 1).filter(x => x.kind !== 'w').length;
-              return <React.Fragment key={i}>
+              return <SwipeRow key={i} bg={C.bg} style={{ marginTop: 6 }} actions={[{ label: 'DELETE', run: () => updEx(e.uid, x => ({ ...x, sets: x.sets.filter((_, j) => j !== i) })) }]}>
+                <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 6, alignItems: 'center' }}>
                 <div role="button" onClick={() => setMenu({ title: 'Set ' + (i + 1), actions: [
                   { label: 'Normal set', run: () => updSet(e.uid, i, x => ({ ...x, kind: 'n' })) }, { label: 'Warm-up set (W)', run: () => updSet(e.uid, i, x => ({ ...x, kind: 'w' })) },
                   { label: 'Drop set (D)', run: () => updSet(e.uid, i, x => ({ ...x, kind: 'd' })) }, { label: 'Failure set (F)', run: () => updSet(e.uid, i, x => ({ ...x, kind: 'f' })) },
@@ -496,10 +520,10 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
                 {ex.type === 'wr' || ex.type === 'r' ? <input inputMode="numeric" style={inStyle} value={s.r == null ? '' : s.r} placeholder={ph.r != null ? String(ph.r) : ''} onChange={ev => { const v = ev.target.value; updSet(e.uid, i, x => ({ ...x, r: v === '' ? null : Math.max(0, Math.round(num(v) || 0)) })); }} /> : null}
                 {ex.type === 'd' || ex.type === 'dt' ? <input inputMode="numbers-and-punctuation" style={inStyle} value={s.tRaw != null ? s.tRaw : s.t == null ? '' : fmtDur(s.t)} placeholder={ph.t != null ? fmtDur(ph.t) : 'm:ss'}
                   onChange={ev => { const v = ev.target.value; updSet(e.uid, i, x => ({ ...x, tRaw: v, t: parseTime(v) })); }} onBlur={() => updSet(e.uid, i, x => ({ ...x, tRaw: undefined }))} /> : null}
-                <div role="button" onClick={() => toggleDone(e, i, prev)} style={{ height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: s.done ? C.olive : '#282d36', color: s.done ? C.oliveInk : C.faint, font: `700 16px/1 ${F.mono}` }}>✓</div>
-              </React.Fragment>;
+                <div role="button" onClick={() => toggleDone(e, i, prev)} style={{ height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: s.done ? C.olive : '#282d36', color: s.done ? C.oliveInk : C.faint, font: `700 16px/1 ${F.mono}` }}>{s.pr ? '🏆' : '✓'}</div>
+                </div>
+              </SwipeRow>;
             })}
-          </div>
           <div role="button" onClick={() => updEx(e.uid, x => ({ ...x, sets: x.sets.concat({ w: null, r: null, t: null, d: null, kind: 'n', done: false, target: x.sets.length ? { ...x.sets[x.sets.length - 1], done: false } : undefined }) }))}
             style={{ marginTop: 8, padding: '10px', textAlign: 'center', background: '#20252c', cursor: 'pointer', ...T.mono, fontSize: 12, color: C.dim }}>+ ADD SET{e.rest ? ' · REST ' + fmtDur(e.rest) : ''}</div>
         </div>;
@@ -677,7 +701,7 @@ function ExerciseDetail({ st, app, exId, onClose }) {
   const tiles = ex.type === 'wr' ? [['EST. 1RM', rec.e1rm ? wDisp(st, r1(rec.e1rm)) + ' ' + wUnit(st) : '—'], ['HEAVIEST', rec.heavy ? wDisp(st, rec.heavy) + ' ' + wUnit(st) : '—'], ['BEST SET VOL', rec.vol ? wDisp(st, rec.vol) + ' ' + wUnit(st) : '—']]
     : ex.type === 'r' ? [['MOST REPS', rec.reps || '—'], ['SESSIONS', hist.length]] : ex.type === 'd' ? [['LONGEST', rec.time ? fmtDur(rec.time) : '—'], ['SESSIONS', hist.length]] : [['LONGEST', rec.dist ? r2(rec.dist) + ' km' : '—'], ['LONGEST TIME', rec.time ? fmtDur(rec.time) : '—']];
   const tt = trendText(st, pts, metric);
-  return <Sheet z={55} title={ex.name} sub={ex.part.toUpperCase() + (ex.equip ? ' · ' + ex.equip.toUpperCase() : '')} left={<TopLink onClick={onClose}>‹ BACK</TopLink>}
+  return <Sheet z={58} title={ex.name} sub={ex.part.toUpperCase() + (ex.equip ? ' · ' + ex.equip.toUpperCase() : '')} left={<TopLink onClick={onClose}>‹ BACK</TopLink>}
     right={ex.custom ? <TopLink tone={C.red} onClick={() => { if (confirm('Delete this custom exercise? Past workouts keep their records.')) { app.setState(s => ({ exLib: (s.exLib || []).filter(e => e.id !== exId) })); onClose(); } }}>DELETE</TopLink> : null}>
     <div style={{ padding: '14px 18px 26px' }}>
       <div style={{ ...T.label, marginBottom: 8 }}>PERSONAL RECORDS</div>
@@ -1015,7 +1039,9 @@ function WorkoutCalendar({ st, onDay }) {
   const shift = d => { const t = new Date(y, m - 1 + d, 1); setMonth(t.getFullYear() + '-' + pad2(t.getMonth() + 1)); };
   const count = cells.filter(c => c && byDate[c]).length;
   const earliest = Object.keys(byDate).sort()[0];
+  const canBack = !earliest || month > earliest.slice(0, 7), canFwd = month < st.curDate.slice(0, 7);
   return <Card style={{ marginBottom: 16, padding: '12px 12px 10px' }}>
+    <div {...swipeNav(() => canFwd && shift(1), () => canBack && shift(-1))}>
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <span role="button" onClick={() => (!earliest || month > earliest.slice(0, 7)) && shift(-1)} style={{ ...T.mono, fontSize: 16, color: earliest && month > earliest.slice(0, 7) ? C.olive : C.faint, padding: '6px 12px', cursor: 'pointer' }}>‹</span>
       <div style={{ textAlign: 'center' }}><div style={{ font: `700 16px/1 ${F.head}`, letterSpacing: '.12em', textTransform: 'uppercase' }}>{MON[m - 1]} {y}</div>
@@ -1035,6 +1061,80 @@ function WorkoutCalendar({ st, onDay }) {
         </div>;
       })}
     </div>
+    </div>
     <div style={{ ...T.label, marginTop: 9, color: C.faint, lineHeight: 1.5 }}>FILLED = WORKOUT DONE · OUTLINED DAYS (LAST {EDIT_DAYS}) CAN STILL BE EDITED OR ADDED TO</div>
   </Card>;
 }
+
+// ── All-time stats & records (🏆 on the History tab) ──
+function AllTime({ st, onClose, onExercise }) {
+  const [showAll, setShowAll] = useState(false);
+  const ws = st.workouts || [];
+  const tot = { time: 0, vol: 0, sets: 0, reps: 0, dist: 0 }, per = {}, weeks = {};
+  let biggest = null, longest = null;
+  for (const w of ws) {
+    const v = w.volume != null ? w.volume : workoutVolume(w), dur = (w.end - w.start) / 1000;
+    tot.time += dur; tot.vol += v;
+    if (!biggest || v > biggest.v) biggest = { v, w };
+    if (!longest || dur > longest.d) longest = { d: dur, w };
+    const d = dOf(w.date), mon = isoOf(new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7)); weeks[mon] = (weeks[mon] || 0) + 1;
+    for (const e of w.exercises) {
+      const R = per[e.exId] || (per[e.exId] = { exId: e.exId, name: e.name, type: e.type, n: 0, heavy: 0, heavyD: '', e1rm: 0, e1rmD: '', vol: 0, reps: 0, time: 0, dist: 0 });
+      R.n++;
+      for (const s of e.sets) {
+        if (s.done === false) continue;
+        tot.sets++; tot.reps += s.r || 0; tot.dist += s.d || 0;
+        if ((s.w || 0) > R.heavy) { R.heavy = s.w; R.heavyD = w.date; }
+        const e1 = est1rm(s); if (e1 > R.e1rm) { R.e1rm = e1; R.e1rmD = w.date; }
+        R.vol = Math.max(R.vol, (s.w || 0) * (s.r || 0)); R.reps = Math.max(R.reps, s.r || 0); R.time = Math.max(R.time, s.t || 0); R.dist = Math.max(R.dist, s.d || 0);
+      }
+    }
+  }
+  const prs = ws.flatMap(w => (w.prs || []).map(p => ({ ...p, date: w.date }))).reverse();
+  const bestWeek = Object.entries(weeks).sort((a, b) => b[1] - a[1])[0];
+  const recs = Object.values(per).sort((a, b) => b.n - a.n);
+  const unit = wUnit(st), W = kg => Math.round(st.imperial ? kg * 2.20462 : kg).toLocaleString();
+  const tile = (l, v, sub) => <Card style={{ padding: '10px 11px' }}><div style={T.label}>{l}</div><div style={{ font: `700 21px/1.1 ${F.head}`, marginTop: 4 }}>{v}</div>{sub ? <div style={{ ...T.label, marginTop: 3 }}>{sub}</div> : null}</Card>;
+  const recLine = R => R.type === 'wr' ? [['HEAVIEST', wDisp(st, R.heavy) + ' ' + unit, R.heavyD], ['EST. 1RM', wDisp(st, r1(R.e1rm)) + ' ' + unit, R.e1rmD], ['BEST SET', wDisp(st, R.vol) + ' ' + unit]]
+    : R.type === 'r' ? [['MOST REPS', R.reps + '']] : R.type === 'd' ? [['LONGEST', fmtDur(R.time)]] : [['LONGEST', r2(R.dist) + ' km'], ['LONGEST TIME', fmtDur(R.time)]];
+  const lastSat = (() => { const d = dOf(st.curDate); d.setDate(d.getDate() - ((d.getDay() + 1) % 7 || 7)); return isoOf(d); })();
+  const reports = Array.from({ length: 8 }, (_, i) => addDaysIso(lastSat, -6 - 7 * i)).filter(s0 => ws.some(w => w.date >= s0 && w.date <= addDaysIso(s0, 6)) || Object.keys(st.diary || {}).some(d => d >= s0 && d <= addDaysIso(s0, 6)));
+  return <Sheet z={55} title="All time" sub={ws.length ? 'SINCE ' + niceDate(ws[0].date).toUpperCase() : 'NO WORKOUTS YET'} left={<TopLink onClick={onClose}>‹ BACK</TopLink>}>
+    <div style={{ padding: '14px 18px 30px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+        {tile('TOTAL LIFTED', W(tot.vol) + ' ' + unit, tot.vol >= 1000 ? r1(tot.vol / 1000).toLocaleString() + ' TONNES' : null)}
+        {tile('WORKOUTS', ws.length.toLocaleString(), fmtMin(tot.time).toUpperCase() + ' TRAINING')}
+        {tile('SETS · REPS', tot.sets.toLocaleString() + ' · ' + tot.reps.toLocaleString())}
+        {tile('PERSONAL RECORDS', prs.length.toLocaleString(), tot.dist ? r1(tot.dist) + ' KM COVERED' : null)}
+      </div>
+      {ws.length ? <>
+        <div style={{ ...T.h2, margin: '22px 0 8px' }}>Milestones</div>
+        {[biggest && ['Biggest session', W(biggest.v) + ' ' + unit, biggest.w.name + ' · ' + niceDate(biggest.w.date)],
+          longest && ['Longest workout', fmtMin(longest.d), longest.w.name + ' · ' + niceDate(longest.w.date)],
+          bestWeek && ['Most in a week', bestWeek[1] + ' workouts', 'Week of ' + niceDate(bestWeek[0])],
+          ['First workout', niceDate(ws[0].date), ws[0].name]].filter(Boolean).map(([l, v, sub]) =>
+          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: '1px solid #272c34' }}>
+            <div><div style={T.name}>{l}</div><div style={{ ...T.label, marginTop: 3 }}>{sub.toUpperCase()}</div></div><div style={{ font: `700 18px/1.2 ${F.head}`, flex: 'none' }}>{v}</div></div>)}
+
+        <div style={{ ...T.h2, margin: '22px 0 8px' }}>Records</div>
+        {(showAll ? recs : recs.slice(0, 10)).map(R => <div key={R.exId} role="button" onClick={() => onExercise(R.exId)} style={{ padding: '10px 0', borderBottom: '1px solid #272c34', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={T.name}>{R.name}</span><span style={{ ...T.label }}>{R.n} {R.n === 1 ? 'SESSION' : 'SESSIONS'} ›</span></div>
+          <div style={{ display: 'flex', gap: 14, marginTop: 5, flexWrap: 'wrap' }}>{recLine(R).map(([l, v]) => <div key={l}><div style={{ ...T.label, fontSize: 9 }}>{l}</div><div style={{ ...T.mono, fontSize: 13, color: C.text, marginTop: 2 }}>{v}</div></div>)}</div>
+        </div>)}
+        {recs.length > 10 ? <Btn kind="ghost" tone={C.olive} onClick={() => setShowAll(!showAll)} style={{ marginTop: 10, minHeight: 42 }}>{showAll ? 'SHOW FEWER' : 'SHOW ALL ' + recs.length + ' EXERCISES'}</Btn> : null}
+
+        <div style={{ ...T.h2, margin: '22px 0 8px' }}>Recent PRs</div>
+        {prs.length ? prs.slice(0, 15).map((p, i) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '8px 0', borderBottom: '1px solid #272c34' }}>
+          <div><div style={{ ...T.name, fontSize: 14 }}>🏆 {p.ex}</div><div style={{ ...T.label, marginTop: 2 }}>{p.what.toUpperCase()} · {niceDate(p.date).toUpperCase()}</div></div>
+          <div style={{ ...T.mono, fontSize: 13, color: C.amber, flex: 'none' }}>{p.val}</div></div>) : <Empty>BEAT A PREVIOUS BEST AND IT SHOWS UP HERE</Empty>}
+      </> : <Empty>FINISH A WORKOUT (OR IMPORT FROM STRONG) TO START YOUR RECORDS</Empty>}
+
+      {reports.length ? <>
+        <div style={{ ...T.h2, margin: '22px 0 8px' }}>Weekly reports</div>
+        {reports.map(s0 => <div key={s0} role="button" onClick={() => window.SHReport && window.SHReport.open(s0)} style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid #272c34', cursor: 'pointer' }}>
+          <span style={T.name}>{weekLabel(s0)}</span><span style={{ ...T.mono, fontSize: 11, color: C.olive }}>VIEW ›</span></div>)}
+      </> : null}
+    </div>
+  </Sheet>;
+}
+const weekLabel = s0 => { const a = dOf(s0), b = dOf(addDaysIso(s0, 6)); return MON[a.getMonth()] + ' ' + a.getDate() + ' – ' + (a.getMonth() === b.getMonth() ? '' : MON[b.getMonth()] + ' ') + b.getDate(); };
