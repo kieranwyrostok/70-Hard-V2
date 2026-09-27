@@ -46,6 +46,9 @@ ui → library → train → fuel → coach and compiled into one IIFE, so later
 - Meal sections: `st.mealSlots` [{id,name,pct}] (defaults BREAKFAST/LUNCH/DINNER/SNACK); global `SLOTS`
   refreshed via `useSlots(st)`.
 - Train data: `st.workouts`, `st.templates`, `st.exLib` (custom exercises), `st.activeWorkout`.
+- Strong import (train.jsx, `StrongImport`): reads Strong's CSV export (columns found by name; kg/lb and m/km/mi in
+  headers or per row; rest-timer rows skipped), matches exercise names to the list, adds unknown ones to `exLib`,
+  skips workouts already present (same name within 90 s), computes volume + PRs in date order. Ids `strong-<start>`.
 
 **netlify/functions/** — Netlify Functions v2 (ESM, `export const config = { path: '/api/...' }`).
 food-search (Health Canada CNF via netlify/lib/cnf.mjs + Open Food Facts products sold in Canada + USDA, merged

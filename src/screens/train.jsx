@@ -157,6 +157,7 @@ function TrainScreen({ app, st }) {
   const [creating, setCreating] = useState(null);
   const [presets, setPresets] = useState(false);
   const [mobPick, setMobPick] = useState(false);
+  const [strongImp, setStrongImp] = useState(false);
   const SH = window.SH;
   const today = st.curDate;
   const aw = st.activeWorkout;
@@ -267,6 +268,8 @@ function TrainScreen({ app, st }) {
     const ws = (st.workouts || []).slice().reverse();
     let lastMonth = '';
     body = <div style={{ padding: '14px 22px 24px' }}>
+      <div role="button" onClick={() => setStrongImp(true)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 14px', marginBottom: 14, background: '#20252c', borderRadius: 12, cursor: 'pointer' }}>
+        <span style={{ ...T.name, fontSize: 14 }}>Have workouts in Strong?</span><span style={{ ...T.mono, fontSize: 11, color: C.olive }}>IMPORT ›</span></div>
       {ws.length ? <HistoryProgress st={st} onExercise={setExOpen} /> : null}
       {ws.length ? <div style={{ ...T.h2, margin: '22px 0 4px' }}>All workouts</div> : null}
       {!ws.length ? <Empty>FINISHED WORKOUTS SHOW UP HERE</Empty> : null}
@@ -365,6 +368,7 @@ function TrainScreen({ app, st }) {
     {exOpen ? <ExerciseDetail st={st} app={app} exId={exOpen} onClose={() => setExOpen(null)} /> : null}
     {tplEdit ? <TemplateEditor app={app} st={st} draft={tplEdit} setDraft={setTplEdit} onClose={() => setTplEdit(null)} /> : null}
     {creating ? <CreateExercise app={app} draft={creating} setDraft={setCreating} onDone={() => setCreating(null)} /> : null}
+    {strongImp ? <StrongImport app={app} st={st} onClose={() => setStrongImp(false)} /> : null}
     {presets ? <PresetBrowser st={st} app={app} onClose={() => setPresets(false)} onStart={t => { setPresets(false); startWorkout(t); }} /> : null}
     {mobPick ? <MobilityPicker title="Mobility session" routinesOnly onClose={() => setMobPick(false)} onAdd={(list, title) => startMobility({ list, title })} /> : null}
     {summary ? <Sheet title="Workout complete" sub={summary.w.name} left={<span />} footer={<div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -828,4 +832,159 @@ function HistoryProgress({ st, onExercise }) {
         <span style={{ ...T.mono, color: C.dim }}>›</span>
       </div>; })}
   </div>;
+}
+
+// ── Import from Strong ──
+// Strong: Settings → Export Strong Data → a CSV with one row per set. Column names vary a little between Strong
+// versions (units in the header or in their own columns, comma or semicolon), so columns are found by name.
+function parseCsv(text) {
+  text = text.replace(/^﻿/, '');
+  const first = text.split(/\r?\n/, 1)[0] || '', delim = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === delim) { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim()));
+}
+const normName = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function strongDate(s) {
+  const m = String(s || '').trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[ T]?(\d{1,2})?:?(\d{2})?:?(\d{2})?/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 12), +(m[5] || 0), +(m[6] || 0));
+  const d = new Date(s); return isNaN(d) ? null : d;
+}
+function strongDuration(s) {
+  s = String(s || '').trim(); if (!s) return 0;
+  if (/^\d+(\.\d+)?$/.test(s)) return +s;                                   // seconds
+  if (/^\d+:\d{2}(:\d{2})?$/.test(s)) { const p = s.split(':').map(Number); return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1]; }
+  const h = s.match(/(\d+)\s*h/), m = s.match(/(\d+)\s*m(?!s)/), sec = s.match(/(\d+)\s*s/);
+  return (h ? +h[1] * 3600 : 0) + (m ? +m[1] * 60 : 0) + (sec ? +sec[1] : 0);
+}
+function parseStrong(text) {
+  const rows = parseCsv(text);
+  if (rows.length < 2) throw new Error('That file is empty.');
+  const head = rows[0].map(h => h.trim().toLowerCase());
+  const col = (...names) => head.findIndex(h => names.some(n => h === n || h.startsWith(n + ' (')));
+  const C_ = { date: col('date'), name: col('workout name'), dur: col('duration'), ex: col('exercise name'), order: col('set order'), w: col('weight'), r: col('reps'),
+    dist: col('distance'), sec: col('seconds'), note: col('notes'), wnote: col('workout notes'), wUnit: col('weight unit'), dUnit: col('distance unit') };
+  if (C_.date < 0 || C_.ex < 0) throw new Error('This doesn’t look like a Strong export (no Date / Exercise Name columns).');
+  const wHead = C_.w >= 0 ? head[C_.w] : '', dHead = C_.dist >= 0 ? head[C_.dist] : '';
+  const weightUnit = /lb/.test(wHead) ? 'lb' : /kg/.test(wHead) ? 'kg' : null;       // null = ask
+  const distUnit = /mile|\(mi\)/.test(dHead) ? 'mi' : /\(km\)/.test(dHead) ? 'km' : /meter|\(m\)/.test(dHead) ? 'm' : null;
+  const get = (r, i) => i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : '';
+  const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; };
+  const byKey = new Map();
+  for (const r of rows.slice(1)) {
+    const exName = get(r, C_.ex), order = get(r, C_.order);
+    if (!exName || /rest/i.test(order) || /^rest( timer)?$/i.test(exName)) continue;   // Strong logs rest timers as rows too
+    const when = strongDate(get(r, C_.date)); if (!when) continue;
+    const wname = get(r, C_.name) || 'Workout', key = get(r, C_.date) + '|' + wname;
+    if (!byKey.has(key)) byKey.set(key, { name: wname, start: when.getTime(), dur: strongDuration(get(r, C_.dur)), note: get(r, C_.wnote), ex: new Map() });
+    const w = byKey.get(key);
+    if (!w.ex.has(exName)) w.ex.set(exName, { name: exName, note: '', sets: [] });
+    const e = w.ex.get(exName);
+    if (get(r, C_.note) && !e.note) e.note = get(r, C_.note);
+    const wu = (get(r, C_.wUnit) || '').toLowerCase(), du = (get(r, C_.dUnit) || '').toLowerCase();
+    e.sets.push({ w: num(get(r, C_.w)), wu: /lb/.test(wu) ? 'lb' : /kg/.test(wu) ? 'kg' : null, r: num(get(r, C_.r)), d: num(get(r, C_.dist)), du: /mi/.test(du) ? 'mi' : /km/.test(du) ? 'km' : /^m$|met/.test(du) ? 'm' : null,
+      t: num(get(r, C_.sec)), kind: /^w/i.test(order) ? 'w' : /^d/i.test(order) ? 'd' : /^f/i.test(order) ? 'f' : 'n' });
+  }
+  const workouts = [...byKey.values()].map(w => ({ ...w, ex: [...w.ex.values()] })).sort((a, b) => a.start - b.start);
+  const hasRowUnits = workouts.some(w => w.ex.some(e => e.sets.some(s => s.wu)));
+  return { workouts, weightUnit: weightUnit || (hasRowUnits ? 'row' : null), distUnit };
+}
+
+function StrongImport({ app, st, onClose }) {
+  const [parsed, setParsed] = useState(null), [err, setErr] = useState(''), [unit, setUnit] = useState(st.imperial ? 'lb' : 'kg'), [busy, setBusy] = useState(false);
+  const fileRef = useRef(null);
+  const pick = ev => {
+    const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { try { setErr(''); setParsed(parseStrong(String(rd.result))); } catch (e) { setParsed(null); setErr(e.message || 'Couldn’t read that file.'); } };
+    rd.readAsText(f);
+  };
+  // match Strong's exercise names to the app's list; anything unknown becomes a custom exercise
+  const plan = useMemo(() => {
+    if (!parsed) return null;
+    const lib = new Map(allExercises(st).map(e => [normName(e.name), e]));
+    const names = [...new Set(parsed.workouts.flatMap(w => w.ex.map(e => e.name)))];
+    const newEx = [], map = {};
+    for (const n of names) {
+      const hit = lib.get(normName(n)) || lib.get(normName(n.replace(/\s*\(.*\)\s*$/, '')));
+      if (hit) { map[n] = hit.id; continue; }
+      const sets = parsed.workouts.flatMap(w => w.ex.filter(e => e.name === n).flatMap(e => e.sets));
+      const type = sets.some(s => s.w > 0) ? 'wr' : sets.some(s => s.d > 0) ? 'dt' : sets.some(s => s.r > 0) ? 'r' : sets.some(s => s.t > 0) ? 'd' : 'wr';
+      const eq = (n.match(/\(([^)]+)\)\s*$/) || [])[1] || '';
+      const ex = { id: 'x' + uid(), name: n, part: 'Other', type, equip: EQUIPS.includes(eq) ? eq : eq ? 'Other' : undefined, custom: true };
+      newEx.push(ex); map[n] = ex.id;
+    }
+    const existing = st.workouts || [];
+    const dup = w => existing.some(x => Math.abs(x.start - w.start) < 90000 && normName(x.name) === normName(w.name));
+    const fresh = parsed.workouts.filter(w => !dup(w));
+    return { map, newEx, fresh, dups: parsed.workouts.length - fresh.length, matched: names.length - newEx.length, total: names.length };
+  }, [parsed, st.workouts, st.exLib]);
+
+  const run = () => {
+    if (!plan || !plan.fresh.length) return;
+    setBusy(true);
+    setTimeout(() => {
+      const kgOf = (v, su) => { if (v == null) return null; const u = parsed.weightUnit === 'row' ? (su || unit) : (parsed.weightUnit || unit); return r2(u === 'lb' ? v / 2.20462 : v); };
+      const kmOf = (v, su) => { if (v == null) return null; const u = su || parsed.distUnit || 'm'; return r2(u === 'mi' ? v * 1.60934 : u === 'km' ? v : v / 1000); };
+      const typeOf = id => (plan.newEx.find(e => e.id === id) || exById(st, id)).type;
+      const made = plan.fresh.map(w => {
+        const d = new Date(w.start), out = { id: 'strong-' + w.start, name: w.name, date: isoOf(d), start: w.start, end: w.start + (w.dur || 3600) * 1000, imported: 'strong', note: w.note || undefined,
+          exercises: w.ex.map(e => { const id = plan.map[e.name], type = typeOf(id);
+            return { exId: id, name: (plan.newEx.find(x => x.id === id) || exById(st, id)).name, type, rest: REST_DEFAULT[type], note: e.note,
+              sets: e.sets.map(s => ({ w: type === 'wr' ? kgOf(s.w, s.wu) : null, r: type === 'wr' || type === 'r' ? (s.r != null ? Math.round(s.r) : null) : null,
+                d: type === 'dt' ? kmOf(s.d, s.du) : null, t: type === 'd' || type === 'dt' ? (s.t != null ? Math.round(s.t) : null) : null, kind: s.kind, done: true }))
+                .filter(s => s.w != null || s.r != null || s.d != null || s.t != null) }; }).filter(e => e.sets.length), mobility: [] };
+        out.volume = workoutVolume(out); return out;
+      }).filter(w => w.exercises.length);
+      const exLib = (st.exLib || []).concat(plan.newEx);
+      const all = (st.workouts || []).concat(made).sort((a, b) => a.start - b.start);
+      // PRs in date order, as if each workout had just been finished
+      const view = { ...st, exLib, workouts: all };
+      for (const w of made) { const upTo = { ...view, workouts: all.filter(x => x.start <= w.start) }; w.prs = findPRs(upTo, w); }
+      try { app.setState({ exLib, workouts: all }); }
+      catch (e) { setBusy(false); alert('Your phone ran out of space for that many workouts.'); return; }
+      setBusy(false);
+      alert('Imported ' + made.length + ' workouts from Strong.' + (plan.newEx.length ? ' ' + plan.newEx.length + (plan.newEx.length === 1 ? ' new exercise was' : ' new exercises were') + ' added to your list.' : ''));
+      onClose();
+    }, 30);
+  };
+  const first = parsed && parsed.workouts[0], last = parsed && parsed.workouts[parsed.workouts.length - 1];
+  return <Sheet z={60} title="Import from Strong" left={<TopLink onClick={onClose}>‹ BACK</TopLink>}
+    footer={plan ? <Btn tone={C.olive} ink={C.oliveInk} disabled={!plan.fresh.length || busy} onClick={run}>{busy ? 'Importing…' : plan.fresh.length ? 'Import ' + plan.fresh.length + ' workouts' : 'Nothing new to import'}</Btn> : null}>
+    <div style={{ padding: '14px 18px 26px' }}>
+      <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>Bring your Strong history in so your graphs, records and “previous” numbers include it.</div>
+      <Card style={{ marginTop: 12 }}>
+        <div style={{ ...T.label, marginBottom: 6 }}>IN THE STRONG APP</div>
+        <div style={{ font: `400 14px/1.5 ${F.body}`, color: C.text }}>1. Open <b>Profile → Settings</b> (gear icon)<br />2. Tap <b>Export Strong Data</b><br />3. Save the file to <b>Files</b>, then choose it below</div>
+      </Card>
+      <input ref={fileRef} type="file" accept=".csv,text/csv,text/plain" onChange={pick} style={{ display: 'none' }} />
+      <Btn kind="ghost" tone={C.olive} onClick={() => fileRef.current && fileRef.current.click()} style={{ marginTop: 12 }}>{parsed ? 'CHOOSE A DIFFERENT FILE' : 'CHOOSE STRONG CSV FILE'}</Btn>
+      {err ? <div style={{ ...T.body, color: C.red, marginTop: 12, fontSize: 14 }}>{err}</div> : null}
+      {plan ? <>
+        <div style={{ display: 'flex', gap: 7, marginTop: 14 }}>
+          {[['WORKOUTS', parsed.workouts.length], ['EXERCISES', plan.total], ['NEW', plan.fresh.length]].map(([l, v]) => <Card key={l} style={{ flex: 1, padding: '10px 10px' }}><div style={T.label}>{l}</div><div style={{ font: `700 22px/1.1 ${F.head}`, marginTop: 3 }}>{v}</div></Card>)}
+        </div>
+        {first ? <div style={{ ...T.label, marginTop: 10 }}>{niceDate(isoOf(new Date(first.start))).toUpperCase()} → {niceDate(isoOf(new Date(last.start))).toUpperCase()}{plan.dups ? ' · ' + plan.dups + ' ALREADY HERE, SKIPPED' : ''}</div> : null}
+        {!parsed.weightUnit ? <div style={{ marginTop: 16 }}>
+          <div style={{ ...T.label, marginBottom: 6 }}>WEIGHTS IN THIS FILE ARE IN</div>
+          <div style={{ display: 'flex', gap: 6 }}>{[['kg', 'KG'], ['lb', 'LB']].map(([v, l]) => <Chip key={v} on={unit === v} tone={C.olive} ink={C.oliveInk} onClick={() => setUnit(v)} style={{ flex: 1, textAlign: 'center' }}>{l}</Chip>)}</div>
+        </div> : <div style={{ ...T.label, marginTop: 8 }}>WEIGHTS READ AS {parsed.weightUnit === 'row' ? 'THE UNIT ON EACH ROW' : parsed.weightUnit.toUpperCase()}</div>}
+        <div style={{ ...T.label, margin: '16px 0 6px' }}>{plan.matched} OF {plan.total} EXERCISES MATCHED YOUR LIST</div>
+        {plan.newEx.length ? <Card>
+          <div style={{ ...T.label, marginBottom: 6 }}>WILL BE ADDED AS YOUR OWN EXERCISES</div>
+          {plan.newEx.map(e => <div key={e.id} style={{ ...T.name, fontSize: 14, padding: '3px 0' }}>{e.name} <span style={{ ...T.label }}>· {({ wr: 'WEIGHT × REPS', r: 'REPS', d: 'TIME', dt: 'DISTANCE' })[e.type]}</span></div>)}
+        </Card> : null}
+        <div style={{ ...T.label, marginTop: 14, color: C.faint, lineHeight: 1.6 }}>IMPORTED WORKOUTS DON’T CHANGE YOUR 70-DAY BOARD OR STREAK. IMPORTING THE SAME FILE AGAIN SKIPS WORKOUTS YOU ALREADY HAVE.</div>
+      </> : null}
+    </div>
+  </Sheet>;
 }
