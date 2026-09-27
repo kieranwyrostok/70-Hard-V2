@@ -163,6 +163,8 @@ function TrainScreen({ app, st }) {
   const [mobPick, setMobPick] = useState(false);
   const [strongImp, setStrongImp] = useState(false);
   const [allTime, setAllTime] = useState(false);
+  const [dataFix, setDataFix] = useState(false);
+  const oddCount = useMemo(() => tab === 'history' ? findOddSets(st).length : 0, [tab, st.workouts]);
   const SH = window.SH;
   const today = st.curDate;
   const aw = st.activeWorkout;
@@ -287,6 +289,8 @@ function TrainScreen({ app, st }) {
           .concat(old || future || aw ? [] : [{ label: '+ Log a workout for this day', run: () => startWorkout(null, iso) }].concat(templates.slice(0, 6).map(t => ({ label: '+ Log “' + t.name + '” for this day', run: () => startWorkout(t, iso) }))))
           .concat(!list.length && (old || future) ? [{ label: future ? 'This day is still ahead' : 'Older than ' + EDIT_DAYS + ' days — can’t add workouts', run: () => {} }] : []) });
       }} />
+      {oddCount ? <div role="button" onClick={() => setDataFix(true)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '11px 14px', marginBottom: 14, background: C.card, border: '1px solid ' + C.amber, borderRadius: 12, cursor: 'pointer' }}>
+        <span style={{ ...T.name, fontSize: 14 }}>🧹 {oddCount} {oddCount === 1 ? 'lift looks' : 'lifts look'} converted wrong</span><span style={{ ...T.mono, fontSize: 11, color: C.amber, flex: 'none' }}>REVIEW ›</span></div> : null}
       {ws.length ? <HistoryProgress st={st} onExercise={setExOpen} /> : null}
       {ws.length ? <div style={{ ...T.h2, margin: '22px 0 4px' }}>All workouts</div> : null}
       {!ws.length ? <Empty>FINISHED WORKOUTS SHOW UP HERE</Empty> : null}
@@ -391,7 +395,8 @@ function TrainScreen({ app, st }) {
     {exOpen ? <ExerciseDetail st={st} app={app} exId={exOpen} onClose={() => setExOpen(null)} /> : null}
     {tplEdit ? <TemplateEditor app={app} st={st} draft={tplEdit} setDraft={setTplEdit} onClose={() => setTplEdit(null)} /> : null}
     {creating ? <CreateExercise app={app} draft={creating} setDraft={setCreating} onDone={() => setCreating(null)} /> : null}
-    {allTime ? <AllTime st={st} onClose={() => setAllTime(false)} onExercise={setExOpen} /> : null}
+    {allTime ? <AllTime st={st} onClose={() => setAllTime(false)} onExercise={setExOpen} onCheck={() => setDataFix(true)} /> : null}
+    {dataFix ? <DataFix app={app} st={st} onClose={() => setDataFix(false)} /> : null}
     {strongImp ? <StrongImport app={app} st={st} onClose={() => setStrongImp(false)} /> : null}
     {presets ? <PresetBrowser st={st} app={app} onClose={() => setPresets(false)} onStart={t => { setPresets(false); startWorkout(t); }} /> : null}
     {mobPick ? <MobilityPicker title="Mobility session" routinesOnly onClose={() => setMobPick(false)} onAdd={(list, title) => startMobility({ list, title })} /> : null}
@@ -1059,7 +1064,7 @@ function WorkoutCalendar({ st, onDay }) {
 }
 
 // ── All-time stats & records (🏆 on the History tab) ──
-function AllTime({ st, onClose, onExercise }) {
+function AllTime({ st, onClose, onExercise, onCheck }) {
   const [showAll, setShowAll] = useState(false);
   const ws = st.workouts || [];
   const tot = { time: 0, vol: 0, sets: 0, reps: 0, dist: 0 }, per = {}, weeks = {};
@@ -1121,6 +1126,7 @@ function AllTime({ st, onClose, onExercise }) {
           <div style={{ ...T.mono, fontSize: 13, color: C.amber, flex: 'none' }}>{p.val}</div></div>) : <Empty>BEAT A PREVIOUS BEST AND IT SHOWS UP HERE</Empty>}
       </> : <Empty>FINISH A WORKOUT (OR IMPORT FROM STRONG) TO START YOUR RECORDS</Empty>}
 
+      {ws.length ? <Btn kind="ghost" tone={C.olive} onClick={onCheck} style={{ marginTop: 20 }}>🧹 CHECK LIFT DATA FOR MISTAKES</Btn> : null}
       {reports.length ? <>
         <div style={{ ...T.h2, margin: '22px 0 8px' }}>Weekly reports</div>
         {reports.map(s0 => <div key={s0} role="button" onClick={() => window.SHReport && window.SHReport.open(s0)} style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid #272c34', cursor: 'pointer' }}>
@@ -1179,4 +1185,115 @@ function ExerciseTrends({ st, freq, onExercise }) {
       {top5.map(id => <TrendRow key={id} st={st} id={id} n={freq[id] || 0} onExercise={onExercise} />)}
     </>}
   </div>;
+}
+
+// ── Data check: find lifts that were probably converted wrong (lb ↔ kg, a slipped decimal, miles/metres) ──
+// Each session's top weight is compared with the median of the nearby sessions of the same exercise. A session
+// that is ~2.2× (or ~0.45×) your usual and lands back in range after a lb↔kg conversion gets a suggested fix.
+const LB = 0.45359237;
+const median = a => { const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length ? (b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2) : 0; };
+function findOddSets(st) {
+  const ws = (st.workouts || []).slice().sort((a, b) => a.start - b.start), byEx = {}, issues = [];
+  ws.forEach(w => w.exercises.forEach((e, ei) => {
+    if (e.type !== 'wr' && e.type !== 'dt') return;
+    const val = s => e.type === 'wr' ? s.w : s.d;
+    const work = e.sets.filter(s => s.done !== false && s.kind !== 'w' && val(s) > 0);
+    if (!work.length) return;
+    (byEx[e.exId] = byEx[e.exId] || { name: e.name, type: e.type, list: [] }).list.push({ w, ei, top: median(work.map(val)), vals: e.sets.map(val), work: e.sets.map(s => s.done !== false && s.kind !== 'w' && val(s) > 0) });
+  }));
+  const near = (x, lo, hi) => x >= lo && x <= hi;
+  for (const exId in byEx) {
+    const { name, type, list } = byEx[exId];
+    if (list.length < 3) continue;
+    list.forEach((S, i) => {
+      const nb = list.filter((_, j) => j !== i && Math.abs(j - i) <= 6).map(x => x.top);
+      if (nb.length < 2) return;
+      const ref = median(nb), r = S.top / ref;
+      let fix = null;
+      if (type === 'wr') {
+        if (near(r, 1.8, 2.8) && near(S.top * LB / ref, 0.75, 1.3)) fix = { f: LB, why: 'about 2.2× your usual — looks like pounds saved as kg' };
+        else if (near(r, 0.33, 0.56) && near(S.top / LB / ref, 0.75, 1.3)) fix = { f: 1 / LB, why: 'about 0.45× your usual — looks like kg saved as pounds' };
+        else if (near(r, 7, 13) && near(S.top / 10 / ref, 0.7, 1.3)) fix = { f: 0.1, why: 'about 10× your usual — looks like a slipped decimal' };
+      } else {
+        if (near(r, 500, 2000)) fix = { f: 0.001, why: 'about 1000× your usual — looks like metres saved as km' };
+        else if (near(r, 1.45, 1.8) && near(S.top / 1.609344 / ref, 0.8, 1.25)) fix = { f: 1 / 1.609344, why: 'about 1.6× your usual — looks like km saved as miles' };
+        else if (near(r, 0.55, 0.69) && near(S.top * 1.609344 / ref, 0.8, 1.25)) fix = { f: 1.609344, why: 'about 0.6× your usual — looks like miles saved as km' };
+      }
+      if (fix) { issues.push({ key: S.w.id + ':' + S.ei, wid: S.w.id, ei: S.ei, exId, name, type, date: S.w.date, top: S.top, ref, ...fix, kind: 'session' }); return; }
+      // one set way off from the rest of the same session (e.g. 850 among 85s)
+      if (type === 'wr') S.vals.forEach((v, si) => {
+        if (!(v > 0)) return;
+        if (!S.work[si]) return;
+        const others = S.vals.filter((x, k) => k !== si && x > 0 && S.work[k]);
+        if (others.length < 2) return;
+        const m = median(others), rr = v / m;
+        let f = null, why = '';
+        if (near(rr, 1.9, 2.6) && near(v * LB / m, 0.8, 1.2)) { f = LB; why = 'one set ~2.2× the rest — pounds saved as kg?'; }
+        else if (near(rr, 8, 12) && near(v / 10 / m, 0.8, 1.2)) { f = 0.1; why = 'one set ~10× the rest — slipped decimal?'; }
+        if (f) issues.push({ key: S.w.id + ':' + S.ei + ':' + si, wid: S.w.id, ei: S.ei, si, exId, name, type, date: S.w.date, top: v, ref: m, f, why, kind: 'set' });
+      });
+    });
+  }
+  return issues;
+}
+// Rebuild volume and PRs for every workout, in date order (after fixes or undo).
+function recomputeWorkouts(st, workouts) {
+  const all = workouts.slice().sort((a, b) => a.start - b.start).map(w => { const x = { ...w }; x.volume = workoutVolume(x); return x; });
+  const view = { ...st, workouts: all };
+  all.forEach(w => { w.prs = findPRs(view, w); });
+  return all;
+}
+function DataFix({ app, st, onClose }) {
+  const issues = useMemo(() => findOddSets(st), [st.workouts]);
+  const [off, setOff] = useState({});
+  const unitOf = t => t === 'wr' ? wUnit(st) : 'km', show = (t, v) => t === 'wr' ? wDisp(st, r2(v)) : r2(v);
+  const apply = () => {
+    const pick = issues.filter(i => !off[i.key]);
+    if (!pick.length) return;
+    const log = [];
+    const ws = (st.workouts || []).map(w => {
+      const mine = pick.filter(i => i.wid === w.id); if (!mine.length) return w;
+      return { ...w, exercises: w.exercises.map((e, ei) => {
+        const fx = mine.filter(i => i.ei === ei); if (!fx.length) return e;
+        return { ...e, sets: e.sets.map((s, si) => {
+          const hit = fx.find(i => i.kind === 'session' || i.si === si); if (!hit) return s;
+          const k = e.type === 'wr' ? 'w' : 'd'; if (!(s[k] > 0)) return s;
+          log.push({ wid: w.id, ei, si, k, from: s[k] });
+          return { ...s, [k]: r2(s[k] * hit.f) };
+        }) };
+      }) };
+    });
+    app.setState({ workouts: recomputeWorkouts(st, ws), dataFixUndo: log });
+    alert('Fixed ' + log.length + (log.length === 1 ? ' set' : ' sets') + '. Graphs, records and PRs have been recalculated.');
+    onClose();
+  };
+  const undo = () => {
+    const log = st.dataFixUndo || []; if (!log.length) return;
+    const ws = (st.workouts || []).map(w => { const mine = log.filter(l => l.wid === w.id); if (!mine.length) return w;
+      return { ...w, exercises: w.exercises.map((e, ei) => ({ ...e, sets: e.sets.map((s, si) => { const l = mine.find(x => x.ei === ei && x.si === si); return l ? { ...s, [l.k]: l.from } : s; }) })) }; });
+    app.setState({ workouts: recomputeWorkouts(st, ws), dataFixUndo: null });
+    alert('Undone — your ' + log.length + ' sets are back to how they were.');
+  };
+  const groups = {};
+  issues.forEach(i => (groups[i.name] = groups[i.name] || []).push(i));
+  const n = issues.filter(i => !off[i.key]).length;
+  return <Sheet z={57} title="Check lift data" sub={issues.length ? issues.length + ' THINGS LOOK OFF' : 'NOTHING LOOKS OFF'} left={<TopLink onClick={onClose}>‹ BACK</TopLink>}
+    footer={issues.length ? <Btn tone={C.olive} ink={C.oliveInk} disabled={!n} onClick={apply}>{n ? 'Fix ' + n + ' selected' : 'Select something to fix'}</Btn> : null}>
+    <div style={{ padding: '14px 18px 30px' }}>
+      <div style={{ ...T.body, color: C.dim, fontSize: 14 }}>Each session is compared with your nearby sessions of the same exercise. When a number only makes sense after a pounds↔kilograms (or decimal) correction, it’s listed here. Untick anything that was real.</div>
+      {!issues.length ? <Empty>ALL YOUR LIFTS LINE UP · NOTHING TO FIX</Empty> : null}
+      {Object.entries(groups).map(([name, list]) => <div key={name}>
+        <div style={{ ...T.h2, margin: '20px 0 6px' }}>{name}</div>
+        {list.map(i => { const on = !off[i.key]; return <div key={i.key} role="button" onClick={() => setOff(o => ({ ...o, [i.key]: on }))} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid #272c34', cursor: 'pointer' }}>
+          <div style={{ width: 22, height: 22, flex: 'none', marginTop: 2, borderRadius: 7, border: '1.5px solid ' + (on ? C.olive : C.line2), background: on ? C.olive : 'transparent', color: C.oliveInk, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 13px/1 ${F.mono}` }}>{on ? '✓' : ''}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><span style={T.name}>{niceDate(i.date)}{i.kind === 'set' ? ' · set ' + (i.si + 1) : ' · whole session'}</span>
+              <span style={{ ...T.mono, fontSize: 12, color: C.text, flex: 'none' }}><span style={{ color: C.red, textDecoration: 'line-through' }}>{show(i.type, i.top)}</span>{i.kind === 'session' ? <span style={{ color: C.dim }}> typ.</span> : null} → <span style={{ color: C.olive }}>{show(i.type, i.top * i.f)}</span> {unitOf(i.type)}</span></div>
+            <div style={{ ...T.label, marginTop: 3, lineHeight: 1.45 }}>{i.why.toUpperCase()} ({i.kind === 'set' ? 'REST OF THE SESSION' : 'NEARBY SESSIONS'} ≈ {show(i.type, i.ref)} {unitOf(i.type).toUpperCase()})</div>
+          </div>
+        </div>; })}
+      </div>)}
+      {(st.dataFixUndo || []).length ? <Btn kind="ghost" tone={C.dim} onClick={undo} style={{ marginTop: 20 }}>UNDO LAST FIX ({st.dataFixUndo.length} SETS)</Btn> : null}
+    </div>
+  </Sheet>;
 }
