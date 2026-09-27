@@ -44,13 +44,7 @@ html[data-screen="s01"] #s01{display:block}html[data-screen="s02"] #s02{display:
 .tabbar span{letter-spacing:.03em!important}
 .tabbar a{min-height:34px!important}
 :root{--vgap:0px}
-/* iOS home-screen apps report a page height that is short by the status-bar height, leaving a band at the
-   bottom. Add exactly that amount back (it is 0 where the page doesn't sit under the status bar, so it can't overshoot). */
-@media (display-mode: standalone), (display-mode: fullscreen) {
-  :root{--vgap:env(safe-area-inset-top, 0px)}
-  .screen{bottom:auto;height:calc(100dvh + var(--vgap))}
-  body > div[style*="position: fixed"][style*="inset: 0px"]{bottom:auto!important;height:calc(100dvh + var(--vgap))!important}
-}
+
 .app-frame [style*="overflow:auto"]{-webkit-overflow-scrolling:touch}
 #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;background:#15181d;z-index:5}
 

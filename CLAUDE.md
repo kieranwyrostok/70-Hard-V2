@@ -14,8 +14,9 @@ learning to edit this himself — explain changes plainly and keep them small an
   tools/light-theme.mjs). A script at the top of the page reads localStorage `sh.theme` (dark|light|system, set in
   Habits & reminders → Appearance) and switches page. Same origin, so both share the saved data. The dev app
   defaults to light, the live app to dark. New colours in src/ need a light partner in tools/light-theme.mjs.
-- iOS home-screen apps shorten 100%/dvh by the status-bar height; screens and full-screen sheets use 100lvh in
-  standalone mode, and bottom-anchored bars subtract `var(--vgap)`.
+- Screens are `position:fixed` to all four edges; both pages use the black-translucent status bar (the light page
+  adds a dark strip behind the clock). Tested on Kieran's iPhone: 100dvh is already the full screen there, so don't
+  add the status-bar height back (it pushes the tab bar off-screen). `--vgap` is kept at 0 as a hook.
 - Workflow: work on a branch → push → GitHub PR gives a free Netlify deploy preview; merging to main publishes
   (costs production-deploy credits, so don't suggest merging unfinished work).
 
