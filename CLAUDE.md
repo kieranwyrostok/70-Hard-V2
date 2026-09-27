@@ -39,7 +39,7 @@ learning to edit this himself — explain changes plainly and keep them small an
   Component instance (call `app.setState(...)`) and `st` is its state.
 
 **src/screens/*.jsx** — React 18 (global `React`/`ReactDOM`, no imports). Concatenated in the order
-ui → library → train → fuel → coach and compiled into one IIFE, so later files use earlier globals.
+ui → library → train → injuries → fuel → coach and compiled into one IIFE, so later files use earlier globals.
 - ui.jsx: colour tokens `C`, fonts `F`, text styles `T`, Btn/Chip/Seg/Card/Sheet/ActionSheet/Field, charts
   (LineChart/BarChart/Sparkline), `DragList` + `Grip` (pointer-event drag-to-reorder), `aiPost`.
 - Overlays are `Sheet`s rendered through portals with z-index layers (40–95).
@@ -98,6 +98,20 @@ adds `#aurora` (drifting blurred colour blobs from CSS vars --n1/--n2/--n3), fro
 and sheet entrance animations, press effect. ui.jsx sets glass `C.bg/card/line…` (C.solid = old opaque page colour,
 use it for text on accent fills). Neon glows for the accent colours: head script in index.html builds `#neon` CSS.
 New solid surface colours need an entry in glass.mjs SURF (dark + light).
+**Timed rules** (index.html `ruleMins/ruleTap/ruleStart/rulePause/ruleAdd/ruleFinish`, `td_timer` in renderVals): a rule
+whose spec/name has minutes ("10 MIN") gets a ⏱ badge; tapping opens a dropdown countdown (state `ruleTimer` {k, dur, end,
+left when paused}, transient `ruleOpen`); `_tick` clears the rule when it hits 0. Training (`strength`, names with
+workout/training/gym) and sleep never get one. Sound: ui.jsx `chime()` / `audioUnlock()` (window.shChime/shAudioUnlock).
+**Workout suggestions** (train.jsx `suggestFor`): the grey placeholders = today's target from the last 2 sessions — all reps
+hit → +`weightStep` (kg: 2.5 upper barbell, 5 legs/deadlift, 2 dumbbell; lb: 5/10), some short → same weight +1 rep,
+stalled twice → −10%. Template targets win. ✓ on an empty set fills the suggestion. PREVIOUS column = last time.
+**Rest circle** (`RestDial`, bottom-right of an active workout): uses `st.restUntil` (also auto-started after each set
+with that exercise's rest); idle tap starts `st.restSec` (default 120, ⚙ to change).
+**Injuries** (src/screens/injuries.jsx, Train → INJURY tab): `INJ_LIB` guide (21 common injuries: signs, 3 stages of
+care, train-around lists, rehab exercises, red flags, `watch` words that flag exercises in a workout via `InjuryWarn`).
+State `st.injuries` [{id, key, name, area, side, start, note, rehab [{id,n,dose,how}], log {date: {feel 1-10, note, done
+[rehab ids]}}, healed}]. Main page = current injuries once one exists; `injCheer` writes the encouragement. The daily AI
+tips get `current_injuries`.
 **Fuel meals** fold up: tap the meal name to show/hide items; a section opens itself when food is added.
 **Lift data check (train.jsx `findOddSets`):** flags sessions/sets that look ~2.2×, ~0.45×, ~10× or ~0.1× your usual
 (unit or decimal mistakes); whole-session fixes only scale sets that land in a believable range (warm-ups stay).

@@ -240,7 +240,9 @@ function tipsContext(app, st) {
     last_days: days,
     weight_kg: weight ? { start: weight.start, latest: wDays.length ? wlog[wDays[wDays.length - 1]] : weight.cur } : undefined,
     workouts_last_14_days: (st.workouts || []).filter(w => w.start >= Date.now() - 14 * 864e5).length,
-    lifts: top.length ? top : undefined
+    lifts: top.length ? top : undefined,
+    current_injuries: (st.injuries || []).filter(i => !i.healed).length ? (st.injuries || []).filter(i => !i.healed).map(i => { const f = injFeel(i);
+      return { name: i.name + (i.side ? ' (' + i.side + ')' : ''), day: injDay(i, today), feels_out_of_10: f ? f.feel : null, rehab_days_last_7: injRehabDays(i, today) }; }) : undefined
   };
 }
 let tipsBusy = false;

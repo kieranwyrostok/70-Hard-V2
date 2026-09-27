@@ -20,7 +20,7 @@ const copyDir = (from, to) => { fs.mkdirSync(to, { recursive: true }); for (cons
 copyDir(path.join(SRC, 'static'), OUT);
 
 // 1. Train / Fuel / Coach screens (JSX → plain JS, so the phone never runs Babel)
-const ORDER = ['ui.jsx', 'library.jsx', 'train.jsx', 'fuel.jsx', 'coach.jsx'];   // later files use earlier ones
+const ORDER = ['ui.jsx', 'library.jsx', 'train.jsx', 'injuries.jsx', 'fuel.jsx', 'coach.jsx'];   // later files use earlier ones
 const jsx = ORDER.map(f => fs.readFileSync(path.join(SRC, 'screens', f), 'utf8')).join('\n\n');
 let code;
 try { code = Babel.transform(jsx, { presets: ['react'], filename: 'screens.jsx' }).code; }

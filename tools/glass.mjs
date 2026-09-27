@@ -75,6 +75,7 @@ html,body{background:${L ? '#e9edf6' : '#06070b'}}
 /* glass cards: a bright top edge (the "specular" highlight) and a soft drop */
 ${cards}{box-shadow:inset 0 1px 0 ${L ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.09)'},0 10px 30px -16px ${L ? 'rgba(30,45,90,.28)' : 'rgba(0,0,0,.7)'}}
 ${tints}{box-shadow:inset 0 1px 0 ${L ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.05)'}}
+input::placeholder,textarea::placeholder{color:${L ? 'rgba(30,45,90,.3)' : 'rgba(255,255,255,.26)'};opacity:1}
 input,textarea,select{background-color:${L ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.06)'}}
 /* motion */
 @keyframes scrIn{from{opacity:0;transform:translate3d(0,14px,0) scale(.985)}to{opacity:1;transform:none}}

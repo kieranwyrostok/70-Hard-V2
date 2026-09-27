@@ -44,6 +44,18 @@ const dOf = iso => new Date(iso + 'T12:00:00');
 const addDaysIso = (iso, n) => { const d = dOf(iso); d.setDate(d.getDate() + n); return isoOf(d); };
 const niceDate = iso => { const d = dOf(iso); return WD[d.getDay()] + ', ' + MON[d.getMonth()] + ' ' + d.getDate(); };
 const agoText = (iso, today) => { const n = Math.round((dOf(today) - dOf(iso)) / 864e5); return n <= 0 ? 'today' : n === 1 ? 'yesterday' : n < 7 ? n + ' days ago' : n < 14 ? '1 week ago' : Math.floor(n / 7) + ' weeks ago'; };
+// A short rising three-note chime (rest timer, rule timers). iPhones only allow sound after a tap, so every
+// "start" button calls shAudioUnlock() first. Silent mode mutes it.
+let audioCtx = null;
+const audioUnlock = () => { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) { /* no audio */ } };
+function chime() {
+  try { audioUnlock(); const t0 = audioCtx.currentTime + 0.02;
+    [[880, 0], [1175, 0.15], [1568, 0.3]].forEach(([f, d]) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0 + d); g.gain.exponentialRampToValueAtTime(0.22, t0 + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.38);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t0 + d); o.stop(t0 + d + 0.42); });
+  } catch (e) { /* no audio */ }
+}
+window.shChime = chime; window.shAudioUnlock = audioUnlock;
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* no-op */ } };
 
 // ── primitives ──

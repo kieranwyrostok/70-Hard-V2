@@ -85,6 +85,120 @@ function setText(st, type, s) {
 const est1rm = s => s.w && s.r ? s.w * (1 + Math.min(s.r, 12) / 30) : 0;
 // what a set's empty boxes suggest: the template's own targets win, otherwise last time's numbers
 function phOf(prev, target) { const o = { ...(prev || {}) }; if (target) ['w', 'r', 't', 'd'].forEach(k => { if (target[k] != null) o[k] = target[k]; }); return o; }
+// ── Rest timer circle (bottom-right of an active workout) ──
+// Idle: shows your default rest; tap to start it. Running (also after each checked set, using that exercise's rest):
+// the ring drains; tap for −15 / +15 / skip. ⚙ sets the default (st.restSec, 15 s steps).
+function RestDial({ app, st, restUntil, restLeft, live }) {
+  const [open, setOpen] = useState(false);
+  if (!live) return null;
+  const def = st.restSec || 120, running = !!(restUntil && restLeft > 0);
+  const total = running ? restUntil.total : def, left = running ? restLeft : def;
+  const R = 27, CIRC = 2 * Math.PI * R, frac = running ? Math.max(0, Math.min(1, left / Math.max(1, total))) : 1;
+  const start = () => { audioUnlock(); vib(10); app.setState({ restUntil: { end: Date.now() + def * 1000, total: def, ex: 'Rest' } }); };
+  const setDef = v => app.setState({ restSec: Math.max(15, Math.min(600, v)) });
+  const adj = d => app.setState(s => s.restUntil ? { restUntil: { ...s.restUntil, end: s.restUntil.end + d * 1000, total: Math.max(1, s.restUntil.total + (d > 0 ? d : 0)) } } : null);
+  const small = { minWidth: 46, minHeight: 42, padding: '0 10px', fontSize: 13 };
+  return <>
+    {open ? <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 58 }} /> : null}
+    {open ? <div style={{ position: 'fixed', right: 16, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)', zIndex: 59, width: 250, background: C.bg, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, border: '1px solid ' + C.line2, borderRadius: 18, padding: 14, boxShadow: '0 18px 40px rgba(0,0,0,.45)', animation: 'asUp .25s cubic-bezier(.2,.9,.25,1) both' }}>
+      {running ? <>
+        <div style={T.label}>REST · {restUntil.ex}</div>
+        <div style={{ font: `800 34px/1 ${F.head}`, color: C.olive, margin: '4px 0 10px' }}>{fmtDur(restLeft)}</div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <Btn kind="ghost" tone={C.text} onClick={() => adj(-15)} style={small}>−15</Btn>
+          <Btn kind="ghost" tone={C.text} onClick={() => adj(15)} style={small}>+15</Btn>
+          <Btn tone={C.olive} ink={C.oliveInk} onClick={() => { app.setState({ restUntil: null }); setOpen(false); }} style={{ ...small, flex: 1 }}>SKIP</Btn>
+        </div>
+        <div style={{ height: 1, background: C.line, margin: '14px 0 12px' }} /></> : null}
+      <div style={T.label}>DEFAULT REST (THE CIRCLE)</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+        <Btn kind="ghost" tone={C.text} onClick={() => setDef(def - 15)} style={small}>−</Btn>
+        <div style={{ flex: 1, textAlign: 'center', font: `800 26px/1 ${F.head}` }}>{fmtDur(def)}</div>
+        <Btn kind="ghost" tone={C.text} onClick={() => setDef(def + 15)} style={small}>+</Btn>
+      </div>
+      <div style={{ display: 'flex', gap: 5, marginTop: 8 }}>{[60, 90, 120, 180, 240].map(v => <Chip key={v} on={def === v} tone={C.olive} ink={C.oliveInk} onClick={() => setDef(v)} style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: 10 }}>{fmtDur(v)}</Chip>)}</div>
+      {!running ? <Btn tone={C.olive} ink={C.oliveInk} onClick={() => { start(); setOpen(false); }} style={{ marginTop: 12, minHeight: 42, fontSize: 15 }}>Start {fmtDur(def)} rest</Btn> : null}
+    </div> : null}
+    <div style={{ position: 'fixed', right: 16, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)', zIndex: 60, width: 68, height: 68 }}>
+      <div role="button" aria-label={running ? 'Rest timer, ' + fmtDur(restLeft) + ' left' : 'Start a ' + fmtDur(def) + ' rest'} onClick={() => running ? setOpen(o => !o) : start()}
+        style={{ position: 'absolute', inset: 0, borderRadius: 999, background: C.bg, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, border: '1px solid ' + C.line2, boxShadow: running ? `0 0 22px -4px ${C.olive}, 0 10px 26px rgba(0,0,0,.4)` : '0 10px 26px rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <svg width="68" height="68" viewBox="0 0 68 68" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+          <circle cx="34" cy="34" r={R} fill="none" stroke={C.line2} strokeWidth="4" />
+          <circle cx="34" cy="34" r={R} fill="none" stroke={C.olive} strokeWidth="4" strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - frac)} opacity={running ? 1 : 0.45} style={{ transition: 'stroke-dashoffset .5s linear' }} />
+        </svg>
+        <div style={{ position: 'relative', textAlign: 'center' }}>
+          <div style={{ font: `800 17px/1 ${F.head}`, color: running ? C.olive : C.text, fontVariantNumeric: 'tabular-nums' }}>{fmtDur(left)}</div>
+          <div style={{ ...T.label, fontSize: 8, marginTop: 2 }}>{running ? 'TAP' : 'REST'}</div>
+        </div>
+      </div>
+      <div role="button" aria-label="Rest timer settings" onClick={() => setOpen(o => !o)} style={{ position: 'absolute', left: -12, top: -8, width: 28, height: 28, borderRadius: 99, background: C.card, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, border: '1px solid ' + C.line2, display: running ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, cursor: 'pointer', color: C.dim }}>⚙</div>
+    </div>
+  </>;
+}
+// ── Progressive overload: what to aim for in each set today, from the last sessions of this exercise ──
+// • Last time every working set hit its reps → add weight (smallest sensible jump for the equipment), same reps.
+// • Some sets fell short → same weight, +1 rep on the sets that fell short (earn the jump first).
+// • Stalled at the same weight twice in a row → drop ~10% and build back up.
+// Bodyweight reps: +1 rep. Holds: +5 s. Cardio: last time's numbers. A template's own targets always win.
+function lastPerformances(st, exId, skipWorkoutId, n = 2) {
+  const ws = st.workouts || [], out = [];
+  for (let i = ws.length - 1; i >= 0 && out.length < n; i--) {
+    const w = ws[i]; if (w.id === skipWorkoutId) continue;
+    const e = w.exercises.find(x => x.exId === exId);
+    if (e && e.sets.some(s => s.done)) out.push({ date: w.date, sets: e.sets.filter(s => s.done) });
+  }
+  return out;
+}
+function weightStep(st, ex) {
+  const legs = /leg|quad|glute|hamstring/i.test(ex.part || ''), eq = ex.equip || '';
+  if (st.imperial) return (eq === 'Barbell' || eq === 'Machine') && legs ? 10 : 5;            // in lb
+  if (eq === 'Barbell') return legs || /deadlift|squat/i.test(ex.name) ? 5 : 2.5;              // in kg
+  if (eq === 'Dumbbell' || eq === 'Kettlebell') return 2;
+  return 2.5;
+}
+const roundW = (st, kg, ex) => { const u = st.imperial ? kgToLb(kg) : kg, q = st.imperial ? 2.5 : ex.equip === 'Barbell' ? 1.25 : 0.5;
+  const v = Math.round(u / q) * q; return st.imperial ? v / 2.20462 : v; };
+function suggestFor(st, e, ex, skipWorkoutId) {
+  const [last, before] = lastPerformances(st, e.exId, skipWorkoutId, 2);
+  const tgt = i => (e.sets[i] && e.sets[i].target) || {};
+  const out = { sets: e.sets.map((s, i) => phOf(last ? last.sets[i] : null, s.target)), msg: '', kind: '' };
+  if (!last) { out.msg = 'FIRST TIME · PICK A WEIGHT YOU COULD DO 2 MORE REPS WITH'; out.kind = 'first'; return out; }
+  const work = last.sets.filter(x => x.kind !== 'w'); if (!work.length) return out;
+  const prevWork = i => { const k = e.sets.slice(0, i + 1).filter(x => x.kind !== 'w').length - 1; return work[Math.min(Math.max(0, k), work.length - 1)]; };
+  if (ex.type === 'wr') {
+    const top = Math.max(...work.map(x => x.w || 0)), atTop = work.filter(x => (x.w || 0) === top && x.kind !== 'd');
+    const goalR = i => tgt(i).r != null ? tgt(i).r : Math.max(...atTop.map(x => x.r || 0));
+    const planned = (e.sets.find(y => y.kind !== 'w' && y.target && y.target.r != null) || {}).target;   // the template's rep goal, if any
+    const need = planned ? planned.r : Math.max(...atTop.map(x => x.r || 0));
+    const hit = atTop.length > 0 && atTop.every(x => (x.r || 0) >= need);
+    const bw = before && before.sets.filter(x => x.kind !== 'w'), bTop = bw && bw.length ? Math.max(...bw.map(x => x.w || 0)) : null;
+    const bHit = bw && bw.filter(x => (x.w || 0) === bTop).every(x => (x.r || 0) >= Math.max(...bw.filter(y => (y.w || 0) === bTop).map(y => y.r || 0)));
+    const step = weightStep(st, ex), stepKg = st.imperial ? step / 2.20462 : step;
+    let mode = hit && top > 0 ? 'up' : 'reps';
+    if (!hit && top > 0 && bTop === top && !bHit) mode = 'deload';
+    out.sets = e.sets.map((s, i) => {
+      const t = tgt(i); if (s.kind === 'w') return phOf(last.sets[i], s.target);
+      const pw = prevWork(i), r = goalR(i);
+      if (t.w != null) return { w: t.w, r: t.r != null ? t.r : r };
+      if (mode === 'up') return { w: roundW(st, top + stepKg, ex), r };
+      if (mode === 'deload') return { w: roundW(st, top * 0.9, ex), r };
+      return { w: pw.w, r: Math.min(r, (pw.r || 0) + 1) || r };
+    });
+    const u = wUnit(st), show = kg => wDisp(st, kg) + ' ' + u, firstWork = out.sets.find((x, i) => e.sets[i].kind !== 'w') || out.sets[0];
+    out.kind = mode;
+    out.msg = mode === 'up' ? '▲ TRY ' + show(firstWork.w) + ' × ' + firstWork.r + ' · YOU HIT EVERY REP LAST TIME (+' + step + ' ' + u + ')'
+      : mode === 'deload' ? '↓ ' + show(firstWork.w) + ' · STALLED TWICE AT ' + show(top) + ' — RESET ~10% AND BUILD BACK UP'
+      : '▲ SAME ' + show(top) + ', +1 REP ON THE SETS THAT FELL SHORT · THEN ADD WEIGHT';
+  } else if (ex.type === 'r') {
+    const best = Math.max(...work.map(x => x.r || 0));
+    out.sets = e.sets.map((s, i) => { const t = tgt(i); if (t.r != null) return { r: t.r }; const pw = prevWork(i); return { r: (pw.r || 0) >= best ? best + 1 : (pw.r || 0) + 1 }; });
+    out.kind = 'reps'; out.msg = '▲ ONE MORE REP THAN LAST TIME';
+  } else if (ex.type === 'd') {
+    out.sets = e.sets.map((s, i) => { const t = tgt(i); if (t.t != null) return { t: t.t }; const pw = prevWork(i); return { t: (pw.t || 0) + 5 }; });
+    out.kind = 'reps'; out.msg = '▲ HOLD 5 S LONGER THAN LAST TIME';
+  }
+  return out;
+}
 // Finished workouts can be edited (or added for a missed day) for this many days after the date.
 const EDIT_DAYS = 14;
 const daysAgo = (st, iso) => Math.round((dOf(st.curDate) - dOf(iso)) / 864e5);
@@ -315,6 +429,8 @@ function TrainScreen({ app, st }) {
         </div>;
       })}
     </div>;
+  } else if (tab === 'injuries') {
+    body = <InjuriesTab app={app} st={st} />;
   } else {
     const list = allExercises(st).filter(e => exMatch(e, q, part, equip)).sort((a, b) => a.name.localeCompare(b.name));
     body = <div style={{ padding: '14px 22px 24px' }}>
@@ -336,7 +452,7 @@ function TrainScreen({ app, st }) {
         <div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · TRAIN</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}><div style={T.h1}>Workout</div>
           {tab === 'history' ? <div role="button" aria-label="All-time stats and records" onClick={() => setAllTime(true)} style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid ' + C.line2, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `400 21px/1 ${F.body}`, cursor: 'pointer' }}>🏆</div> : null}</div>
-        <div style={{ marginTop: 14 }}><Seg items={[['start', 'START'], ['history', 'HISTORY'], ['exercises', 'EXERCISES']]} value={tab} onChange={setTab} tone={C.olive} ink={C.oliveInk} /></div>
+        <div style={{ marginTop: 14 }}><Seg items={[['start', 'START'], ['history', 'HISTORY'], ['exercises', 'EXERCISES'], ['injuries', (st.injuries || []).some(i => !i.healed) ? 'INJURY •' : 'INJURY']]} value={tab} onChange={setTab} tone={C.olive} ink={C.oliveInk} /></div>
       </div>
       {body}
     </div>
@@ -432,7 +548,7 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
   }, [aw.editOf]);
   const restUntil = st.restUntil, restLeft = restUntil ? Math.ceil((restUntil.end - Date.now()) / 1000) : 0;
   useTick(true, 500);
-  useEffect(() => { if (restUntil && restLeft <= 0) { vib([200, 100, 200]); app.setState({ restUntil: null }); } }, [restLeft <= 0 && !!restUntil]);
+  useEffect(() => { if (restUntil && restLeft <= 0) { vib([200, 100, 200]); chime(); app.setState({ restUntil: null }); } }, [restLeft <= 0 && !!restUntil]);
 
   const updEx = (u, fn) => upd(w => ({ ...w, exercises: w.exercises.map(e => e.uid === u ? fn(e) : e) }));
   const updSet = (u, i, fn) => updEx(u, e => ({ ...e, sets: e.sets.map((s, j) => j === i ? fn(s) : s) }));
@@ -441,7 +557,7 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
   const toggleDone = (e, i, prev) => {
     const ex = exById(st, e.exId), s = e.sets[i];
     if (s.done) { updSet(e.uid, i, x => ({ ...x, done: false })); return; }
-    const ph = phOf(prev, s.target);
+    const ph = (suggestFor(st, e, ex, aw.editOf).sets[i]) || phOf(prev, s.target);
     const filled = { ...s, w: s.w != null ? s.w : ph.w != null ? ph.w : null, r: s.r != null ? s.r : ph.r != null ? ph.r : null, t: s.t != null ? s.t : ph.t != null ? ph.t : null, d: s.d != null ? s.d : ph.d != null ? ph.d : null };
     const ok = ex.type === 'wr' ? filled.r != null : ex.type === 'r' ? filled.r != null : ex.type === 'd' ? filled.t != null : (filled.d != null || filled.t != null);
     if (!ok) { alert('Enter ' + (ex.type === 'd' ? 'a time' : ex.type === 'dt' ? 'a distance or time' : 'the reps') + ' first.'); return; }
@@ -459,10 +575,10 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
     }
     updSet(e.uid, i, () => ({ ...filled, done: true, pr: lines.length ? true : undefined }));
     if (lines.length) celebrate('New PR!', lines); else vib(30);
-    if (!aw.editOf && e.rest) app.setState({ restUntil: { end: Date.now() + e.rest * 1000, total: e.rest, ex: ex.name } });
+    if (!aw.editOf && e.rest) { audioUnlock(); app.setState({ restUntil: { end: Date.now() + e.rest * 1000, total: e.rest, ex: ex.name } }); }
   };
   const addExercises = ids => upd(w => ({ ...w, exercises: w.exercises.concat(ids.map(id => { const ex = exById(st, id), lp = lastPerformance(st, id, aw.editOf); const n = lp ? lp.sets.length : 3;
-    return { uid: uid(), exId: id, rest: REST_DEFAULT[ex.type], note: '', sets: Array.from({ length: n }, () => ({ w: null, r: null, t: null, d: null, kind: 'n', done: false })) }; })) }));
+    return { uid: uid(), exId: id, rest: REST_DEFAULT[ex.type], note: '', sets: Array.from({ length: n }, (_, i) => ({ w: null, r: null, t: null, d: null, kind: (lp && lp.sets[i] && lp.sets[i].kind) || 'n', done: false })) }; })) }));   // warm-ups stay warm-ups
 
   const elapsed = aw.editOf ? (aw.end - aw.start) / 1000 : (Date.now() - aw.start) / 1000;
   const cols = type => type === 'wr' ? [wUnit(st).toUpperCase(), 'REPS'] : type === 'r' ? ['REPS'] : type === 'd' ? ['TIME'] : ['KM', 'TIME'];
@@ -471,20 +587,13 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
   return <Sheet z={45} title={aw.editOf ? 'Edit workout' : fmtDur(elapsed)} sub={aw.editOf ? niceDate(aw.date).toUpperCase() : 'ELAPSED · ' + doneSets(aw) + ' SETS DONE'}
     left={<TopLink onClick={onMin}>▼ HIDE</TopLink>}
     right={<Btn tone={C.olive} ink={C.oliveInk} onClick={onFinish} style={{ minHeight: 36, padding: '0 14px', fontSize: 15 }}>{aw.editOf ? 'Save' : 'Finish'}</Btn>}
-    footer={restUntil && restLeft > 0 ? <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ flex: 1 }}><div style={T.label}>REST · {restUntil.ex}</div><div style={{ font: `800 30px/1 ${F.head}`, color: C.olive, marginTop: 3 }}>{fmtDur(restLeft)}</div></div>
-        <Btn kind="ghost" tone={C.text} onClick={() => app.setState(s => ({ restUntil: { ...s.restUntil, end: s.restUntil.end - 15000 } }))} style={{ minHeight: 42, padding: '0 12px' }}>−15</Btn>
-        <Btn kind="ghost" tone={C.text} onClick={() => app.setState(s => ({ restUntil: { ...s.restUntil, end: s.restUntil.end + 15000, total: s.restUntil.total + 15 } }))} style={{ minHeight: 42, padding: '0 12px' }}>+15</Btn>
-        <Btn tone={C.olive} ink={C.oliveInk} onClick={() => app.setState({ restUntil: null })} style={{ minHeight: 42, padding: '0 14px', fontSize: 14 }}>Skip</Btn>
-      </div>
-      <div style={{ marginTop: 8 }}><Bar pct={100 * restLeft / restUntil.total} tone={C.olive} h={4} /></div>
-    </div> : null}>
-    <div style={{ padding: '14px 16px 30px' }}>
+    >
+    <RestDial app={app} st={st} restUntil={restUntil} restLeft={restLeft} live={!aw.editOf} />
+    <div style={{ padding: '14px 16px 110px' }}>
       <input value={aw.name} onChange={e => { const v = e.target.value; upd(w => ({ ...w, name: v })); }} style={{ width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none', borderBottom: '1px dotted ' + C.line2, color: C.text, font: `800 28px/1.1 ${F.head}`, textTransform: 'uppercase', padding: '4px 0 6px', outline: 'none' }} />
       {aw.exercises.length > 1 ? <div style={{ ...T.label, color: C.faint, marginTop: 8 }}>{reorder ? 'DROP IT WHERE IT SHOULD GO' : 'HOLD AN EXERCISE NAME OR DRAG ≡ TO REORDER'}</div> : null}
       <DragList items={aw.exercises} keyOf={e => e.uid} onActive={setReorder} onMove={(a, b) => upd(w => { const x = w.exercises.slice(); const [m] = x.splice(a, 1); x.splice(b, 0, m); return { ...w, exercises: x }; })} render={(e, ei, dg) => {
-        const ex = exById(st, e.exId), lp = lastPerformance(st, e.exId, aw.editOf), cs = cols(ex.type), gridCols = `34px 1fr ${cs.map(() => '64px').join(' ')} 44px`;
+        const ex = exById(st, e.exId), lp = lastPerformance(st, e.exId, aw.editOf), cs = cols(ex.type), sug = suggestFor(st, e, ex, aw.editOf), gridCols = `34px 1fr ${cs.map(() => '64px').join(' ')} 44px`;
         if (reorder) return <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, background: dg.dragging ? '#2a3037' : C.card, border: '1px solid ' + (dg.dragging ? C.olive : C.line), borderRadius: 14, padding: '6px 12px 6px 4px' }}>
           <Grip h={dg.handle} color={C.olive} /><div style={{ flex: 1, minWidth: 0, font: `700 16px/1.2 ${F.body}`, color: C.olive }}>{ex.name}</div><span style={T.label}>{e.sets.length} SETS</span></div>;
         return <div style={{ marginTop: 20 }}>
@@ -502,12 +611,14 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
             ] })} style={{ ...T.mono, color: C.olive, padding: '6px 4px 6px 12px', cursor: 'pointer' }}>•••</span>
           </div>
           {e.note ? <div style={{ font: `italic 400 13px/1.4 ${F.body}`, color: C.dim, marginTop: 2 }}>{e.note}</div> : null}
+          {sug.msg && !e.sets.every(x => x.done) ? <div style={{ ...T.label, fontSize: 9.5, lineHeight: 1.45, marginTop: 4, color: sug.kind === 'deload' ? C.amber : sug.kind === 'first' ? C.faint : C.blue }}>{sug.msg}</div> : null}
+          <InjuryWarn st={st} ex={ex} />
           <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 6, alignItems: 'center', marginTop: 8 }}>
             <div style={{ ...T.label, textAlign: 'center' }}>SET</div><div style={T.label}>PREVIOUS</div>
             {cs.map(c => <div key={c} style={{ ...T.label, textAlign: 'center' }}>{c}</div>)}<div style={{ ...T.label, textAlign: 'center' }}>✓</div>
           </div>
             {e.sets.map((s, i) => {
-              const prev = lp && lp.sets[i] ? lp.sets[i] : null, ph = phOf(prev, s.target);
+              const prev = lp && lp.sets[i] ? lp.sets[i] : null, ph = sug.sets[i] || phOf(prev, s.target);   // grey "shadow" = today's suggestion
               const kindCol = s.kind === 'w' ? C.amber : s.kind === 'd' ? C.blue : s.kind === 'f' ? C.red : C.text;
               const rowBg = s.done ? 'rgba(168,242,92,.18)' : 'transparent';
               const inStyle = { ...cellIn, background: s.done ? 'transparent' : '#282d36' };
