@@ -629,12 +629,14 @@ function RingsWidget({ rings }) {
       return { z: -t * Math.cos(a) * PX, w: 2 * t * Math.sin(a) + 0.8, lite: -Math.cos(a) }; });   // back → front
     const svg = (z, kids, key) => <svg key={key} viewBox="0 0 200 200" width="176" height="176" style={{ position: 'absolute', inset: 0, overflow: 'visible', transform: `translateZ(${z.toFixed(2)}px)` }}>{kids}</svg>;
     const front = slices[N - 1];
+    // the empty part of the ring: a solid, muted tube (see-through slices would show as stripes when tilted)
+    const pale = window.__PAGE === 'light', track = lite => pale ? shade(r.tone, 0.72 + lite * 0.12) : shade(r.tone, -0.72 + lite * 0.1);
     return <div key={i} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', animation: reduce ? 'none' : `${anim} ${dur}s linear infinite${i % 2 ? ' reverse' : ''}` }}>
       {slices.map((sl, k) => { const tone = sl.lite < 0 ? shade(r.tone, sl.lite * 0.6) : shade(r.tone, sl.lite * 0.35);
         return svg(sl.z, <>
-          {ring(shade(r.tone, -0.55), sl.w, { strokeOpacity: 0.16 })}
-          {k === (N - 1) / 2 ? <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>{arc(r.tone, r.sw + 14, { filter: `url(#${id}glow)`, opacity: 0.8 })}</g> : null}
-          <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>{arc(tone, sl.w)}</g>
+          {ring(track(sl.lite), sl.w)}
+          {k === (N - 1) / 2 ? <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>{arc(r.tone, r.sw + 14, { filter: `url(#${id}glow)`, opacity: 0.8, className: "rglow" })}</g> : null}
+          <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>{arc(tone, sl.w, { strokeLinecap: "butt" })}</g>
         </>, k); })}
       {svg(front.z + 0.3, <>
         <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>
@@ -736,6 +738,40 @@ const COLOR_PRESETS = [
 const HX = h => '#' + h;
 const SWATCHES = ['4f8dff', '3aa0ff', '00d4ff', '22e3c4', '2ee86f', 'a8f25c', 'd7ff3a', 'ffe14d', 'ffc233', 'ff9f2e',
   'ff6b3d', 'ff5a5f', 'ff4f8b', 'ff6bd6', 'e05cff', 'b36bff', '8a6bff', '6b7dff', 'c9ced8', '8a93a6'].map(HX);
+// hex ⇄ hue/saturation/lightness, for the "any other colour" sliders
+const hexToHsl = h => { const n = parseInt(String(h).slice(1), 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (!d) return { h: 0, s: 0, l: Math.round(l * 100) };
+  const sat = d / (1 - Math.abs(2 * l - 1)), hue = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: Math.round(hue * 60), s: Math.round(sat * 100), l: Math.round(l * 100) }; };
+const hslToHex = ({ h, s, l }) => { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = n => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
+  return '#' + [f(0), f(8), f(4)].map(v => ('0' + v.toString(16)).slice(-2)).join(''); };
+// Any colour: hue, intensity and shade sliders + a hex box, and the phone's own picker as a real (tappable) input
+function ColourMixer({ value, onChange, label }) {
+  const [hsl, setHsl] = useState(() => hexToHsl(value)), [hex, setHex] = useState(value);
+  useEffect(() => { if (hslToHex(hsl) !== value) { setHsl(hexToHsl(value)); } setHex(value); }, [value]);
+  const put = next => { const v = { ...hsl, ...next }; setHsl(v); const h = hslToHex(v); setHex(h); onChange(h); };
+  const slider = (k, max, bg, name) => <label style={{ display: 'block', marginTop: 10 }}>
+    <div style={{ ...T.label, marginBottom: 6 }}>{name}</div>
+    <input type="range" className="sh-range" min="0" max={max} value={hsl[k]} aria-label={label + ' ' + name} onChange={e => put({ [k]: +e.target.value })} style={{ background: bg }} />
+  </label>;
+  const typed = t => { setHex(t); const m = /^#?([0-9a-f]{6})$/i.exec(t.trim()); if (m) { const h = '#' + m[1].toLowerCase(); setHsl(hexToHsl(h)); onChange(h); } };
+  return <div style={{ gridColumn: 'span 5', padding: '4px 0 2px' }}>
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, background: value, boxShadow: `0 0 16px ${value}88`, border: '2px solid rgba(255,255,255,.35)', flex: 'none' }} />
+      <input value={hex} onChange={e => typed(e.target.value)} maxLength={7} spellCheck={false} autoCapitalize="characters" aria-label={label + ' hex code'}
+        style={{ flex: 1, minWidth: 0, height: 44, boxSizing: 'border-box', borderRadius: 12, border: '1px solid ' + C.line2, color: C.text, padding: '0 12px', font: `600 16px/1 ${F.mono}`, letterSpacing: '.08em', outline: 'none' }} />
+      <label style={{ position: 'relative', height: 44, padding: '0 12px', borderRadius: 12, border: '1px dashed ' + C.line2, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', ...T.mono, fontSize: 10, color: C.dim, flex: 'none', overflow: 'hidden' }}>
+        <span style={{ width: 14, height: 14, borderRadius: 99, background: 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)' }} />PHONE
+        <input type="color" value={value} onChange={e => typed(e.target.value)} aria-label={label + ' system colour picker'} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, border: 0, padding: 0, cursor: 'pointer' }} />
+      </label>
+    </div>
+    {slider('h', 360, 'linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)', 'HUE')}
+    {slider('s', 100, `linear-gradient(90deg,${hslToHex({ ...hsl, s: 0 })},${hslToHex({ ...hsl, s: 100 })})`, 'INTENSITY')}
+    {slider('l', 100, `linear-gradient(90deg,#000,${hslToHex({ ...hsl, l: 50 })},#fff)`, 'SHADE')}
+  </div>;
+}
 const readSets = () => { try { return JSON.parse(localStorage.getItem('sh.colorSets') || '[]') || []; } catch (e) { return []; } };
 function CustomizeWidget() {
   let saved = null; try { saved = JSON.parse(localStorage.getItem('sh.colors') || 'null'); } catch (e) { /* ignore */ }
@@ -743,7 +779,7 @@ function CustomizeWidget() {
   const clean = v => ({ core: v.core, secondary: v.secondary, accent: v.accent });
   const [pick, setPick] = useState(saved ? clean(saved) : DEF), [open, setOpen] = useState(null);
   const [sets, setSets] = useState(readSets), [naming, setNaming] = useState(null);
-  const custom = useRef(null);
+  const [mixing, setMixing] = useState(null);
   const same = (x, y) => x && y && x.core === y.core && x.secondary === y.secondary && x.accent === y.accent;
   const changed = !same(pick, saved ? clean(saved) : DEF);
   const apply = p => { try { if (p) localStorage.setItem('sh.colors', JSON.stringify(p)); else localStorage.removeItem('sh.colors'); } catch (e) { /* ignore */ } location.reload(); };
@@ -754,7 +790,7 @@ function CustomizeWidget() {
   const set = (k, v) => setPick(p => ({ ...p, [k]: v }));
   const row = (k, label, what) => { const on = open === k;
     return <div key={k} style={{ borderBottom: '1px solid ' + C.line }}>
-      <div role="button" aria-expanded={on} onClick={() => setOpen(on ? null : k)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer' }}>
+      <div role="button" aria-expanded={on} onClick={() => { setOpen(on ? null : k); setMixing(null); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer' }}>
         <div style={{ width: 34, height: 34, borderRadius: 999, background: pick[k], boxShadow: `0 0 16px ${pick[k]}88`, flex: 'none', border: '2px solid rgba(255,255,255,.35)' }} />
         <div style={{ flex: 1 }}><div style={T.name}>{label}</div><div style={{ ...T.label, marginTop: 2 }}>{what}</div></div>
         <span style={{ ...T.mono, fontSize: 12, color: C.dim }}>{pick[k].toUpperCase()}</span>
@@ -765,9 +801,10 @@ function CustomizeWidget() {
           {SWATCHES.map(h => { const sel = pick[k] === h;
             return <div key={h} role="button" aria-label={label + ' ' + h} onClick={() => { set(k, h); vib(6); }} style={{ height: 40, borderRadius: 12, background: h, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ink(h), font: `700 16px/1 ${F.mono}`,
               boxShadow: sel ? `0 0 0 2px ${C.solid}, 0 0 0 4px ${h}, 0 0 18px ${h}` : `0 0 10px -4px ${h}` }}>{sel ? '✓' : ''}</div>; })}
-          <div role="button" onClick={() => custom.current && custom.current.click()} style={{ gridColumn: 'span 5', height: 40, borderRadius: 12, border: '1px dashed ' + C.line2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', ...T.mono, fontSize: 11, color: C.dim }}>
-            <span style={{ width: 14, height: 14, borderRadius: 99, background: 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)' }} />ANY OTHER COLOUR…
-            {on ? <input ref={custom} type="color" value={pick[k]} onChange={e => set(k, e.target.value)} style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} /> : null}</div>
+          {mixing === k
+            ? <ColourMixer value={pick[k]} label={label} onChange={v => set(k, v)} />
+            : <div role="button" onClick={() => setMixing(k)} style={{ gridColumn: 'span 5', height: 40, borderRadius: 12, border: '1px dashed ' + C.line2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', ...T.mono, fontSize: 11, color: C.dim }}>
+              <span style={{ width: 14, height: 14, borderRadius: 99, background: 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)' }} />ANY OTHER COLOUR…</div>}
         </div>
       </div></div>
     </div>; };
@@ -803,3 +840,55 @@ function CustomizeWidget() {
   </div>;
 }
 window.CustomizeWidget = CustomizeWidget;
+
+// ── Visual setup: three complete looks (style + colours + light/dark) in one tap, or just swap the style ──
+// Saved in localStorage like the theme and colours: sh.style (neon|glass|matte, read by the head script in index.html).
+const LOOKS = [
+  { k: 'neon', name: 'Neon Night', what: 'GLOWING · DARK', style: 'neon', theme: 'dark', colors: null,
+    show: { bg: HX('06070b'), card: 'rgba(255,255,255,.07)', dots: [HX('4f8dff'), HX('ffc233'), HX('a8f25c')], glow: true } },
+  { k: 'glass', name: 'Soft Glass', what: 'FROSTED · LIGHT', style: 'glass', theme: 'light', colors: { core: HX('3aa0ff'), secondary: HX('ffb347'), accent: HX('34d1bf') },
+    show: { bg: 'linear-gradient(160deg,' + HX('dfe9ff') + ',' + HX('f4f6fb') + ' 55%,' + HX('d9f5f0') + ')', card: 'rgba(255,255,255,.7)', dots: [HX('3aa0ff'), HX('ffb347'), HX('34d1bf')], glow: false } },
+  { k: 'matte', name: 'Matte', what: 'SOLID · CALM · DARK', style: 'matte', theme: 'dark', colors: { core: HX('ff7a3d'), secondary: HX('ffcf5c'), accent: HX('c9e265') },
+    show: { bg: HX('0e1015'), card: HX('1a1d24'), dots: [HX('ff7a3d'), HX('ffcf5c'), HX('c9e265')], glow: false } }
+];
+function LookWidget() {
+  const get = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
+  const style = get('sh.style', 'neon'), theme = window.__themePref ? window.__themePref() : 'dark';
+  let cols = null; try { cols = JSON.parse(get('sh.colors', 'null')); } catch (e) { /* ignore */ }
+  const sameCols = (a, b) => (!a && !b) || (a && b && ['core', 'secondary', 'accent'].every(k => String(a[k]).toLowerCase() === String(b[k]).toLowerCase()));
+  const active = LOOKS.find(L => L.style === style && L.theme === theme && sameCols(L.colors, cols));
+  const reloadTo = th => {   // switch light/dark page if needed, otherwise just reload so the new look applies
+    if (th && th !== window.__PAGE && window.__setTheme) window.__setTheme(th); else location.reload(); };
+  const useLook = L => { vib(10);
+    try { localStorage.setItem('sh.style', L.style); localStorage.setItem('sh.theme', L.theme);
+      if (L.colors) localStorage.setItem('sh.colors', JSON.stringify(L.colors)); else localStorage.removeItem('sh.colors'); } catch (e) { /* ignore */ }
+    reloadTo(L.theme); };
+  const useStyle = k => { if (k === style) return; vib(6); try { localStorage.setItem('sh.style', k); } catch (e) { /* ignore */ } location.reload(); };
+  return <div style={{ background: C.card, border: '1px solid ' + C.line, borderRadius: 14, padding: 12 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      {LOOKS.map(L => { const on = active === L, v = L.show;
+        return <div key={L.k} role="button" aria-pressed={on} onClick={() => !on && useLook(L)} style={{ borderRadius: 12, padding: 4, cursor: 'pointer', border: '2px solid ' + (on ? v.dots[0] : 'transparent'), boxShadow: on ? `0 0 16px -4px ${v.dots[0]}` : 'none' }}>
+          <div style={{ height: 78, borderRadius: 9, background: v.bg, position: 'relative', overflow: 'hidden', border: '1px solid rgba(127,127,127,.25)' }}>
+            {v.glow ? <div style={{ position: 'absolute', width: 70, height: 70, left: -14, top: -20, borderRadius: 99, background: v.dots[0], filter: 'blur(22px)', opacity: 0.55 }} /> : null}
+            <div style={{ position: 'absolute', left: 8, right: 8, bottom: 8, height: 30, borderRadius: 7, background: v.card, display: 'flex', alignItems: 'center', gap: 5, padding: '0 7px', boxShadow: v.glow ? 'none' : '0 4px 10px -6px rgba(0,0,0,.4)' }}>
+              {v.dots.map((d, i) => <span key={i} style={{ width: 11, height: 11, borderRadius: 99, background: d, boxShadow: v.glow ? `0 0 8px ${d}` : 'none' }} />)}
+            </div>
+            <svg width="30" height="30" viewBox="0 0 30 30" style={{ position: 'absolute', right: 8, top: 7 }}>
+              <circle cx="15" cy="15" r="11" fill="none" stroke={v.dots[0]} strokeOpacity=".22" strokeWidth="5" />
+              <circle cx="15" cy="15" r="11" fill="none" stroke={v.dots[0]} strokeWidth="5" strokeLinecap="round" strokeDasharray="69" strokeDashoffset="22" transform="rotate(-90 15 15)" style={{ filter: v.glow ? `drop-shadow(0 0 3px ${v.dots[0]})` : 'none' }} />
+            </svg>
+          </div>
+          <div style={{ font: `700 14px/1 ${F.head}`, letterSpacing: '.06em', textTransform: 'uppercase', color: C.text, marginTop: 7, textAlign: 'center' }}>{L.name}</div>
+          <div style={{ ...T.label, fontSize: 8, marginTop: 3, textAlign: 'center', color: on ? C.text : C.faint }}>{on ? '✓ IN USE' : L.what}</div>
+        </div>; })}
+    </div>
+    <div style={{ ...T.label, margin: '14px 0 6px' }}>STYLE ONLY · KEEPS YOUR COLOURS</div>
+    <div style={{ display: 'flex', gap: 6 }}>
+      {[['neon', 'NEON'], ['glass', 'GLASS'], ['matte', 'MATTE']].map(([k, l]) => <div key={k} role="button" aria-pressed={style === k} onClick={() => useStyle(k)}
+        style={{ flex: 1, minHeight: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, cursor: 'pointer', ...T.mono, fontSize: 11,
+          border: '1px solid ' + (style === k ? C.blue : C.line2), background: style === k ? C.blue : 'transparent', color: style === k ? C.blueInk : C.dim }}>{l}</div>)}
+    </div>
+    <div style={{ ...T.label, marginTop: 8, color: C.faint }}>A SETUP SETS STYLE, COLOURS AND LIGHT/DARK · TWEAK ANY OF THEM BELOW</div>
+  </div>;
+}
+window.LookWidget = LookWidget;

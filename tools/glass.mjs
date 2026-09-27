@@ -53,7 +53,8 @@ const both = v => { const m = v.match(/rgba\((\d+),(\d+),(\d+),([.\d]+)\)/); con
 
 export function glassCss(theme) {
   const L = theme === 'light';
-  const cards = ['rgba(255,255,255,.055)', 'rgba(255,255,255,.06)', 'rgba(255,255,255,.62)'].flatMap(both).map(s => '.app-frame ' + s + ',body>' + s).join(',');
+  const cardSel = ['rgba(255,255,255,.055)', 'rgba(255,255,255,.06)', 'rgba(255,255,255,.62)'].flatMap(both).flatMap(s => ['.app-frame ' + s, 'body>' + s]);
+  const cards = cardSel.join(',');
   const tints = (L ? ['rgba(255,255,255,.42)', 'rgba(255,255,255,.5)', 'rgba(255,255,255,.55)', 'rgba(255,255,255,.72)']
     : ['rgba(255,255,255,.035)', 'rgba(255,255,255,.05)', 'rgba(255,255,255,.07)', 'rgba(255,255,255,.09)']).flatMap(both).join(',');
   return `
@@ -108,6 +109,22 @@ input,textarea,select{background-color:${L ? 'rgba(255,255,255,.7)' : 'rgba(255,
 .screen [style*="overflow:auto"]>*>*:nth-child(n+6){animation-delay:.2s}
 [role=button],.app-frame [style*="cursor:pointer"],.app-frame [style*="cursor: pointer"]{transition:transform .22s cubic-bezier(.2,.9,.25,1),filter .22s}
 [role=button]:active,.app-frame [style*="cursor:pointer"]:active,.app-frame [style*="cursor: pointer"]:active{transform:scale(.965);filter:brightness(1.12);transition-duration:.06s}
+/* visual setups (html[data-look], set by the head script from localStorage sh.style): neon is the default above.
+   glass = the same frosted look, calmer: softer background glow, no twinkles, no neon halos.
+   matte = solid and flat: plain background, no glow anywhere, solid tab bar. */
+html[data-look=glass] #aurora b{display:none}
+html[data-look=glass] #aurora i{opacity:${L ? .3 : .2}!important;filter:blur(100px)!important}
+html[data-look=glass] [style*="letter-spacing:.16em;text-transform:uppercase"]::after,html[data-look=glass] [style*="letter-spacing: 0.16em; text-transform: uppercase"]::after{box-shadow:none;opacity:.7}
+html[data-look=glass] .rglow{opacity:.35!important}
+html[data-look=matte] #aurora{background:${L ? '#eef1f6' : '#0e1015'}}
+html[data-look=matte] #aurora i,html[data-look=matte] #aurora b,html[data-look=matte] .rglow{display:none}
+html[data-look=matte] [style*="letter-spacing:.16em;text-transform:uppercase"]::after,html[data-look=matte] [style*="letter-spacing: 0.16em; text-transform: uppercase"]::after{box-shadow:none;background:var(--n1);width:10px}
+html[data-look=matte] .tabbar{background:${L ? '#ffffff' : '#12151b'}!important;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+${cardSel.map(x => 'html[data-look=matte] ' + x).join(',')}{box-shadow:none}
+/* colour sliders (App colours → any other colour) */
+.sh-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;border-radius:14px;margin:0;outline:none;border:1px solid ${L ? 'rgba(30,45,90,.15)' : 'rgba(255,255,255,.15)'}}
+.sh-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid rgba(0,0,0,.35);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.sh-range::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid rgba(0,0,0,.35)}
 @media (prefers-reduced-motion: reduce){#aurora b{display:none}#aurora i,.screen [style*="overflow:auto"],.screen [style*="overflow:auto"]>*>*{animation:none!important}}
 `;
 }
