@@ -2,7 +2,11 @@
   "name": "seventy-hard",
   "private": true,
   "type": "module",
-  "description": "Seventy Hard habit app: PWA + Netlify functions for food lookup and push reminders",
+  "description": "Seventy Hard habit app: installable phone web app + Netlify functions for food lookup, AI coach and push reminders",
+  "scripts": {
+    "dev": "node dev.mjs",
+    "build": "node build.mjs"
+  },
   "dependencies": {
     "@netlify/blobs": "^8.1.0",
     "web-push": "^3.6.7",

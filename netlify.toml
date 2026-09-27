@@ -1,8 +1,8 @@
-# Netlify reads this file when you connect the GitHub repo.
+# Netlify reads this file on every deploy: it builds public/ from src/, then publishes it.
 [build]
   publish = "public"
-  # copies the barcode-reading library into the app so scanning also works offline
-  command = "mkdir -p public/vendor && (cp node_modules/@zxing/library/umd/index.min.js public/vendor/zxing.min.js || echo 'zxing copy skipped: app will load it from the CDN')"
+  # build the app, then copy the barcode-reading library in so scanning also works offline
+  command = "node build.mjs && mkdir -p public/vendor && (cp node_modules/@zxing/library/umd/index.min.js public/vendor/zxing.min.js || echo 'zxing copy skipped: app will load it from the CDN')"
 
 [functions]
   directory = "netlify/functions"
