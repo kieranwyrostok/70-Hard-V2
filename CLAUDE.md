@@ -56,6 +56,13 @@ ui → library → train → fuel → coach and compiled into one IIFE, so later
 - PRs: `celebrate(title, lines)` (ui.jsx, confetti + banner) fires when a checked set beats history + today's sets
   (set gets `pr: true`) and again on finish. Gestures (ui.jsx): `SwipeRow` (swipe left for actions, long swipe runs
   the first), `swipeNav(onLeft,onRight)`, Sheet edge-swipe = back, ActionSheet swipe-down = close.
+- Today (s02): Schedule = rules with a reminder time today, as a timeline (DUE/NEXT/✓ time badges; `td_*` vars in
+  renderVals feed `schedItems`), "Anytime today" = rules whose reminder is off, "Today's targets" = water pail +
+  calories + protein + training card. The pail is React (`PailWidget` via x-import, `Pail` in ui.jsx) because the
+  template can't bind values inside that SVG. Keep the s02 wrapper depth: overflow div must close before the tab bar.
+- Voice food logging: fuel.jsx `VoiceCapture` (Web Speech API, typing fallback) → /api/food-photo with `{ text }`.
+- History "Exercise trends": `ExerciseTrends` — search any exercise, else body-part chips with top 5 (most-trained,
+  topped up from `CORE_LIFTS`).
 - Strong import (train.jsx, `StrongImport`): reads Strong's CSV export (columns found by name; kg/lb and m/km/mi in
   headers or per row; rest-timer rows skipped), matches exercise names to the list, adds unknown ones to `exLib`,
   skips workouts already present (same name within 90 s), computes volume + PRs in date order. Ids `strong-<start>`.

@@ -860,15 +860,7 @@ function HistoryProgress({ st, onExercise }) {
     </div>
     <Card style={{ padding: '12px 12px 6px' }}><div style={{ ...T.label, marginBottom: 6 }}>WORKOUTS PER WEEK · LAST 8 WEEKS</div><BarChart bars={count} tone={C.olive} fmt={v => String(Math.round(v))} height={120} /></Card>
     {vol.some(b => b.y) ? <Card style={{ padding: '12px 12px 6px', marginTop: 8 }}><div style={{ ...T.label, marginBottom: 6 }}>VOLUME PER WEEK · {wUnit(st).toUpperCase()}</div><BarChart bars={vol} tone={C.olive} fmt={v => v >= 10000 ? r1(v / 1000) + 'k' : wDisp(st, Math.round(v))} height={120} /></Card> : null}
-    <div style={{ ...T.h2, margin: '20px 0 6px' }}>Exercise trends</div>
-    <div style={{ ...T.label, marginBottom: 6 }}>TAP ONE FOR ITS FULL GRAPH</div>
-    {top.map(id => { const ex = exById(st, id), metric = (METRICS[ex.type] || METRICS.wr)[0][0], pts = seriesFor(st, id, metric), tt = trendText(st, pts, metric);
-      return <div key={id} role="button" onClick={() => onExercise(id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #272c34', cursor: 'pointer' }}>
-        <div style={{ flex: 1, minWidth: 0 }}><div style={{ ...T.name, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ex.name}</div>
-          <div style={{ ...T.label, marginTop: 3, color: tt.startsWith('▲') ? C.olive : tt.startsWith('▼') ? C.red : C.mute }}>{pts.length ? (METRICS[ex.type] || METRICS.wr)[0][1] + ' ' + metricFmt(st, metric)(pts[pts.length - 1].y) : ''}{tt ? ' · ' + tt.split(' SINCE')[0] : ' · ' + freq[id] + ' SESSION'}</div></div>
-        <Sparkline values={pts.map(p => p.y)} tone={C.olive} />
-        <span style={{ ...T.mono, color: C.dim }}>›</span>
-      </div>; })}
+    <ExerciseTrends st={st} freq={freq} onExercise={onExercise} />
   </div>;
 }
 
@@ -1138,3 +1130,53 @@ function AllTime({ st, onClose, onExercise }) {
   </Sheet>;
 }
 const weekLabel = s0 => { const a = dOf(s0), b = dOf(addDaysIso(s0, 6)); return MON[a.getMonth()] + ' ' + a.getDate() + ' – ' + (a.getMonth() === b.getMonth() ? '' : MON[b.getMonth()] + ' ') + b.getDate(); };
+
+
+// Exercise trends: search any exercise, or (no search) the top 5 core lifts for a body part.
+const CORE_LIFTS = {
+  Chest: ['bench', 'incline-bb', 'bench-db', 'incline-db', 'dip', 'chest-press', 'fly-cable'],
+  Back: ['deadlift', 'row-bb', 'pullup', 'pulldown', 'row-cable', 'row-db', 'chinup'],
+  Legs: ['squat', 'rdl', 'leg-press', 'front-squat', 'hip-thrust', 'split-squat', 'leg-curl'],
+  Shoulders: ['ohp', 'ohp-db', 'lateral', 'push-press', 'arnold', 'facepull', 'rear-delt'],
+  Arms: ['curl-bb', 'cgbp', 'curl-db', 'skull', 'hammer', 'pushdown', 'oh-tri'],
+  Core: ['hlr', 'ab-wheel', 'cable-crunch', 'plank', 'pallof', 'dead-bug', 'side-plank'],
+  Cardio: ['run', 'row-erg', 'cycle', 'bike-int', 'incline-walk', 'swim', 'stairs'],
+  'Full Body': ['farmer', 'kb-swing', 'sled', 'thruster', 'burpee', 'kb-tgu', 'box-jump'],
+  Olympic: ['clean', 'snatch', 'clean-jerk', 'hang-clean', 'trap-jump']
+};
+function TrendRow({ st, id, n, onExercise }) {
+  const ex = exById(st, id), M = METRICS[ex.type] || METRICS.wr, metric = M[0][0], pts = n ? seriesFor(st, id, metric) : [], tt = pts.length ? trendText(st, pts, metric) : '';
+  return <div role="button" onClick={() => onExercise(id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #272c34', cursor: 'pointer' }}>
+    <div style={{ flex: 1, minWidth: 0 }}><div style={{ ...T.name, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: pts.length ? C.text : C.dim }}>{ex.name}</div>
+      <div style={{ ...T.label, marginTop: 3, color: tt.startsWith('▲') ? C.olive : tt.startsWith('▼') ? C.red : C.mute }}>{pts.length ? M[0][1] + ' ' + metricFmt(st, metric)(pts[pts.length - 1].y) + ' · ' + tt : 'NOT LOGGED YET'}</div></div>
+    {pts.length > 1 ? <Sparkline values={pts.map(p => p.y)} tone={C.olive} /> : null}
+    <span style={{ ...T.mono, color: C.dim }}>›</span>
+  </div>;
+}
+function ExerciseTrends({ st, freq, onExercise }) {
+  const [q, setQ] = useState('');
+  const partOf = id => exById(st, id).part;
+  const parts = Object.keys(CORE_LIFTS).concat('Other').filter(p => p !== 'Other' || Object.keys(freq).some(id => partOf(id) === 'Other'));
+  const byPart = p => Object.keys(freq).filter(id => partOf(id) === p).reduce((a, id) => a + freq[id], 0);
+  const [part, setPart] = useState(() => parts.slice().sort((a, b) => byPart(b) - byPart(a))[0] || 'Chest');
+  // top five: your most-trained lifts for that body part, topped up with the standard core lifts
+  const top5 = (() => {
+    const mine = Object.keys(freq).filter(id => partOf(id) === part).sort((a, b) => freq[b] - freq[a]);
+    return mine.concat((CORE_LIFTS[part] || []).filter(id => !mine.includes(id) && EX_LIB.some(e => e.id === id))).slice(0, 5);
+  })();
+  const found = q.trim() ? allExercises(st).filter(e => exMatch(e, q, 'All', 'Any')).sort((a, b) => ((freq[b.id] || 0) - (freq[a.id] || 0)) || a.name.localeCompare(b.name)).slice(0, 40) : [];
+  return <div>
+    <div style={{ ...T.h2, margin: '20px 0 8px' }}>Exercise trends</div>
+    <Field value={q} onChange={setQ} placeholder="🔍  Search any exercise for its trend" />
+    {q.trim() ? <>
+      <div style={{ ...T.label, margin: '10px 0 2px' }}>{found.length ? found.length + (found.length === 40 ? '+' : '') + ' MATCHES · LOGGED ONES FIRST' : 'NO EXERCISE MATCHES “' + q.trim().toUpperCase() + '”'}</div>
+      {found.map(e => <TrendRow key={e.id} st={st} id={e.id} n={freq[e.id] || 0} onExercise={onExercise} />)}
+    </> : <>
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '10px -22px 2px', padding: '0 22px 4px' }}>
+        {parts.map(p => <Chip key={p} on={part === p} tone={C.olive} ink={C.oliveInk} onClick={() => setPart(p)}>{p.toUpperCase()}</Chip>)}
+      </div>
+      <div style={{ ...T.label, margin: '8px 0 2px' }}>TOP 5 {part.toUpperCase()} LIFTS · TAP FOR THE FULL GRAPH</div>
+      {top5.map(id => <TrendRow key={id} st={st} id={id} n={freq[id] || 0} onExercise={onExercise} />)}
+    </>}
+  </div>;
+}

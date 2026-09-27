@@ -381,3 +381,34 @@ function celebrate(title, lines) {
   };
   requestAnimationFrame(step);
 }
+
+// ── Water pail: fills as you drink; tap it to add a glass ──
+function Pail({ ml, goal, onTap, size = 118 }) {
+  const pct = Math.max(0, Math.min(1, goal ? ml / goal : 0)), top = 38, bottom = 108, y = bottom - pct * (bottom - top);
+  const [pop, setPop] = useState(0);
+  const tap = () => { if (!onTap) return; setPop(p => p + 1); vib(12); onTap(); };
+  const id = useMemo(() => 'pail' + uid(), []);
+  return <svg role="button" aria-label="Add a glass of water" onClick={tap} viewBox="0 0 120 120" width={size} height={size} key={pop}
+    style={{ cursor: onTap ? 'pointer' : 'default', flex: 'none', animation: pop ? 'pailpop .35s ease' : 'none', overflow: 'visible' }}>
+    <defs><clipPath id={id}><path d="M17 38 L103 38 L94 104 Q93 110 87 110 L33 110 Q27 110 26 104 Z" /></clipPath></defs>
+    <path d="M24 40 C 22 2, 98 2, 96 40" fill="none" stroke={C.line2} strokeWidth="4" strokeLinecap="round" />
+    <path d="M17 38 L103 38 L94 104 Q93 110 87 110 L33 110 Q27 110 26 104 Z" fill={C.card} />
+    <g clipPath={`url(#${id})`}>
+      <rect x="0" y={y} width="120" height="120" fill={C.blue} style={{ transition: 'y .5s ease' }} />
+      {pct > 0 && pct < 1 ? <g className="pailwave" style={{ transform: `translateY(${y - 6}px)` }}>
+        <path d="M-60 6 Q -45 0 -30 6 T 0 6 T 30 6 T 60 6 T 90 6 T 120 6 T 150 6 T 180 6 V 14 H -60 Z" fill={C.blue} opacity=".55" />
+      </g> : null}
+      {[0.25, 0.5, 0.75].map(f => <line key={f} x1="18" x2="102" y1={bottom - f * (bottom - top)} y2={bottom - f * (bottom - top)} stroke={C.bg} strokeOpacity=".35" strokeDasharray="3 4" />)}
+    </g>
+    <path d="M17 38 L103 38 L94 104 Q93 110 87 110 L33 110 Q27 110 26 104 Z" fill="none" stroke={pct >= 1 ? C.blue : C.line2} strokeWidth="3" strokeLinejoin="round" />
+    <ellipse cx="60" cy="38" rx="44" ry="4" fill="none" stroke={pct >= 1 ? C.blue : C.line2} strokeWidth="3" />
+    <text x="60" y="80" textAnchor="middle" style={{ font: `700 19px ${F.head}`, fill: pct > 0.45 ? '#ffffff' : C.text }}>{Math.round(pct * 100)}%</text>
+  </svg>;
+}
+
+// Today tab's pail (the Today screen is a template, so it mounts this React piece)
+function PailWidget({ app, st }) {
+  if (!app || !st) return null;
+  return <Pail ml={st.waterMl || 0} goal={st.waterGoal || 3500} size={112} onTap={() => app.addWater(250)} />;
+}
+window.PailWidget = PailWidget;

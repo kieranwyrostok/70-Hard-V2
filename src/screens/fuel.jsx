@@ -156,9 +156,13 @@ function FuelScreen({ app, st }) {
             <span style={{ font: `700 18px/1 ${F.head}`, letterSpacing: '.08em', textTransform: 'uppercase' }}>Water</span>
             <span style={{ ...T.mono, color: C.blue }}>{(day.waterMl / 1000).toFixed(2)} / {(goalW / 1000).toFixed(2)} L</span>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-            {Array.from({ length: glasses }, (_, i) => <div key={i} role="button" onClick={() => setWater(i < filled ? i * 250 : (i + 1) * 250)}
-              style={{ width: 26, height: 34, boxSizing: 'border-box', border: '2px solid ' + (i < filled ? C.blue : C.line2), borderTop: '2px solid ' + (i < filled ? C.blue : '#30363f'), background: i < filled ? 'linear-gradient(to top, ' + C.blue + ' 78%, transparent 78%)' : 'transparent', borderRadius: '0 0 5px 5px', cursor: 'pointer' }} />)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
+            <Pail ml={day.waterMl} goal={goalW} onTap={() => setWater(day.waterMl + 250)} />
+            <div style={{ flex: 1 }}>
+              <div style={{ font: `700 30px/1 ${F.head}` }}>{(day.waterMl / 1000).toFixed(2)}<span style={{ fontSize: 15, color: C.mute }}> L</span></div>
+              <div style={{ ...T.label, marginTop: 5 }}>{day.waterMl >= goalW ? 'GOAL REACHED 💧' : ((goalW - day.waterMl) / 1000).toFixed(2) + ' L TO GO · ' + Math.ceil((goalW - day.waterMl) / 250) + ' GLASSES'}</div>
+              <div style={{ ...T.label, marginTop: 8, color: C.faint }}>TAP THE PAIL FOR +250 ML</div>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 7, marginTop: 12 }}>
             <Btn kind="ghost" tone={C.text} onClick={() => setWater(day.waterMl - 250)} style={{ flex: 1, minHeight: 42 }}>−250</Btn>
@@ -240,13 +244,15 @@ function AddFood({ app, st, slot, setSlot, dateLabel, onClose, addEntries, flash
       else setCreate({ name: '', brand: '', serv: '1 serving', g: '', kcal: '', p: '', c: '', f: '', upc: code, note: 'BARCODE ' + code + ' ISN’T IN THE DATABASES. ADD IT FROM THE LABEL ONCE AND IT SCANS NEXT TIME.' });
     } catch (e) { setCreate({ name: '', brand: '', serv: '1 serving', g: '', kcal: '', p: '', c: '', f: '', upc: code, note: 'OFFLINE — ENTER IT FROM THE LABEL.' }); }
   };
-  const analyse = async (b64, url, hint) => {
-    setPhoto({ status: 'loading', url, b64, items: [], note: '' });
+  const [voice, setVoice] = useState(false);
+  // photo (b64) or voice (said) → the AI lists foods → editable review
+  const analyse = async (b64, url, hint, said) => {
+    setPhoto({ status: 'loading', url, b64, said, items: [], note: '' });
     try {
-      const { ok, j } = await aiPost('/api/food-photo', { image: b64, media_type: 'image/jpeg', hint });
-      if (!ok) { setPhoto({ status: 'error', url, b64, items: [], note: j.message || 'Couldn’t analyse the photo.' }); return; }
-      setPhoto({ status: 'ready', url, b64, note: j.note || '', items: (j.items || []).map(i => ({ ...i, key: uid(), per100: i.grams ? { kcal: i.kcal * 100 / i.grams, p: i.p * 100 / i.grams, c: i.c * 100 / i.grams, f: i.f * 100 / i.grams } : null })) });
-    } catch (e) { setPhoto({ status: 'error', url, b64, items: [], note: navigator.onLine === false ? 'You’re offline — photo logging needs internet.' : 'Couldn’t reach the server.' }); }
+      const { ok, j } = await aiPost('/api/food-photo', said ? { text: said, hint } : { image: b64, media_type: 'image/jpeg', hint });
+      if (!ok) { setPhoto({ status: 'error', url, b64, said, items: [], note: j.message || 'Couldn’t analyse that.' }); return; }
+      setPhoto({ status: 'ready', url, b64, said, note: j.note || '', items: (j.items || []).map(i => ({ ...i, key: uid(), per100: i.grams ? { kcal: i.kcal * 100 / i.grams, p: i.p * 100 / i.grams, c: i.c * 100 / i.grams, f: i.f * 100 / i.grams } : null })) });
+    } catch (e) { setPhoto({ status: 'error', url, b64, said, items: [], note: navigator.onLine === false ? 'You’re offline — AI logging needs internet.' : 'Couldn’t reach the server.' }); }
   };
   const onPhoto = async ev => {
     const file = ev.target.files && ev.target.files[0]; ev.target.value = '';
@@ -269,7 +275,11 @@ function AddFood({ app, st, slot, setSlot, dateLabel, onClose, addEntries, flash
         <Field value={q} onChange={setQ} placeholder="Search foods & brands" style={{ flex: 1 }} />
         <Btn tone={C.amber} ink={C.amberInk} onClick={scan} style={{ minHeight: 44, padding: '0 12px', fontSize: 14 }}>▥ Scan</Btn>
       </div>
-      <Btn kind="ghost" tone={C.amber} onClick={() => fileRef.current && fileRef.current.click()} style={{ marginTop: 8 }}>📷 SNAP A PHOTO · AI ESTIMATES IT</Btn>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <Btn kind="ghost" tone={C.amber} onClick={() => fileRef.current && fileRef.current.click()} style={{ flex: 1, padding: '0 8px' }}>📷 PHOTO</Btn>
+        <Btn kind="ghost" tone={C.amber} onClick={() => setVoice(true)} style={{ flex: 1, padding: '0 8px' }}>🎤 SAY IT</Btn>
+      </div>
+      <div style={{ ...T.label, marginTop: 5, color: C.faint, textAlign: 'center' }}>AI WORKS OUT THE FOODS · YOU CHECK BEFORE ADDING</div>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={onPhoto} style={{ display: 'none' }} />
       {!q.trim() ? <div style={{ marginTop: 12 }}><Seg items={[['recent', 'RECENT'], ['favs', 'FAVOURITES'], ['mine', 'MY FOODS'], ['meals', 'MEALS']]} value={tab} onChange={setTab} tone={C.amber} ink={C.amberInk} /></div> : null}
       {q.trim() ? <div style={{ ...T.label, margin: '12px 0 2px' }}>{rows.length} RESULTS{db && db.status === 'loading' ? ' · SEARCHING CANADIAN + USDA FOODS…' : db && db.status === 'err' ? ' · ' + String(db.msg || 'DATABASE UNREACHABLE').toUpperCase().slice(0, 90) : db ? ' · INCL. USDA' : ''}</div> : null}
@@ -291,7 +301,8 @@ function AddFood({ app, st, slot, setSlot, dateLabel, onClose, addEntries, flash
     </div>
     {detail ? <FoodDetail st={st} app={app} nf={detail} slot={slot} onClose={() => setDetail(null)} onSave={(amount, unit, sl) => { addEntries([makeEntry(detail, amount, unit, sl)], detail.name.toUpperCase() + ' → ' + (SLOTS.find(s => s[0] === sl) || SLOTS[SLOTS.length - 1])[1].toUpperCase()); setDetail(null); }} /> : null}
     {create ? <CreateFood app={app} draft={create} setDraft={setCreate} onClose={() => setCreate(null)} onSaved={nf => { setCreate(null); setQ(''); setDetail(nf); }} /> : null}
-    {photo ? <PhotoReview photo={photo} setPhoto={setPhoto} slot={slot} st={st} onClose={() => setPhoto(null)} onRecheck={hint => analyse(photo.b64, photo.url, hint)}
+    {voice ? <VoiceCapture onClose={() => setVoice(false)} onDone={text => { setVoice(false); analyse(null, null, '', text); }} /> : null}
+    {photo ? <PhotoReview photo={photo} setPhoto={setPhoto} slot={slot} st={st} onClose={() => setPhoto(null)} onRecheck={hint => analyse(photo.b64, photo.url, hint, photo.said)}
       onAdd={(items, sl) => { addEntries(items.map(i => makeEntry(normFood({ name: i.name.trim() || 'Food', serv: i.amount || (i.grams ? i.grams + ' g' : '1 serving'), g: i.grams || null, kcal: i.kcal, p: i.p, c: i.c, f: i.f, src: 'PHOTO' }), 1, 'serv', sl)),
         items.length + (items.length === 1 ? ' ITEM' : ' ITEMS') + ' → ' + (SLOTS.find(s => s[0] === sl) || SLOTS[SLOTS.length - 1])[1].toUpperCase()); setPhoto(null); }} /> : null}
     {quick ? <QuickAdd onClose={() => setQuick(false)} onSave={v => { addEntries([{ id: 'm' + uid(), time: SH.nowHM(), slot, name: v.name || 'Quick add', amount: 1, unit: 'quick', serv: 'quick add', kcal: v.kcal, p: v.p, c: v.c, f: v.f }], 'QUICK ADD → ' + slotLabel.toUpperCase()); setQuick(false); }} /> : null}
@@ -405,14 +416,15 @@ function PhotoReview({ photo, setPhoto, slot: slot0, st, onClose, onRecheck, onA
   const tot = sumN(items.map(i => ({ kcal: Number(i.kcal) || 0, p: Number(i.p) || 0, c: Number(i.c) || 0, f: Number(i.f) || 0 })));
   const cell = { width: '100%', boxSizing: 'border-box', background: '#282d36', border: 'none', color: C.text, textAlign: 'center', font: `600 15px/1 ${F.body}`, padding: '9px 2px', outline: 'none', minWidth: 0 };
   const loading = photo.status === 'loading';
-  return <Sheet z={68} title="Photo log" sub={loading ? 'ANALYSING…' : photo.status === 'error' ? 'COULDN’T ANALYSE' : items.length + ' ITEMS · CHECK AND EDIT'} left={<TopLink tone={C.amber} onClick={onClose}>‹ BACK</TopLink>}
+  return <Sheet z={68} title={photo.said ? 'Voice log' : 'Photo log'} sub={loading ? 'ANALYSING…' : photo.status === 'error' ? 'COULDN’T ANALYSE' : items.length + ' ITEMS · CHECK AND EDIT'} left={<TopLink tone={C.amber} onClick={onClose}>‹ BACK</TopLink>}
     footer={<Btn tone={C.amber} ink={C.amberInk} disabled={loading || !items.length} onClick={() => onAdd(items.filter(i => (i.name || '').trim()).map(i => ({ ...i, kcal: Number(i.kcal) || 0, p: Number(i.p) || 0, c: Number(i.c) || 0, f: Number(i.f) || 0, grams: Number(i.grams) || null })), slot)}>
       {loading ? 'Analysing…' : 'Add ' + items.length + (items.length === 1 ? ' item' : ' items') + ' · ' + Math.round(tot.kcal) + ' kcal'}</Btn>}>
     <div style={{ padding: '14px 16px 26px' }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        <img src={photo.url} style={{ width: 96, height: 96, objectFit: 'cover', flex: 'none', border: '1px solid ' + C.line2 }} />
+        {photo.said ? <div style={{ width: 96, flex: 'none', font: `italic 400 13px/1.4 ${F.body}`, color: C.text, background: C.card, border: '1px solid ' + C.line2, borderRadius: 10, padding: 8, boxSizing: 'border-box' }}>🎤 “{photo.said}”</div>
+          : <img src={photo.url} style={{ width: 96, height: 96, objectFit: 'cover', flex: 'none', border: '1px solid ' + C.line2 }} />}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {loading ? <div style={{ ...T.mono, fontSize: 12, color: C.amber, lineHeight: 1.6 }}>LOOKING AT YOUR PLATE…</div>
+          {loading ? <div style={{ ...T.mono, fontSize: 12, color: C.amber, lineHeight: 1.6 }}>{photo.said ? 'WORKING OUT WHAT YOU ATE…' : 'LOOKING AT YOUR PLATE…'}</div>
             : <><div style={{ font: `800 34px/0.95 ${F.head}`, color: C.amber }}>{Math.round(tot.kcal)}<span style={{ fontSize: 14, color: C.mute }}> KCAL</span></div>
               <div style={{ ...T.label, marginTop: 5 }}>P {r1(tot.p)} · C {r1(tot.c)} · F {r1(tot.f)} G</div></>}
           {photo.note ? <div style={{ font: `400 13px/1.4 ${F.body}`, color: photo.status === 'error' ? '#e0a89a' : C.dim, marginTop: 6 }}>{photo.note}</div> : null}
@@ -438,7 +450,7 @@ function PhotoReview({ photo, setPhoto, slot: slot0, st, onClose, onRecheck, onA
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{SLOTS.map(([v2, l]) => <Chip key={v2} on={slot === v2} tone={C.amber} ink={C.amberInk} onClick={() => setSlot(v2)} style={{ flex: '1 0 22%', textAlign: 'center', padding: '10px 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.toUpperCase()}</Chip>)}</div>
       {!loading ? <div style={{ marginTop: 16 }}>
         <Field label="MISSED SOMETHING? TELL IT AND RE-CHECK" value={hint} onChange={setHint} placeholder="e.g. cooked in 1 tbsp butter, rice is ~200 g" />
-        <Btn kind="ghost" tone={C.amber} disabled={!hint.trim()} onClick={() => onRecheck(hint.trim())} style={{ marginTop: 8 }}>RE-CHECK PHOTO</Btn>
+        <Btn kind="ghost" tone={C.amber} disabled={!hint.trim()} onClick={() => onRecheck(hint.trim())} style={{ marginTop: 8 }}>{photo.said ? 'RE-CHECK' : 'RE-CHECK PHOTO'}</Btn>
       </div> : null}
     </div>
   </Sheet>;
@@ -508,6 +520,40 @@ function MealSlotsEditor({ app, st, onClose }) {
         <Btn kind="ghost" tone={C.dim} onClick={() => setList(DEF_MEALS().map(m => ({ ...m, kc: String(Math.round(goal * m.pct / 100)) })))} style={{ flex: 1 }}>RESET</Btn>
       </div>
       <div style={{ ...T.label, color: C.faint, marginTop: 14, lineHeight: 1.6 }}>MEAL CALORIES FOLLOW YOUR DAILY GOAL: IF YOU CHANGE THE GOAL, EACH MEAL KEEPS ITS SHARE.</div>
+    </div>
+  </Sheet>;
+}
+
+
+// Listen with the phone's speech recognition (Safari/Chrome); if it isn't available, type or use the keyboard's 🎤.
+function VoiceCapture({ onClose, onDone }) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const [text, setText] = useState(''), [live, setLive] = useState(''), [on, setOn] = useState(false), [err, setErr] = useState('');
+  const rec = useRef(null), finalRef = useRef('');
+  const start = () => {
+    if (!SR) return;
+    try {
+      const r = new SR(); rec.current = r;
+      r.lang = 'en-CA'; r.interimResults = true; r.continuous = true;
+      r.onresult = e => { let fin = '', mid = ''; for (let i = 0; i < e.results.length; i++) { const t = e.results[i][0].transcript; if (e.results[i].isFinal) fin += t + ' '; else mid += t; } finalRef.current = fin; setText(fin.trim()); setLive(mid); };
+      r.onerror = e => { setOn(false); setErr(e.error === 'not-allowed' ? 'Microphone access is blocked — allow it in Settings, or type below.' : e.error === 'no-speech' ? 'Didn’t hear anything — tap the mic and try again.' : 'Voice didn’t work here — type below or use the 🎤 on your keyboard.'); };
+      r.onend = () => setOn(false);
+      r.start(); setOn(true); setErr(''); vib(15);
+    } catch (e) { setErr('Voice didn’t work here — type below or use the 🎤 on your keyboard.'); }
+  };
+  const stop = () => { try { rec.current && rec.current.stop(); } catch (e) { /* ignore */ } setOn(false); };
+  useEffect(() => { if (SR) start(); return () => { try { rec.current && rec.current.abort(); } catch (e) { /* ignore */ } }; }, []);
+  const said = (text + ' ' + live).trim();
+  return <Sheet z={66} title="Say what you ate" left={<TopLink tone={C.amber} onClick={() => { stop(); onClose(); }}>‹ BACK</TopLink>}
+    footer={<Btn tone={C.amber} ink={C.amberInk} disabled={!said} onClick={() => { stop(); onDone(said); }}>Work it out</Btn>}>
+    <div style={{ padding: '22px 18px', textAlign: 'center' }}>
+      {SR ? <div role="button" onClick={on ? stop : start} style={{ width: 112, height: 112, margin: '6px auto 0', borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `400 44px/1 ${F.body}`, cursor: 'pointer',
+        background: on ? C.amber : C.card, border: '2px solid ' + C.amber, boxShadow: on ? '0 0 0 10px rgba(244,181,68,.18), 0 0 0 22px rgba(244,181,68,.08)' : 'none', transition: 'box-shadow .3s' }}>🎤</div> : null}
+      <div style={{ ...T.mono, fontSize: 12, color: on ? C.amber : C.dim, marginTop: 16 }}>{SR ? (on ? 'LISTENING… TAP TO STOP' : 'TAP THE MIC TO TALK') : 'TYPE IT, OR TAP 🎤 ON YOUR KEYBOARD'}</div>
+      <div style={{ ...T.body, color: C.dim, fontSize: 14, marginTop: 8 }}>e.g. “two eggs, a slice of whole wheat toast with peanut butter and a large coffee with milk”</div>
+      {err ? <div style={{ ...T.body, color: C.red, fontSize: 14, marginTop: 10 }}>{err}</div> : null}
+      <textarea value={on ? said : text} onChange={e => { setText(e.target.value); setLive(''); }} rows={4} placeholder="What did you eat?"
+        style={{ width: '100%', boxSizing: 'border-box', marginTop: 16, background: C.card, border: '1px solid ' + C.line2, borderRadius: 12, color: C.text, font: `400 16px/1.45 ${F.body}`, padding: 12, outline: 'none', resize: 'none', textAlign: 'left' }} />
     </div>
   </Sheet>;
 }

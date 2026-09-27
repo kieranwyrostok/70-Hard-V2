@@ -1,4 +1,5 @@
-// POST /api/food-photo  { image: base64, media_type, hint?, code? }  ->  { items: [...], note }
+// POST /api/food-photo  { image: base64, media_type, hint?, code? }  or  { text: 'what I ate', hint? }  ->  { items: [...], note }
+// (text = voice logging: the user said what they ate)
 // Claude looks at a meal photo and estimates each food's portion and macros. The app shows the
 // result as an editable list before anything is logged.
 import { readBody } from '../lib/shared.mjs';
@@ -6,7 +7,7 @@ import { readBody } from '../lib/shared.mjs';
 const MODEL = () => process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
 const REPORT = {
   name: 'report_foods',
-  description: 'Report every distinct food or drink visible in the photo with estimated portion and nutrition for the whole visible portion.',
+  description: 'Report every distinct food or drink in the photo (or that the user described) with the estimated portion and nutrition for that whole portion.',
   input_schema: {
     type: 'object', required: ['items'],
     properties: {
@@ -30,20 +31,25 @@ export default async (req) => {
   try { b = await readBody(req, 4500000); } catch (e) { return Response.json({ error: 'bad body', message: 'That photo is too large.' }, { status: 400 }); }
   if (process.env.COACH_CODE && b.code !== process.env.COACH_CODE) return Response.json({ error: 'code', message: 'Enter your coach passcode.' }, { status: 401 });
   const media = ['image/jpeg', 'image/png', 'image/webp'].includes(b.media_type) ? b.media_type : 'image/jpeg';
-  if (typeof b.image !== 'string' || b.image.length < 100) return Response.json({ error: 'bad image', message: 'No photo received.' }, { status: 400 });
+  const said = typeof b.text === 'string' ? b.text.trim().slice(0, 600) : '';
+  if (!said && (typeof b.image !== 'string' || b.image.length < 100)) return Response.json({ error: 'bad image', message: 'No photo received.' }, { status: 400 });
 
   const hint = String(b.hint || '').slice(0, 300);
   const prompt = 'Identify each food and drink in this meal photo and estimate the portion actually shown (use plate/utensil/hand size for scale). '
     + 'Use realistic USDA-style values for the prepared food, and include visible oils, sauces, dressings or toppings as separate items when they add meaningful calories. '
     + 'Keep names short. If there is no food, return an empty list and say so in note.'
     + (hint ? '\nThe user adds: ' + hint : '');
+  const spoken = 'The user said what they ate (speech-to-text, may have small transcription mistakes): "' + said + '"\n'
+    + 'List each food and drink they mentioned with the amount they said (or a typical single portion if they gave none). '
+    + 'Use realistic USDA/Canadian Nutrient File values for the food as prepared; brands or restaurant items at their published values when you know them. '
+    + 'Keep names short. If nothing edible was mentioned, return an empty list and say so in note.' + (hint ? '\nThe user adds: ' + hint : '');
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: MODEL(), max_tokens: 1200, tools: [REPORT], tool_choice: { type: 'tool', name: 'report_foods' },
-        messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: media, data: b.image } }, { type: 'text', text: prompt }] }]
+        messages: [{ role: 'user', content: said ? [{ type: 'text', text: spoken }] : [{ type: 'image', source: { type: 'base64', media_type: media, data: b.image } }, { type: 'text', text: prompt }] }]
       })
     });
     const j = await r.json();
