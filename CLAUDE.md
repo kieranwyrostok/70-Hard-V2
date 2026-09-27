@@ -14,6 +14,9 @@ learning to edit this himself — explain changes plainly and keep them small an
   tools/light-theme.mjs). A script at the top of the page reads localStorage `sh.theme` (dark|light|system, set in
   Habits & reminders → Appearance) and switches page. Same origin, so both share the saved data. The dev app
   defaults to light, the live app to dark. New colours in src/ need a light partner in tools/light-theme.mjs.
+- Visual setup (Habits & reminders): localStorage `sh.style` = neon|glass|matte → `html[data-look]` (head script; only
+  neon injects the glow CSS). Glass/matte rules live in tools/glass.mjs. `LookWidget` (ui.jsx) applies a whole setup
+  (style + `sh.colors` + `sh.theme`); `ColourMixer` is the "any other colour" picker.
 - Screens are `position:fixed` to all four edges; both pages use the black-translucent status bar with a coloured strip
   behind the clock / Dynamic Island (glass.mjs `body::before`, colours --sb1/--sb2 from the head script, darkened until
   white text has ≥4.5:1 contrast). Tested on Kieran's iPhone: 100dvh is already the full screen there, so don't
@@ -85,6 +88,8 @@ ui → library → train → injuries → fuel → coach and compiled into one I
 food-search (Health Canada CNF via netlify/lib/cnf.mjs + Open Food Facts products sold in Canada + USDA, merged
 Canadian-first), food-barcode (Open Food Facts, then USDA), coach + food-photo (Anthropic Messages API with tools;
 model via ANTHROPIC_MODEL, default claude-haiku-4-5-20251001), push-* (web-push + Netlify Blobs, cron every 5 min).
+Hercules chats (coach.jsx): `st.coachChat` = current chat; opening Hercules after 10 min idle files it into
+`st.coachChats` [{id,start,last,msgs}] (CHATS side drawer), pruned 21 days after the last message.
 tips (daily AI suggestions: coach.jsx `tipsMaybe` sends a ~1.8 KB 7-day summary once per day, forced `give_tips` tool,
 max 500 tokens out; state `aiTips`, toggle `aiTipsOn`; card on Today, setting in Habits & reminders).
 Env vars live in Netlify only: ANTHROPIC_API_KEY, USDA_API_KEY, COACH_CODE, ANTHROPIC_MODEL.

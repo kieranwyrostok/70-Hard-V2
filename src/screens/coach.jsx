@@ -130,6 +130,54 @@ function Rich({ text }) {
 
 const UNDO_KEYS = ['meals', 'diary', 'history', 'targets', 'waterGoal', 'waterMl', 'done', 'doneAt', 'rem', 'regulars', 'setup'];
 
+// Chats: every visit to Hercules starts a fresh chat (unless you were just talking, < CHAT_FRESH_MIN ago). The old one
+// is filed in st.coachChats [{ id, start, last, msgs }] and shown in the CHATS side drawer; chats are deleted
+// CHAT_KEEP_DAYS after their last message. st.coachChat stays the current conversation (never renamed).
+const CHAT_KEEP_DAYS = 21, CHAT_FRESH_MIN = 10;
+const chatTitle = msgs => { const u = (msgs || []).find(m => m.role === 'user'); return u ? u.content.replace(/\s+/g, ' ').slice(0, 70) : 'Chat'; };
+const keepChats = list => { const now = Date.now(); return (list || []).filter(c => now - (c.last || c.start || 0) < CHAT_KEEP_DAYS * 864e5).slice(0, 40); };
+function fileChat(s) {   // → state changes that put the current chat into the drawer and start an empty one
+  const cur = s.coachChat || [], hasTalk = cur.some(m => m.role === 'user');
+  const first = cur.find(m => m.at), last = s.coachLastAt || Date.now();
+  const list = hasTalk ? [{ id: 'h' + uid(), start: first ? first.at : last, last, msgs: cur }].concat(s.coachChats || []) : (s.coachChats || []);
+  return { coachChats: keepChats(list), coachChat: [] };
+}
+const MON3 = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const whenLabel = t => { const d = new Date(t), now = new Date(), day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(now) - day(d)) / 864e5), hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  return (diff === 0 ? 'TODAY' : diff === 1 ? 'YESTERDAY' : d.getDate() + ' ' + MON3[d.getMonth()]) + ' · ' + hm; };
+
+function ChatDrawer({ st, onClose, onOpen, onDelete, onNew }) {
+  const chats = keepChats(st.coachChats), cur = st.coachChat || [];
+  const row = (key, title, sub, on, click, del) => <div key={key} role="button" onClick={click} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 12px', borderRadius: 12, cursor: 'pointer', marginBottom: 6,
+    background: on ? C.card : 'transparent', border: '1px solid ' + (on ? C.blue : C.line) }}>
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ font: `600 15px/1.3 ${F.body}`, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{title}</div>
+      <div style={{ ...T.label, marginTop: 4 }}>{sub}</div>
+    </div>
+    {del ? <span role="button" aria-label="Delete chat" onClick={e => { e.stopPropagation(); if (confirm('Delete this chat?')) del(); }} style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.faint, fontSize: 18, flex: 'none' }}>×</span> : null}
+  </div>;
+  const left = c => Math.max(1, Math.ceil(CHAT_KEEP_DAYS - (Date.now() - c.last) / 864e5));
+  return ReactDOM.createPortal(<div style={{ position: 'fixed', inset: 0, zIndex: 60 }}>
+    <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.45)', animation: 'fadeIn .25s both' }} />
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 'min(86vw, 340px)', background: C.bg, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, borderRight: '1px solid ' + C.line,
+      boxShadow: '12px 0 40px rgba(0,0,0,.35)', display: 'flex', flexDirection: 'column', animation: 'drawerIn .3s cubic-bezier(.2,.9,.25,1) both', fontFamily: F.body, color: C.text }}>
+      <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 16px 12px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div><div style={T.h2}>Chats</div><div style={{ ...T.label, marginTop: 4 }}>KEPT {CHAT_KEEP_DAYS} DAYS, THEN DELETED</div></div>
+        <TopLink tone={C.dim} onClick={onClose}>CLOSE</TopLink>
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: '12px 12px calc(env(safe-area-inset-bottom, 0px) + 12px)' }}>
+        <div role="button" onClick={onNew} style={{ padding: '12px', borderRadius: 12, border: '1px dashed ' + C.line2, textAlign: 'center', cursor: 'pointer', ...T.mono, fontSize: 12, color: C.blue, marginBottom: 12 }}>＋ NEW CHAT</div>
+        {cur.some(m => m.role === 'user') ? <><div style={{ ...T.label, margin: '0 2px 6px' }}>CURRENT</div>
+          {row('cur', chatTitle(cur), (st.coachLastAt ? whenLabel(st.coachLastAt) + ' · ' : '') + cur.filter(m => m.role !== 'error').length + ' MESSAGES', true, onClose, null)}</> : null}
+        {chats.length ? <div style={{ ...T.label, margin: '12px 2px 6px' }}>EARLIER</div> : null}
+        {chats.map(c => row(c.id, chatTitle(c.msgs), whenLabel(c.last) + ' · ' + c.msgs.filter(m => m.role !== 'error').length + ' MSGS · ' + left(c) + 'D LEFT', false, () => onOpen(c), () => onDelete(c.id)))}
+        {!chats.length ? <div style={{ ...T.body, color: C.dim, fontSize: 14, marginTop: 10, lineHeight: 1.5 }}>Your past chats with Hercules show up here. Each time you open Hercules a new chat starts.</div> : null}
+      </div>
+    </div>
+  </div>, document.body);
+}
+
 function CoachScreen({ app, st }) {
   useSlots(st);
   const [input, setInput] = useState('');
@@ -138,7 +186,20 @@ function CoachScreen({ app, st }) {
   const undos = useRef({});
   const chat = st.coachChat || [];
   useEffect(() => { const el = scroller.current; if (el) el.scrollTop = el.scrollHeight; }, [chat.length, busy]);
-  const push = m => app.setState(s => ({ coachChat: (s.coachChat || []).concat({ id: 'c' + uid(), ...m }).slice(-60) }));
+  const [drawer, setDrawer] = useState(false);
+  const push = m => app.setState(s => ({ coachChat: (s.coachChat || []).concat({ id: 'c' + uid(), at: Date.now(), ...m }).slice(-60), coachLastAt: Date.now() }));
+  // opening Hercules = a new chat (the last one is filed in the drawer), unless you were talking a few minutes ago
+  useEffect(() => {
+    const fresh = () => { const s = app.state; if ((location.hash || '') !== '#s12') return;
+      if ((s.coachChat || []).length && Date.now() - (s.coachLastAt || 0) > CHAT_FRESH_MIN * 60e3) app.setState(fileChat);
+      else if ((s.coachChats || []).length !== keepChats(s.coachChats).length) app.setState({ coachChats: keepChats(s.coachChats) }); };
+    fresh(); window.addEventListener('hashchange', fresh);
+    return () => window.removeEventListener('hashchange', fresh);
+  }, []);
+  const newChat = () => { app.setState(fileChat); setInput(''); setDrawer(false); };
+  const openChat = c => { app.setState(s => { const f = fileChat(s); return { coachChats: f.coachChats.filter(x => x.id !== c.id), coachChat: c.msgs, coachLastAt: Date.now() }; }); setDrawer(false); };
+  const delChat = id => app.setState(s => ({ coachChats: (s.coachChats || []).filter(x => x.id !== id) }));
+  const nChats = keepChats(st.coachChats).length;
 
   const send = async (text, retried) => {
     text = String(text || '').trim(); if (!text || busy) return;
@@ -160,7 +221,7 @@ function CoachScreen({ app, st }) {
       const done = runCoachActions(app, j.actions);
       const id = 'c' + uid();
       if (done.length) undos.current[id] = snap;
-      app.setState(s => ({ coachChat: (s.coachChat || []).concat({ id, role: 'assistant', content: j.text || (done.length ? 'Done.' : 'Hmm, I didn’t get that — try rephrasing?'), done }).slice(-60) }));
+      app.setState(s => ({ coachChat: (s.coachChat || []).concat({ id, at: Date.now(), role: 'assistant', content: j.text || (done.length ? 'Done.' : 'Hmm, I didn’t get that — try rephrasing?'), done }).slice(-60), coachLastAt: Date.now() }));
     } catch (e) {
       push({ role: 'error', content: navigator.onLine === false ? 'You’re offline — Hercules needs internet.' : 'Couldn’t reach Hercules. Try again.' });
     }
@@ -173,9 +234,13 @@ function CoachScreen({ app, st }) {
 
   return <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'transparent', fontFamily: F.body, color: C.text }}>
     <div style={{ padding: '58px 22px 12px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-      <div><div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · YOUR AI GYM BRO · ASK HIM ANYTHING</div><div style={T.h1}>Hercules</div></div>
-      {chat.length ? <TopLink tone={C.dim} onClick={() => { if (confirm('Clear the conversation?')) app.setState({ coachChat: [] }); }}>CLEAR</TopLink> : null}
+      <div style={{ flex: 1, minWidth: 0 }}><div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · YOUR AI GYM BRO · ASK HIM ANYTHING</div><div style={T.h1}>Hercules</div></div>
+      <div style={{ display: 'flex', gap: 10, whiteSpace: 'nowrap', flex: 'none' }}>
+        <TopLink tone={C.dim} onClick={() => setDrawer(true)}>☰ CHATS{nChats ? ' ' + nChats : ''}</TopLink>
+        {chat.length ? <TopLink onClick={newChat}>＋ NEW</TopLink> : null}
+      </div>
     </div>
+    {drawer ? <ChatDrawer st={st} onClose={() => setDrawer(false)} onOpen={openChat} onDelete={delChat} onNew={newChat} /> : null}
     <div ref={scroller} style={{ flex: 1, overflow: 'auto', padding: '14px 16px 10px' }}>
       {!chat.length ? <div>
         <div style={{ ...T.body, color: C.dim, lineHeight: 1.5 }}>Yo, Hercules here 💪 I can see your food, targets, training, rules and measurements. Tell me what you ate and I’ll log it, or ask why something isn’t moving and we’ll dig into the numbers together. Let’s get it.</div>

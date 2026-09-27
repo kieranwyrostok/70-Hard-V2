@@ -95,6 +95,7 @@ input,textarea,select{background-color:${L ? 'rgba(255,255,255,.7)' : 'rgba(255,
 @keyframes shIn{from{opacity:0;transform:translate3d(28px,0,0)}to{opacity:1;transform:none}}
 @keyframes asUp{from{transform:translate3d(0,40px,0);opacity:0}to{transform:none;opacity:1}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes drawerIn{from{transform:translate3d(-100%,0,0)}to{transform:none}}
 /* the rope rings on Today: each spins on its own tilted axis */
 @keyframes ropeA{from{transform:rotate3d(1,.35,0,0deg)}to{transform:rotate3d(1,.35,0,360deg)}}
 @keyframes ropeB{from{transform:rotate3d(-.3,1,.15,0deg)}to{transform:rotate3d(-.3,1,.15,360deg)}}
