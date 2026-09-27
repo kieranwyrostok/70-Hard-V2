@@ -40,7 +40,9 @@ learning to edit this himself — explain changes plainly and keep them small an
 - State: `this.state`, persisted to localStorage `seventyhard.v1` by the `setState` override (keys in `TRANSIENT`
   aren't saved). `loadState()` merges saved data over `defaultState()` — new fields need defaults there.
   `rollover()` archives each finished day into `history[dayNum]` and the food diary into `diary[date]`.
-  Photos are in IndexedDB (`PhotoDB`). `exportData`/`importData` = backup file.
+  Photos are in IndexedDB (`PhotoDB`): key `d<day>` = the day's cover (grid + day-1 comparison), extra photos that day
+  `d<day>x<time>` (`photoExtras(n)`, `makeCover`, `deletePhoto`); tap a day on the Photos grid → `PhotoDay` folder
+  (coach.jsx, `window.SHPhotos.open(n)`). `exportData`/`importData` = backup file.
 - `window.SH` exposes PLAN, FOODS, helpers to the React screens.
 - s03/s04/s12 bodies are `<x-import component-from-global-scope="FuelScreen|TrainScreen|CoachScreen"
   from="screens.js" dc-props="{{ fuelProps|trainProps|coachProps }}">` → props `{ app, st }` where `app` is the

@@ -599,10 +599,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="padding:20px 22px 8px;display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">All captures</span><span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8f9ab0">{{ photoCount }} SAVED</span></div>
 <div style="padding:0 22px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
 <sc-for list="{{ photoDays }}" as="p" hint-placeholder-count="16">
-<div style="aspect-ratio:3/4;background:{{ p.bg }};border:1px solid {{ p.border }};display:flex;align-items:flex-end;justify-content:flex-start;padding:5px"><span style="font:500 9px/1 'IBM Plex Mono',monospace;color:{{ p.fg }}">{{ p.n }}</span></div>
+<div sc-camel-on-click="{{ p.open }}" style="aspect-ratio:3/4;background:{{ p.bg }};border:1px solid {{ p.border }};display:flex;align-items:flex-end;justify-content:space-between;padding:5px;cursor:pointer"><span style="font:500 9px/1 'IBM Plex Mono',monospace;color:{{ p.fg }}">{{ p.n }}</span><span style="display:{{ p.moreShow }};font:600 9px/1 'IBM Plex Mono',monospace;color:#eef0f4;background:rgba(0,0,0,.55);border-radius:99px;padding:3px 5px">{{ p.more }}</span></div>
 </sc-for>
 </div>
-<div style="padding:18px 22px 24px"><label style="display:block;background:#4f8dff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">Capture day {{ dayNum }}<input type="file" accept="image/*" capture="environment" sc-camel-on-change="{{ addPhoto }}" style="display:none"></label></div>
+<div style="padding:18px 22px 24px"><label style="display:block;background:#4f8dff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">{{ captureLabel }}<input type="file" accept="image/*" capture="environment" sc-camel-on-change="{{ addPhoto }}" style="display:none"></label><div style="font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:center;margin-top:8px">FIRST PHOTO = THE DAY'S COVER · MORE GO IN THAT DAY'S FOLDER · TAP A DAY TO OPEN IT</div></div>
 </div>
 <div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><svg class="tabicon" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#8f9ab0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;opacity:.85;"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
@@ -1132,6 +1132,7 @@ const PhotoDB = {
   },
   async put(key, blob) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('photos', 'readwrite'); t.objectStore('photos').put(blob, key); t.oncomplete = res; t.onerror = () => rej(t.error); }); },
   async all() { const db = await this.open(); return new Promise((res, rej) => { const out = {}; const t = db.transaction('photos'); const c = t.objectStore('photos').openCursor(); c.onsuccess = () => { const cur = c.result; if (cur) { out[cur.key] = cur.value; cur.continue(); } else res(out); }; c.onerror = () => rej(c.error); }); },
+  async del(key) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('photos', 'readwrite'); t.objectStore('photos').delete(key); t.oncomplete = res; t.onerror = () => rej(t.error); }); },
   async clear() { const db = await this.open(); return new Promise(res => { const t = db.transaction('photos', 'readwrite'); t.objectStore('photos').clear(); t.oncomplete = res; }); }
 };
 function shrinkImage(file, maxSide) {
@@ -1202,18 +1203,43 @@ class Component extends DCLogic {
     if (!s.startDate) return 1;
     return Math.min(70, Math.max(1, dayDiff(s.startDate, s.curDate) + 1));
   }
-  async addPhoto(ev) {
+  // Photos: the first photo of a day is its cover ('d' + day — the one shown on the grid and compared with day 1).
+  // Any more that day go in the day's folder as 'd' + day + 'x' + time. Tap a day on the Photos grid to open it.
+  photoExtras(n) { return Object.keys(this.photoUrls).filter(k => k.startsWith('d' + n + 'x')).sort(); }
+  async addPhoto(ev, day) {
     const file = ev.target.files && ev.target.files[0];
     ev.target.value = '';
     if (!file) return;
-    const dn = this.dayNum();
+    const dn = day || this.dayNum(), cover = !this.photoUrls['d' + dn], key = cover ? 'd' + dn : 'd' + dn + 'x' + Date.now();
     try {
       const blob = await shrinkImage(file, 1400);
-      await PhotoDB.put('d' + dn, blob);
-      if (this.photoUrls['d' + dn]) URL.revokeObjectURL(this.photoUrls['d' + dn]);
-      this.photoUrls['d' + dn] = URL.createObjectURL(blob);
-      this.setState(s => ({ done: { ...s.done, photo: true }, doneAt: { ...s.doneAt, photo: nowHM() } }));
+      await PhotoDB.put(key, blob);
+      this.photoUrls[key] = URL.createObjectURL(blob);
+      if (cover && dn === this.dayNum()) this.setState(s => ({ done: { ...s.done, photo: true }, doneAt: { ...s.doneAt, photo: nowHM() } }));
+      else this.forceUpdate();
     } catch (e) { alert('Could not save that photo: ' + e.message); }
+  }
+  // swap an extra photo with the day's cover
+  async makeCover(n, key) {
+    const ck = 'd' + n, cu = this.photoUrls[ck], xu = this.photoUrls[key]; if (!xu) return;
+    try {
+      const xb = await (await fetch(xu)).blob(), cb = cu ? await (await fetch(cu)).blob() : null;
+      await PhotoDB.put(ck, xb);
+      if (cb) await PhotoDB.put(key, cb); else await PhotoDB.del(key);
+      this.photoUrls[ck] = xu; if (cu) this.photoUrls[key] = cu; else delete this.photoUrls[key];
+      this.forceUpdate();
+    } catch (e) { alert('Could not change the cover: ' + e.message); }
+  }
+  // delete one photo; if it was the cover, the day's earliest extra becomes the new cover
+  async deletePhoto(n, key) {
+    try {
+      const ck = 'd' + n, next = key === ck ? this.photoExtras(n)[0] : null;
+      if (next) { await this.makeCover(n, next); key = next; }
+      await PhotoDB.del(key);
+      if (this.photoUrls[key]) URL.revokeObjectURL(this.photoUrls[key]);
+      delete this.photoUrls[key];
+      this.forceUpdate();
+    } catch (e) { alert('Could not delete that photo: ' + e.message); }
   }
   exportData() {
     const blob = new Blob([JSON.stringify({ app: 'seventy-hard', exported: new Date().toISOString(), state: this.state }, null, 2)], { type: 'application/json' });
@@ -1946,7 +1972,9 @@ class Component extends DCLogic {
     const photoDays = Array.from({ length: dayNum }, (_, i) => {
       const n = dayNum - i;
       const u = PU['d' + n];
-      return { n, bg: photoBg(u), border: n === dayNum ? '#4f8dff' : '#353b45', fg: u ? '#eef0f4' : n === dayNum ? '#4f8dff' : '#4f5766' };
+      const more = this.photoExtras(n).length;
+      return { n, bg: photoBg(u), border: n === dayNum ? '#4f8dff' : '#353b45', fg: u ? '#eef0f4' : n === dayNum ? '#4f8dff' : '#4f5766',
+        more: '+' + more, moreShow: more ? 'block' : 'none', open: () => window.SHPhotos && window.SHPhotos.open(n) };
     });
     const photoCount = Object.keys(PU).length;
 
@@ -1979,7 +2007,7 @@ class Component extends DCLogic {
       dbSets: selRecD ? String(selRecD.sets) : '—',
       goalL: (goal / 1000).toFixed(1),
       photo1Bg: photoBg(PU.d1), photoNowBg: photoBg(PU['d' + dayNum]),
-      addPhoto: ev => this.addPhoto(ev),
+      addPhoto: ev => this.addPhoto(ev), captureLabel: PU['d' + dayNum] ? '+ Add another photo · day ' + dayNum : 'Capture day ' + dayNum,
       exportData: () => this.exportData(), importData: ev => this.importData(ev), restart: () => this.restart(),
       ...(() => { // Sunday: report on the 7 days (Sun–Sat) that just ended
         const t = new Date(this.state.curDate + 'T12:00:00'), s0d = new Date(t); s0d.setDate(t.getDate() - 7);

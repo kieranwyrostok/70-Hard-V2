@@ -400,25 +400,69 @@ function DayDetail({ app, st, n, onClose, onNav }) {
         {photo || wkg != null || note ? section('Notes & body') : null}
         {wkg != null ? <div style={{ ...T.body, marginBottom: 8 }}>Weight: <b>{st.imperial ? r1(wkg * 2.20462) + ' lb' : wkg + ' kg'}</b></div> : null}
         {note ? <div style={{ font: `italic 400 14px/1.45 ${F.body}`, color: C.text, marginBottom: 10 }}>“{note}”</div> : null}
-        {photo ? <img src={photo} alt={'Day ' + n} style={{ width: '100%', borderRadius: 14, display: 'block' }} /> : null}
+        {photo ? <div role="button" onClick={() => window.SHPhotos && window.SHPhotos.open(n)} style={{ position: 'relative', cursor: 'pointer' }}>
+          <img src={photo} alt={'Day ' + n} style={{ width: '100%', borderRadius: 14, display: 'block' }} />
+          {app.photoExtras && app.photoExtras(n).length ? <span style={{ position: 'absolute', right: 10, bottom: 10, ...T.mono, fontSize: 11, color: '#ffffff', background: 'rgba(0,0,0,.6)', padding: '6px 9px', borderRadius: 99 }}>+{app.photoExtras(n).length} MORE ›</span> : null}
+        </div> : null}
       </>}
     </div>
   </Sheet>;
 }
+// ── A day's photo folder (Photos grid → tap a day): the cover (compared with day 1) + any extra photos that day ──
+function PhotoDay({ app, n, onClose }) {
+  const [view, setView] = useState(null);   // key of the photo shown full screen
+  const U = app.photoUrls || {}, cover = 'd' + n, extras = app.photoExtras(n), today = n === app.dayNum();
+  const keys = (U[cover] ? [cover] : []).concat(extras);
+  const add = <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 12, background: C.blue, color: C.blueInk, cursor: 'pointer', font: `700 16px/1 ${F.head}`, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+    {U[cover] ? '+ Add photo to this day' : today ? 'Capture day ' + n : '+ Add a photo (becomes the cover)'}
+    <input type="file" accept="image/*" capture={today ? 'environment' : undefined} onChange={e => app.addPhoto(e, n)} style={{ display: 'none' }} /></label>;
+  const tag = (t, tone) => <span style={{ ...T.mono, fontSize: 10, color: tone === 'dark' ? C.text : C.blueInk, background: tone === 'dark' ? 'rgba(0,0,0,.55)' : C.blue, padding: '4px 7px', borderRadius: 99 }}>{t}</span>;
+  const i = view ? keys.indexOf(view) : -1;
+  return <Sheet z={72} title={'Day ' + n + ' photos'} sub={keys.length + (keys.length === 1 ? ' PHOTO' : ' PHOTOS')} left={<TopLink onClick={onClose}>‹ BACK</TopLink>}>
+    <div style={{ padding: '14px 18px 30px' }}>
+      {U[cover] ? <div role="button" onClick={() => setView(cover)} style={{ position: 'relative', cursor: 'pointer' }}>
+        <img src={U[cover]} alt={'Day ' + n + ' cover'} style={{ width: '100%', borderRadius: 14, display: 'block', border: '2px solid ' + C.blue }} />
+        <div style={{ position: 'absolute', left: 10, top: 10 }}>{tag('COVER · COMPARED WITH DAY 1')}</div>
+      </div> : <Empty>NO PHOTO FOR THIS DAY YET</Empty>}
+      {extras.length ? <><div style={{ ...T.h2, margin: '20px 0 8px' }}>More from this day</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+          {extras.map((k, j) => <div key={k} role="button" onClick={() => setView(k)} style={{ aspectRatio: '3/4', borderRadius: 10, cursor: 'pointer', background: `url(${U[k]}) center/cover no-repeat`, border: '1px solid ' + C.line2, position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 5, bottom: 5 }}>{tag(String(j + 2), 'dark')}</div></div>)}
+        </div></> : null}
+      <div style={{ marginTop: 18 }}>{add}</div>
+      <div style={{ ...T.label, marginTop: 8, textAlign: 'center' }}>THE COVER IS THE ONE ON THE GRID AND IN COMPARISONS · EXTRAS JUST LIVE HERE</div>
+    </div>
+    {view && U[view] ? ReactDOM.createPortal(<div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,.94)', display: 'flex', flexDirection: 'column', animation: 'fadeIn .2s both' }}>
+      <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 14px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff' }}>
+        <TopLink tone="#ffffff" onClick={() => setView(null)}>✕ CLOSE</TopLink>
+        <span style={{ ...T.mono, fontSize: 11, color: '#fff' }}>{view === cover ? 'COVER' : 'PHOTO ' + (i + 1)} · {i + 1}/{keys.length}</span>
+      </div>
+      <div {...swipeNav(() => i < keys.length - 1 && setView(keys[i + 1]), () => i > 0 && setView(keys[i - 1]))} style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', touchAction: 'pan-y' }}>
+        <img src={U[view]} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8 }} />
+      </div>
+      <div style={{ display: 'flex', gap: 8, padding: '12px 14px calc(env(safe-area-inset-bottom, 0px) + 14px)' }}>
+        {view !== cover ? <Btn tone={C.blue} ink={C.blueInk} onClick={async () => { await app.makeCover(n, view); setView(cover); }} style={{ flex: 2, minHeight: 46 }}>Make cover</Btn> : null}
+        <Btn kind="ghost" tone={C.red} onClick={async () => { if (!confirm(view === cover && extras.length ? 'Delete the cover? The next photo from this day becomes the cover.' : 'Delete this photo?')) return; await app.deletePhoto(n, view); setView(null); }} style={{ flex: 1, minHeight: 46 }}>Delete</Btn>
+      </div>
+    </div>, document.body) : null}
+  </Sheet>;
+}
 function DayHost() {
-  const [n, setN] = useState(null), [rep, setRep] = useState(null);
+  const [n, setN] = useState(null), [rep, setRep] = useState(null), [ph, setPh] = useState(null);
   useEffect(() => {
     window.SHDay = { open: d => setN(d) };
+    window.SHPhotos = { open: d => setPh(d) };
     window.SHReport = { open: s0 => setRep(s0 || (window.__app && lastWeekStart(window.__app.state))) };
     // opened from the Sunday notification (…/?report=1)
     if (/[?&]report=1/.test(location.search)) { setTimeout(() => window.__app && setRep(lastWeekStart(window.__app.state)), 900); try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* ignore */ } }
   }, []);
-  useTick(n != null || rep != null, 1000);   // keep in step with changes made elsewhere while open
+  useTick(n != null || rep != null || ph != null, 1000);   // keep in step with changes made elsewhere while open
   const app = window.__app;
   if (!app) return null;
   return <>
     {n != null ? <DayDetail app={app} st={app.state} n={n} onClose={() => setN(null)} onNav={setN} /> : null}
     {rep ? <WeeklyReport app={app} st={app.state} s0={rep} onClose={() => setRep(null)} /> : null}
+    {ph != null ? <PhotoDay app={app} n={ph} onClose={() => setPh(null)} /> : null}
   </>;
 }
 if (!window.__dayHost) {
