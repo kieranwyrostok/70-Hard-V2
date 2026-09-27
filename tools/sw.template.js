@@ -13,11 +13,13 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin === location.origin && url.pathname.startsWith('/api/')) return; // always live
   if (e.request.mode === 'navigate') {
+    // index.html (dark) and light.html (light) are cached separately; './' is the same page as index.html
+    const pageKey = /light\.html$/.test(url.pathname) ? 'light.html' : './';
     // the app page: network first (so a new deploy shows up immediately), cached copy when offline
     e.respondWith(Promise.race([
-      fetch(e.request).then(res => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put('./', copy)); } return res; }),
+      fetch(e.request).then(res => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(pageKey, copy)); } return res; }),
       new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 4000))
-    ]).catch(() => caches.match('./')));
+    ]).catch(() => caches.match(pageKey).then(r => r || caches.match('./'))));
     return;
   }
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request).then(res => {

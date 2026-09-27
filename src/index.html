@@ -5,9 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Seventy Hard</title>
 <meta name="theme-color" content="#15181d">
+<script>
+// Light/dark: index.html is the dark app, light.html the light one (same data). Pick the one that matches the setting.
+(function () {
+  var PAGE = '__PAGE_THEME__', DEF = '__DEFAULT_THEME__', mq = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
+  function pref() { try { return localStorage.getItem('sh.theme') || DEF; } catch (e) { return DEF; } }
+  function want() { var t = pref(); return t === 'system' ? (mq && mq.matches ? 'light' : 'dark') : t; }
+  function go() {
+    var w = want(); if (w === PAGE) return;
+    var n = 0; try { n = +sessionStorage.getItem('sh.themeHops') || 0; sessionStorage.setItem('sh.themeHops', n + 1); } catch (e) { /* ignore */ }
+    if (n < 4) location.replace((w === 'light' ? 'light.html' : './') + location.hash);
+  }
+  window.__themePref = pref;
+  window.__setTheme = function (t) { try { localStorage.setItem('sh.theme', t); sessionStorage.removeItem('sh.themeHops'); } catch (e) { /* ignore */ } go(); };
+  if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (pref() === 'system') go(); });
+  go();
+  window.addEventListener('load', function () { try { sessionStorage.removeItem('sh.themeHops'); } catch (e) { /* ignore */ } });
+})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="70 Hard">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -25,6 +43,13 @@ html[data-screen="s01"] #s01{display:block}html[data-screen="s02"] #s02{display:
 .app-frame{height:100%}
 .tabbar span{letter-spacing:.03em!important}
 .tabbar a{min-height:34px!important}
+:root{--vgap:0px}
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  html{height:100lvh}
+  :root{--vgap:max(0px, calc(100lvh - 100dvh))}
+  .screen{bottom:auto;height:100lvh}
+  body > div[style*="position: fixed"][style*="inset: 0px"]{bottom:auto!important;height:100lvh!important}
+}
 .app-frame [style*="overflow:auto"]{-webkit-overflow-scrolling:touch}
 #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;background:#15181d;z-index:5}
 
@@ -564,6 +589,12 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </sc-for>
 <div sc-camel-on-click="{{ addHabit }}" style="border:1px dashed #3d4450;padding:15px;text-align:center;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;cursor:pointer" style-hover="border-color:#6390ff;color:#6390ff">+ ADD HABIT</div>
+</div>
+<div style="padding:22px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Appearance</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:right">YOUR DATA STAYS THE SAME</span></div>
+<div style="padding:0 22px;display:flex;gap:7px">
+<sc-for list="{{ themeOpts }}" as="t" hint-placeholder-count="3">
+<div sc-camel-on-click="{{ t.pick }}" style="flex:1;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.fg }};padding:14px 4px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;cursor:pointer">{{ t.label }}</div>
+</sc-for>
 </div>
 <div style="padding:22px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Your data</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:right">SAVED ON THIS PHONE<br>BACK IT UP NOW AND THEN</span></div>
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
@@ -1759,6 +1790,9 @@ class Component extends DCLogic {
       photo1Bg: photoBg(PU.d1), photoNowBg: photoBg(PU['d' + dayNum]),
       addPhoto: ev => this.addPhoto(ev),
       exportData: () => this.exportData(), importData: ev => this.importData(ev), restart: () => this.restart(),
+      themeOpts: (() => { const cur = window.__themePref ? window.__themePref() : 'dark';
+        return [['dark', 'DARK'], ['light', 'LIGHT'], ['system', 'MATCH PHONE']].map(([k, label]) => ({ label, pick: () => { if (window.__setTheme) window.__setTheme(k); this.setState({}); },
+          bg: cur === k ? '#6390ff' : 'transparent', fg: cur === k ? '#081631' : '#9ca3b0', border: cur === k ? '#6390ff' : '#3d4450' })); })(),
       vDay: vd || 0, vMissCount: vMiss.length, vRuleWord: vMiss.length === 1 ? 'RULE' : 'RULES',
       vText: !vRec ? '' : vRec.skipped ? 'No check-in was recorded for day ' + vd + ', so it is marked red on the board and your streak ends here. The challenge keeps running — day ' + dayNum + ' starts now.'
         : vNames.join(', ') + (vNames.length === 1 ? ' was' : ' were') + ' not cleared. Day ' + vd + ' is marked red on the board and your streak ends here. The challenge keeps running — day ' + dayNum + ' starts now.',

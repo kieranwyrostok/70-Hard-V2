@@ -49,13 +49,15 @@ if (LABEL) {
   m.name += ' ' + nice; m.short_name += ' ' + nice;
   fs.writeFileSync(mf, JSON.stringify(m, null, 2));
 }
-// The DEV app gets the light colour scheme (THEME=light also forces it, e.g. `THEME=light npm run dev`).
-if (CTX === 'branch-deploy' || process.env.THEME === 'light') {
-  page = toLight(page).replace('name="apple-mobile-web-app-status-bar-style" content="black-translucent"', 'name="apple-mobile-web-app-status-bar-style" content="default"');
-  const sj = path.join(OUT, 'screens.js'); fs.writeFileSync(sj, toLight(fs.readFileSync(sj, 'utf8')));
-  const mf = path.join(OUT, 'manifest.webmanifest'); fs.writeFileSync(mf, toLight(fs.readFileSync(mf, 'utf8')));
-}
-fs.writeFileSync(path.join(OUT, 'index.html'), page);
+// Light + dark: index.html is the dark app, light.html the light one (every dark colour swapped for its light
+// partner, see tools/light-theme.mjs). Both share the same saved data; a tiny script at the top of each page
+// switches to the other one when the Appearance setting asks for it. The dev app starts in light, the live app in dark
+// (THEME=light makes light the starting look on your Mac too).
+const DEFAULT_THEME = CTX === 'branch-deploy' || process.env.THEME === 'light' ? 'light' : 'dark';
+page = page.replace('__DEFAULT_THEME__', DEFAULT_THEME);
+fs.writeFileSync(path.join(OUT, 'index.html'), page.replace('__PAGE_THEME__', 'dark'));
+fs.writeFileSync(path.join(OUT, 'light.html'), toLight(page.replace('__PAGE_THEME__', 'light')).replaceAll('from="screens.js"', 'from="screens-light.js"'));
+fs.writeFileSync(path.join(OUT, 'screens-light.js'), toLight(fs.readFileSync(path.join(OUT, 'screens.js'), 'utf8')));
 
 // 3. Service worker: caches every file for offline use; the cache name changes whenever any file changes
 const files = [];

@@ -8,9 +8,14 @@ learning to edit this himself — explain changes plainly and keep them small an
 - `npm run dev` → build + serve http://localhost:8888 + rebuild on save. `/api/*` returns a stub locally.
 - No test runner; verify by building and loading the page (check the browser console for errors).
 - Two apps: `main` = live app (merging costs production-deploy credits). `dev` = Netlify branch deploy at
-  dev--<site>.netlify.app, installed as "70 Hard Dev": free, auto-updates on push, DEV badge, light colours
-  (tools/light-theme.mjs maps each dark colour to a light one at build time; `THEME=light npm run dev` to try it).
+  dev--<site>.netlify.app, installed as "70 Hard Dev": free, auto-updates on push, DEV badge.
   Push changes to `dev`; publish by merging dev → main.
+- Light/dark: build.mjs writes index.html (dark) and light.html + screens-light.js (every dark colour swapped via
+  tools/light-theme.mjs). A script at the top of the page reads localStorage `sh.theme` (dark|light|system, set in
+  Habits & reminders → Appearance) and switches page. Same origin, so both share the saved data. The dev app
+  defaults to light, the live app to dark. New colours in src/ need a light partner in tools/light-theme.mjs.
+- iOS home-screen apps shorten 100%/dvh by the status-bar height; screens and full-screen sheets use 100lvh in
+  standalone mode, and bottom-anchored bars subtract `var(--vgap)`.
 - Workflow: work on a branch → push → GitHub PR gives a free Netlify deploy preview; merging to main publishes
   (costs production-deploy credits, so don't suggest merging unfinished work).
 
@@ -42,7 +47,8 @@ ui → library → train → fuel → coach and compiled into one IIFE, so later
 - Train data: `st.workouts`, `st.templates`, `st.exLib` (custom exercises), `st.activeWorkout`.
 
 **netlify/functions/** — Netlify Functions v2 (ESM, `export const config = { path: '/api/...' }`).
-food-search (USDA), food-barcode (Open Food Facts), coach + food-photo (Anthropic Messages API with tools;
+food-search (Health Canada CNF via netlify/lib/cnf.mjs + Open Food Facts products sold in Canada + USDA, merged
+Canadian-first), food-barcode (Open Food Facts, then USDA), coach + food-photo (Anthropic Messages API with tools;
 model via ANTHROPIC_MODEL, default claude-haiku-4-5-20251001), push-* (web-push + Netlify Blobs, cron every 5 min).
 Env vars live in Netlify only: ANTHROPIC_API_KEY, USDA_API_KEY, COACH_CODE, ANTHROPIC_MODEL.
 

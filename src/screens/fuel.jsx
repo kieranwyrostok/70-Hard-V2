@@ -176,7 +176,7 @@ function FuelScreen({ app, st }) {
       onDelete={() => { delEntry(editEntryObj.id); setEditing(null); }} /> : null}
     {menu ? <ActionSheet title={menu.title} actions={menu.actions} onClose={() => setMenu(null)} /> : null}
     {mealEdit ? <MealSlotsEditor app={app} st={st} onClose={() => setMealEdit(false)} /> : null}
-    {toast ? ReactDOM.createPortal(<div style={{ position: 'fixed', left: 16, right: 16, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)', zIndex: 95, pointerEvents: 'none', background: C.amber, color: C.amberInk, padding: '12px 14px', ...T.mono, fontSize: 12, textAlign: 'center', boxShadow: '0 6px 20px rgba(0,0,0,.5)' }}>✓ {toast}</div>, document.body) : null}
+    {toast ? ReactDOM.createPortal(<div style={{ position: 'fixed', left: 16, right: 16, bottom: 'calc(max(4px, env(safe-area-inset-bottom, 0px) - 18px) + 56px - var(--vgap, 0px))', zIndex: 95, pointerEvents: 'none', background: C.amber, color: C.amberInk, padding: '12px 14px', ...T.mono, fontSize: 12, textAlign: 'center', boxShadow: '0 6px 20px rgba(0,0,0,.5)' }}>✓ {toast}</div>, document.body) : null}
   </div>;
 }
 
@@ -271,7 +271,7 @@ function AddFood({ app, st, slot, setSlot, dateLabel, onClose, addEntries, flash
       <Btn kind="ghost" tone={C.amber} onClick={() => fileRef.current && fileRef.current.click()} style={{ marginTop: 8 }}>📷 SNAP A PHOTO · AI ESTIMATES IT</Btn>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={onPhoto} style={{ display: 'none' }} />
       {!q.trim() ? <div style={{ marginTop: 12 }}><Seg items={[['recent', 'RECENT'], ['favs', 'FAVOURITES'], ['mine', 'MY FOODS'], ['meals', 'MEALS']]} value={tab} onChange={setTab} tone={C.amber} ink={C.amberInk} /></div> : null}
-      {q.trim() ? <div style={{ ...T.label, margin: '12px 0 2px' }}>{rows.length} RESULTS{db && db.status === 'loading' ? ' · SEARCHING USDA…' : db && db.status === 'err' ? ' · ' + String(db.msg || 'DATABASE UNREACHABLE').toUpperCase().slice(0, 90) : db ? ' · INCL. USDA' : ''}</div> : null}
+      {q.trim() ? <div style={{ ...T.label, margin: '12px 0 2px' }}>{rows.length} RESULTS{db && db.status === 'loading' ? ' · SEARCHING CANADIAN + USDA FOODS…' : db && db.status === 'err' ? ' · ' + String(db.msg || 'DATABASE UNREACHABLE').toUpperCase().slice(0, 90) : db ? ' · INCL. USDA' : ''}</div> : null}
       {rows ? rows.map(row) : null}
       {rows && !rows.length ? <Empty>{q.trim() ? (db && db.status === 'loading' ? 'SEARCHING…' : 'NO MATCHES · CREATE IT BELOW') : tab === 'recent' ? 'FOODS YOU LOG SHOW UP HERE' : tab === 'favs' ? 'TAP ♡ ON A FOOD TO KEEP IT HERE' : 'FOODS YOU CREATE SHOW UP HERE'}</Empty> : null}
       {tab === 'meals' && !q.trim() ? <div>

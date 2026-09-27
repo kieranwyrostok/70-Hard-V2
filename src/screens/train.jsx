@@ -314,7 +314,7 @@ function TrainScreen({ app, st }) {
     </div>
 
     {aw && minimized ? ReactDOM.createPortal(
-      <div role="button" onClick={() => setMinimized(false)} style={{ position: 'fixed', left: 10, right: 10, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 78px)', zIndex: 30, background: C.olive, color: C.oliveInk, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 6px 20px rgba(0,0,0,.5)' }}>
+      <div role="button" onClick={() => setMinimized(false)} style={{ position: 'fixed', left: 10, right: 10, bottom: 'calc(max(4px, env(safe-area-inset-bottom, 0px) - 18px) + 45px - var(--vgap, 0px))', zIndex: 30, background: C.olive, color: C.oliveInk, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 6px 20px rgba(0,0,0,.5)' }}>
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: `700 16px/1.1 ${F.head}`, letterSpacing: '.08em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{aw.editOf ? 'Editing · ' : ''}{aw.name}</div>
           <div style={{ font: `600 11px/1.2 ${F.mono}`, marginTop: 2 }}>{aw.editOf ? 'TAP TO CONTINUE EDITING' : fmtDur((Date.now() - aw.start) / 1000) + ' · ' + doneSets(aw) + ' SETS DONE'}</div></div>
         <div style={{ ...T.mono, fontSize: 12 }}>OPEN ▲</div>
