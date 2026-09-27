@@ -18,6 +18,8 @@ learning to edit this himself — explain changes plainly and keep them small an
   behind the clock / Dynamic Island (glass.mjs `body::before`, colours --sb1/--sb2 from the head script, darkened until
   white text has ≥4.5:1 contrast). Tested on Kieran's iPhone: 100dvh is already the full screen there, so don't
   add the status-bar height back (it pushes the tab bar off-screen). `--vgap` is kept at 0 as a hook.
+- Today header: date row, big gradient day number (var(--n1)) with a 70-day bar (`topDayPct`, `topToGo`), rules-open pill
+  (`topPillTone`), streak / best tiles.
 - Tab bars (one per screen, 10 copies) have an SVG line icon above each label (`.tabicon`); the active one glows.
   Section titles get a neon dash (glass.mjs `::after`); `#aurora` also holds twinkling specks (`<b>`).
 - Workflow: work on a branch → push → GitHub PR gives a free Netlify deploy preview; merging to main publishes
@@ -87,8 +89,9 @@ tips (daily AI suggestions: coach.jsx `tipsMaybe` sends a ~1.8 KB 7-day summary 
 max 500 tokens out; state `aiTips`, toggle `aiTipsOn`; card on Today, setting in Habits & reminders).
 Env vars live in Netlify only: ANTHROPIC_API_KEY, USDA_API_KEY, COACH_CODE, ANTHROPIC_MODEL.
 
-**Today extras (ui.jsx):** `RingsWidget` (floating neon tubes: one depth layer per ring with its own `ringBob`, tube shading =
-dark edge + colour + highlight strokes via `shade()`, drop shadow; drag/flick tumbles it toward/away
+**Today extras (ui.jsx):** `RingsWidget` (neon ropes: thicker rings on their own radii (local `GEO`), each spinning on its own
+tilted axis via glass.mjs `ropeA/B/C` keyframes, 3 stacked slices for thickness, rope shading via `shade()`, moving light strands
+(`ropeFlow`, masked to the lit arc); drag/flick tumbles the whole set toward/away
 from you (up-down) or turns it (sideways), finishes the turn in the flick's direction; flies in from depth on opening Today),
 `SleepWidget` (state `sleepLog[date] = {bed, wake, q}`, minutes after midnight; shown in DayDetail, weekly report, tips).
 **Custom colours:** localStorage `sh.colors` = {core, secondary, accent}, set in Habits & reminders → App colours

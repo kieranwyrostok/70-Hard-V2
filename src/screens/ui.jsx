@@ -559,7 +559,7 @@ window.PailWidget = PailWidget;
   document.addEventListener('pointercancel', end, true);
 })();
 
-// ── Today's progress rings: floating neon tubes ──
+// ── Today's progress rings: neon ropes spinning around each other ──
 function RingsWidget({ rings }) {
   // 3D rings: drag or flick to tumble them toward / away from you (up-down) or turn them (sideways). They coast,
   // then settle back. Opening Today makes them fly in from deep in the screen with one forward flip.
@@ -612,34 +612,38 @@ function RingsWidget({ rings }) {
     if (Math.abs(s.vx) + Math.abs(s.vy) > 3) vib(10); run(); };
   const ease = 'stroke-dashoffset 1.1s cubic-bezier(.2,.9,.25,1)';
   const fracOf = r => r.c ? 1 - r.off / r.c : 0;
-  // one floating tube per ring: its own layer (spaced apart in depth) with a gentle bob of its own.
-  // The tube look comes from stacked strokes: dark edges → colour → a bright highlight nudged up (light from above).
-  const tube = (r, i) => { const frac = fracOf(r), off = drawn ? r.off : r.c, lit = frac > 0;
-    const dark = shade(r.tone, -0.45), light = shade(r.tone, 0.65), hi = -r.sw * 0.2;
+  // Neon ropes: thicker rings on their own radii, each spinning on its own tilted axis (opposite directions, different
+  // speeds) so they swing through each other like a gyroscope. The lit part = your progress, with light strands running along it.
+  const GEO = { 1: [[78, 30]], 2: [[82, 26], [52, 26]], 3: [[86, 20], [62, 20], [38, 20]] }[list.length] || [];
+  const SPIN = [['ropeA', 11], ['ropeB', 8.5], ['ropeC', 14]];
+  const tube = (r0, i) => { const [rr, sw] = GEO[i] || [r0.r, r0.sw], frac = fracOf(r0), c = 2 * Math.PI * rr, r = { ...r0, r: rr, sw, c, off: c * (1 - frac) };
+    const off = drawn ? r.off : r.c, lit = frac > 0, dark = shade(r.tone, -0.5), light = shade(r.tone, 0.7), hi = -r.sw * 0.2;
     const arc = (stroke, w, extra = {}) => <circle cx="100" cy="100" r={r.r} fill="none" stroke={stroke} strokeWidth={w} strokeLinecap="round" strokeDasharray={r.c} strokeDashoffset={off} style={{ transition: ease }} {...extra} />;
     const ring = (stroke, w, extra = {}) => <circle cx="100" cy="100" r={r.r} fill="none" stroke={stroke} strokeWidth={w} {...extra} />;
-    return <div key={i} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', transform: `translateZ(${i * 14}px)` }}>
-      <div style={{ position: 'absolute', inset: 0, animation: reduce ? 'none' : `ringBob ${3.6 + i * 0.7}s ease-in-out ${-i * 1.1}s infinite` }}>
-        <svg viewBox="0 0 200 200" width="176" height="176" style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
-          {/* the empty glass tube */}
-          {ring(r.tone, r.sw, { strokeOpacity: 0.12 })}
-          {ring('#000', r.sw, { strokeOpacity: 0.25, transform: 'translate(0 2)', style: { mixBlendMode: 'multiply' }, strokeWidth: r.sw * 0.4 })}
-          {ring('#ffffff', Math.max(1, r.sw * 0.14), { strokeOpacity: 0.16, transform: `translate(0 ${hi})` })}
-          {/* shadow it casts, so it looks like it's floating */}
-          <g transform="translate(0 7)" opacity={lit ? 0.55 : 0}><g transform="rotate(-90 100 100)">{arc('#000', r.sw, { filter: `url(#${id}soft)` })}</g></g>
-          {/* the lit neon tube */}
-          <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>
-            {arc(r.tone, r.sw + 8, { filter: `url(#${id}glow)`, opacity: 0.75 })}
-            {arc(dark, r.sw)}
-            {arc(r.tone, r.sw * 0.7)}
+    const [anim, dur] = SPIN[i % 3];
+    const body = (back) => <svg viewBox="0 0 200 200" width="176" height="176" style={{ position: 'absolute', inset: 0, overflow: 'visible', transform: back ? `translateZ(${back}px)` : 'none' }}>
+      {back ? <g transform="rotate(-90 100 100)" opacity={lit ? 0.45 : 0}>{arc(r.tone, r.sw * 0.9)}</g> : <>
+        {ring(r.tone, r.sw * 0.7, { strokeOpacity: 0.1 })}
+        {ring('#ffffff', Math.max(1, r.sw * 0.12), { strokeOpacity: 0.18, transform: `translate(0 ${hi})` })}
+        <g transform="rotate(-90 100 100)" opacity={lit ? 1 : 0}>
+          {arc(r.tone, r.sw + 14, { filter: `url(#${id}glow)`, opacity: 0.95 })}
+          {arc(dark, r.sw)}
+          {arc(r.tone, r.sw * 0.84)}
+          {arc(shade(r.tone, 0.25), r.sw * 0.5)}
+          <g mask={`url(#${id}m${i})`}>
+            <circle cx="100" cy="100" r={r.r} fill="none" stroke={light} strokeWidth={r.sw * 0.5} strokeDasharray="3 9" opacity=".55" style={{ animation: reduce ? 'none' : `ropeFlow ${1.6 + i * 0.4}s linear infinite` }} />
           </g>
-          <g transform={`translate(0 ${hi})`} opacity={lit ? 1 : 0}><g transform="rotate(-90 100 100)">
-            {arc(light, r.sw * 0.26, { opacity: 0.9 })}
-            {arc('#ffffff', Math.max(1, r.sw * 0.09), { opacity: 0.9, transform: `translate(0 ${hi * 0.4})` })}
-          </g></g>
-          {drawn && frac > 0.02 ? <circle cx={100 + r.r * Math.sin(frac * 2 * Math.PI)} cy={100 - r.r * Math.cos(frac * 2 * Math.PI) + hi * 0.5} r={r.sw * 0.3} fill="#ffffff" opacity=".9" filter={`url(#${id}glow)`} style={{ transition: 'opacity .8s .9s' }} /> : null}
-        </svg>
-      </div>
+        </g>
+        <g transform={`translate(0 ${hi})`} opacity={lit ? 1 : 0}><g transform="rotate(-90 100 100)">
+          {arc(light, r.sw * 0.24, { opacity: 0.9 })}
+          {arc('#ffffff', Math.max(1, r.sw * 0.08), { opacity: 0.95, transform: `translate(0 ${hi * 0.4})` })}
+        </g></g>
+        {drawn && frac > 0.02 ? <circle cx={100 + r.r * Math.sin(frac * 2 * Math.PI)} cy={100 - r.r * Math.cos(frac * 2 * Math.PI) + hi * 0.5} r={r.sw * 0.3} fill="#ffffff" opacity=".9" filter={`url(#${id}glow)`} style={{ transition: 'opacity .8s .9s' }} /> : null}
+        <defs><mask id={`${id}m${i}`} maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">{arc('#fff', r.sw, {})}</mask></defs>
+      </>}
+    </svg>;
+    return <div key={i} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', animation: reduce ? 'none' : `${anim} ${dur}s linear infinite${i % 2 ? ' reverse' : ''}` }}>
+      {body(-5)}{body(-2.5)}{body(0)}
     </div>; };
   return <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
     style={{ width: 176, height: 176, flex: 'none', position: 'relative', perspective: 700, touchAction: 'none', cursor: 'grab' }}>
