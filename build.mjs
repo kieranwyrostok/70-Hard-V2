@@ -34,7 +34,21 @@ fs.writeFileSync(path.join(OUT, 'screens.js'), '// Train + Fuel + Coach screens.
 // 2. The app page, with the version stamp (Edmonton time)
 const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Edmonton', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date()).map(x => [x.type, x.value]));
 const version = `${p.year}-${p.month}-${p.day} ${p.hour === '24' ? '00' : p.hour}:${p.minute}`;
-fs.writeFileSync(path.join(OUT, 'index.html'), fs.readFileSync(path.join(SRC, 'index.html'), 'utf8').replaceAll('__APP_VERSION__', version));
+// Netlify tells the build which copy it is making. Anything that isn't the live app gets a label, a different
+// home-screen name and a small corner badge, so a test copy can never be mistaken for the real one.
+const CTX = process.env.CONTEXT || '';          // 'production' | 'branch-deploy' | 'deploy-preview' | '' (your Mac)
+const LABEL = CTX === 'branch-deploy' ? 'DEV' : CTX === 'deploy-preview' ? 'PREVIEW' : '';
+let page = fs.readFileSync(path.join(SRC, 'index.html'), 'utf8').replaceAll('__APP_VERSION__', (LABEL ? LABEL + ' · ' : '') + version);
+if (LABEL) {
+  const nice = LABEL[0] + LABEL.slice(1).toLowerCase();
+  page = page.replace('<meta name="apple-mobile-web-app-title" content="70 Hard">', `<meta name="apple-mobile-web-app-title" content="70 Hard ${nice}">`)
+    .replace('<title>Seventy Hard</title>', `<title>Seventy Hard ${nice}</title>`)
+    .replace('</style>', `body::after{content:'${LABEL}';position:fixed;z-index:99;pointer-events:none;top:calc(env(safe-area-inset-top, 0px) + 4px);right:10px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#231800;background:#f4b544;padding:3px 6px;border-radius:6px}\n</style>`);
+  const mf = path.join(OUT, 'manifest.webmanifest'), m = JSON.parse(fs.readFileSync(mf, 'utf8'));
+  m.name += ' ' + nice; m.short_name += ' ' + nice;
+  fs.writeFileSync(mf, JSON.stringify(m, null, 2));
+}
+fs.writeFileSync(path.join(OUT, 'index.html'), page);
 
 // 3. Service worker: caches every file for offline use; the cache name changes whenever any file changes
 const files = [];
@@ -45,4 +59,4 @@ const h = crypto.createHash('sha256'); files.forEach(f => h.update(fs.readFileSy
 const ver = h.digest('hex').slice(0, 10);
 const sw = fs.readFileSync(path.join(ROOT, 'tools', 'sw.template.js'), 'utf8').replace('__CACHE__', 'seventy-hard-' + ver).replace('__FILES__', JSON.stringify(['./'].concat(files), null, 2));
 fs.writeFileSync(path.join(OUT, 'sw.js'), sw);
-console.log(`✓ built public/ · version ${version} · ${files.length + 1} files · cache ${ver}`);
+console.log(`✓ built public/ · ${LABEL ? LABEL + ' copy · ' : ''}version ${version} · ${files.length + 1} files · cache ${ver}`);
