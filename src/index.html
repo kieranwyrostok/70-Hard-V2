@@ -14,14 +14,17 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
-html,body{height:100%;margin:0;overflow:hidden;background:#15181d;color:#eef0f4;font-family:Barlow,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+html{background:#111419}
+body{background:#15181d}
+html,body{height:100%;margin:0;overflow:hidden;color:#eef0f4;font-family:Barlow,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 a{color:#6390ff;text-decoration:none}
 ::-webkit-scrollbar{width:0;height:0}
 input,textarea{font-size:16px!important}
-.screen{display:none;height:100vh;height:100dvh}
+.screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0}
 html[data-screen="s01"] #s01{display:block}html[data-screen="s02"] #s02{display:block}html[data-screen="s03"] #s03{display:block}html[data-screen="s04"] #s04{display:block}html[data-screen="s05"] #s05{display:block}html[data-screen="s06"] #s06{display:block}html[data-screen="s07"] #s07{display:block}html[data-screen="s08"] #s08{display:block}html[data-screen="s09"] #s09{display:block}html[data-screen="s10"] #s10{display:block}html[data-screen="s11"] #s11{display:block}html[data-screen="s12"] #s12{display:block}
 .app-frame{height:100%}
 .tabbar span{letter-spacing:.03em!important}
+.tabbar a{min-height:34px!important}
 .app-frame [style*="overflow:auto"]{-webkit-overflow-scrolling:touch}
 #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;background:#15181d;z-index:5}
 
@@ -276,7 +279,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </div>
 </div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
@@ -288,7 +291,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div id="s03" class="screen"><x-import component-from-global-scope="IOSDevice" from="app-frame.js">
 <div style="height:100%;display:flex;flex-direction:column;background:#15181d;font-family:Barlow,system-ui,sans-serif">
 <div style="flex:1;min-height:0"><x-import component-from-global-scope="FuelScreen" from="screens.js" dc-props="{{ fuelProps }}"></x-import></div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#f4b544"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#f4b544">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
@@ -300,7 +303,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div id="s04" class="screen"><x-import component-from-global-scope="IOSDevice" from="app-frame.js">
 <div style="height:100%;display:flex;flex-direction:column;background:#15181d;font-family:Barlow,system-ui,sans-serif">
 <div style="flex:1;min-height:0"><x-import component-from-global-scope="TrainScreen" from="screens.js" dc-props="{{ trainProps }}"></x-import></div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#a3c46e"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#a3c46e">TRAIN</span></a>
@@ -349,7 +352,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </div>
 </div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
@@ -395,7 +398,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </div>
 </div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
@@ -442,7 +445,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="padding:8px 22px 24px;font:400 12px/1.4 'IBM Plex Mono',monospace;color:#6b7382">{{ waterSummary }}</div>
 </div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
@@ -476,7 +479,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="padding:18px 22px 24px"><label style="display:block;background:#6390ff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">Capture day {{ dayNum }}<input type="file" accept="image/*" capture="environment" sc-camel-on-change="{{ addPhoto }}" style="display:none"></label></div>
 </div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
@@ -572,7 +575,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="height:24px"></div>
 </div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:#6390ff"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6390ff">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
@@ -642,7 +645,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="padding:12px 22px 24px;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#8f9ab0">RELAXED, TAPE LEVEL, SAME SPOT EACH WEEK · <a href="#s10">SET A WEEKLY REMINDER ›</a></div>
 </div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
@@ -652,7 +655,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 </x-import></div>
 <div id="s12" class="screen"><x-import component-from-global-scope="IOSDevice" from="app-frame.js"><div style="height:100%;display:flex;flex-direction:column;background:#15181d;font-family:Barlow,system-ui,sans-serif"><div style="flex:1;min-height:0"><x-import component-from-global-scope="CoachScreen" from="screens.js" dc-props="{{ coachProps }}"></x-import></div>
-<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px 24px">
+<div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
 <a href="#s03" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">FUEL</span></a>
 <a href="#s04" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TRAIN</span></a>
