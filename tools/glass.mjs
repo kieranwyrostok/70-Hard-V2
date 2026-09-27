@@ -70,6 +70,12 @@ html,body{background:${L ? '#e9edf6' : '#06070b'}}
 @keyframes aur3{to{transform:translate3d(18vw,-26vh,0) scale(1.2)}}
 .screen{z-index:1}
 #boot{background:transparent!important}
+/* behind the iPhone clock / Dynamic Island: iOS draws the time and battery in white there, so this strip is a deep
+   version of your core colour (→ a violet shift) that keeps them readable, fading softly into the app below */
+@media (display-mode: standalone){body::before{content:"";position:fixed;z-index:98;top:0;left:0;right:0;pointer-events:none;
+  height:env(safe-area-inset-top, 0px);
+  background:linear-gradient(100deg,var(--sb1,#1b2130),var(--sb2,#1b2130));${L ? '' : 'filter:brightness(.8);'}
+  -webkit-mask-image:linear-gradient(#000 calc(100% - 12px),transparent);mask-image:linear-gradient(#000 calc(100% - 12px),transparent)}}
 /* frosted tab bar */
 .tabbar{position:relative;background:${L ? 'rgba(255,255,255,.55)' : 'rgba(12,14,22,.5)'}!important;-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);border-top:1px solid ${L ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.08)'}!important;box-shadow:0 -10px 30px -18px ${L ? 'rgba(30,45,90,.35)' : 'rgba(0,0,0,.8)'}}
 /* glass cards: a bright top edge (the "specular" highlight) and a soft drop */

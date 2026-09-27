@@ -146,7 +146,7 @@ async function aiPost(path, body, retried) {
   const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...body, code }) });
   let j = {}; try { j = await r.json(); } catch (e) { /* ignore */ }
   if (r.status === 401 && j.error === 'code' && !retried) {
-    const c = prompt('Coach passcode (the COACH_CODE you set in Netlify):');
+    const c = prompt('Hercules passcode (the COACH_CODE you set in Netlify):');
     if (c) { try { localStorage.setItem('coachCode', c.trim()); } catch (e) { /* ignore */ } return aiPost(path, body, true); }
   }
   return { ok: r.ok, status: r.status, j };

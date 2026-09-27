@@ -14,8 +14,9 @@ learning to edit this himself — explain changes plainly and keep them small an
   tools/light-theme.mjs). A script at the top of the page reads localStorage `sh.theme` (dark|light|system, set in
   Habits & reminders → Appearance) and switches page. Same origin, so both share the saved data. The dev app
   defaults to light, the live app to dark. New colours in src/ need a light partner in tools/light-theme.mjs.
-- Screens are `position:fixed` to all four edges; both pages use the black-translucent status bar (the light page
-  adds a dark strip behind the clock). Tested on Kieran's iPhone: 100dvh is already the full screen there, so don't
+- Screens are `position:fixed` to all four edges; both pages use the black-translucent status bar with a coloured strip
+  behind the clock / Dynamic Island (glass.mjs `body::before`, colours --sb1/--sb2 from the head script, darkened until
+  white text has ≥4.5:1 contrast). Tested on Kieran's iPhone: 100dvh is already the full screen there, so don't
   add the status-bar height back (it pushes the tab bar off-screen). `--vgap` is kept at 0 as a hook.
 - Workflow: work on a branch → push → GitHub PR gives a free Netlify deploy preview; merging to main publishes
   (costs production-deploy credits, so don't suggest merging unfinished work).
@@ -112,6 +113,11 @@ care, train-around lists, rehab exercises, red flags, `watch` words that flag ex
 State `st.injuries` [{id, key, name, area, side, start, note, rehab [{id,n,dose,how}], log {date: {feel 1-10, note, done
 [rehab ids]}}, healed}]. Main page = current injuries once one exists; `injCheer` writes the encouragement. The daily AI
 tips get `current_injuries`.
+**Hercules** = the AI assistant (tab s12, was "Coach"; internal names coach.jsx / /api/coach / COACH_CODE unchanged).
+Gym-bro personality lives in netlify/functions/coach.mjs `systemPrompt` and tips.mjs `SYSTEM`; safety rules unchanged.
+**Archives** (bottom of Today): `ReportArchive` (coach.jsx) lists every finished Sun–Sat week → `SHReport.open(s0)`.
+**Personal injury entry**: `INJ_LIB` 'my-shoulders' (`mine: true`, `detail` cards) holds Kieran's MRI findings — no names,
+dates of birth or clinic details, because public/ files are downloadable from the site.
 **Fuel meals** fold up: tap the meal name to show/hide items; a section opens itself when food is added.
 **Lift data check (train.jsx `findOddSets`):** flags sessions/sets that look ~2.2×, ~0.45×, ~10× or ~0.1× your usual
 (unit or decimal mistakes); whole-session fixes only scale sets that land in a believable range (warm-ups stay).

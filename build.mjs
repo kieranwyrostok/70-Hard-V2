@@ -59,9 +59,8 @@ page = page.replace('__DEFAULT_THEME__', DEFAULT_THEME);
 // Liquid glass (tools/glass.mjs): see-through surfaces, the moving colour glow behind the app, motion.
 const finish = (html, theme) => glassPage(html, theme).replace('</style>', glassCss(theme) + '</style>').replace('<body>\n', '<body>\n' + AURORA + '\n');
 fs.writeFileSync(path.join(OUT, 'index.html'), finish(page.replace('__PAGE_THEME__', 'dark'), 'dark'));
-// iOS draws the clock/battery in white over the top of the app, so the light page keeps a dark strip behind them.
-const STATUS_STRIP = '@media (display-mode: standalone){body::before{content:"";position:fixed;z-index:98;top:0;left:0;right:0;height:env(safe-area-inset-top, 0px);background:#1b2130;pointer-events:none}}\n</style>';
-fs.writeFileSync(path.join(OUT, 'light.html'), finish(toLight(page.replace('__PAGE_THEME__', 'light')).replace('</style>', STATUS_STRIP).replaceAll('from="screens.js"', 'from="screens-light.js"'), 'light'));
+// (the coloured strip behind the iPhone clock / Dynamic Island is in tools/glass.mjs, for both pages)
+fs.writeFileSync(path.join(OUT, 'light.html'), finish(toLight(page.replace('__PAGE_THEME__', 'light')).replaceAll('from="screens.js"', 'from="screens-light.js"'), 'light'));
 fs.writeFileSync(path.join(OUT, 'screens.js'), glassify(screensRaw, 'dark'));
 fs.writeFileSync(path.join(OUT, 'screens-light.js'), glassify(toLight(screensRaw), 'light'));
 

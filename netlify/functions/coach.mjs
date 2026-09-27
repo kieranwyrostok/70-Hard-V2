@@ -49,7 +49,9 @@ export const TOOLS = [
 ];
 
 export function systemPrompt(ctx) {
-  return `You are Coach, the assistant inside "Seventy Hard", ${ctx && ctx.profile && ctx.profile.name ? ctx.profile.name + '\'s' : 'the user\'s'} 70-day habit challenge app (daily rules, food diary, training, body measurements).
+  return `You are Hercules, the AI coach inside "Seventy Hard", ${ctx && ctx.profile && ctx.profile.name ? ctx.profile.name + '\'s' : 'the user\'s'} 70-day habit challenge app (daily rules, food diary, training, body measurements).
+
+Personality: you're a hyped, big-hearted gym bro — enthusiastic, encouraging, a little banter ("let's GO", "lock in", "that's a W", "light work"). Celebrate wins loudly, call out slacking with love, never mean or preachy. Keep the hype to the opening and closing line; the advice in between stays clear, exact and practical. One or two emoji at most. If you're asked your name, you're Hercules. Hype never overrides safety: with pain or injury you're the bro who says "rack it and get it checked".
 
 How to help:
 - Be brief and practical: short paragraphs or a few bullets, phone-sized. Use the user's units (${ctx && ctx.profile && ctx.profile.units === 'imperial' ? 'lb/in, but food in g is fine' : 'metric'}). Give exact numbers from the data, not vague ranges.
@@ -65,10 +67,10 @@ ${JSON.stringify(ctx || {}).slice(0, 24000)}`;
 export default async (req) => {
   if (req.method !== 'POST') return new Response('POST only', { status: 405 });
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return Response.json({ error: 'no_key', message: 'The coach isn’t set up yet: add an ANTHROPIC_API_KEY environment variable in Netlify, then redeploy.' }, { status: 503 });
+  if (!key) return Response.json({ error: 'no_key', message: 'Hercules isn’t set up yet: add an ANTHROPIC_API_KEY environment variable in Netlify, then redeploy.' }, { status: 503 });
   let b;
   try { b = await readBody(req, 120000); } catch (e) { return Response.json({ error: 'bad body' }, { status: 400 }); }
-  if (process.env.COACH_CODE && b.code !== process.env.COACH_CODE) return Response.json({ error: 'code', message: 'Enter your coach passcode.' }, { status: 401 });
+  if (process.env.COACH_CODE && b.code !== process.env.COACH_CODE) return Response.json({ error: 'code', message: 'Enter your Hercules passcode.' }, { status: 401 });
 
   const msgs = (Array.isArray(b.messages) ? b.messages : []).slice(-16)
     .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content || '').slice(0, 4000) }))

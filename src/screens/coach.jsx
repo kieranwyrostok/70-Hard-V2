@@ -1,4 +1,4 @@
-// ── COACH: chat with Claude about your food, training and habits; it can log and adjust things ──
+// ── HERCULES (the Coach tab): chat with Claude about your food, training and habits; it can log and adjust things ──
 const DEF_REM = { on: true, t: 1200, days: [1, 1, 1, 1, 1, 1, 1] };
 const hhmmToMin = s => { const m = String(s || '').match(/^(\d{1,2}):(\d{2})$/); return m ? (parseInt(m[1], 10) % 24) * 60 + (parseInt(m[2], 10) % 60) : null; };
 const minToHhmm = t => pad2(Math.floor(t / 60) % 24) + ':' + pad2(t % 60);
@@ -150,10 +150,10 @@ function CoachScreen({ app, st }) {
       const r = await fetch('/api/coach', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: history, context: coachContext(app, app.state), code }) });
       let j = {}; try { j = await r.json(); } catch (e) { /* ignore */ }
       if (r.status === 401 && j.error === 'code') {
-        const c = prompt('Coach passcode (the COACH_CODE you set in Netlify):');
+        const c = prompt('Hercules passcode (the COACH_CODE you set in Netlify):');
         setBusy(false);
         if (c) { try { localStorage.setItem('coachCode', c.trim()); } catch (e) { /* ignore */ } return send(text, true); }
-        push({ role: 'error', content: 'The coach needs its passcode.' }); return;
+        push({ role: 'error', content: 'Hercules needs his passcode.' }); return;
       }
       if (!r.ok) { push({ role: 'error', content: j.message || ('Something went wrong (' + r.status + ').'), setup: j.error === 'no_key' }); setBusy(false); return; }
       const snap = {}; UNDO_KEYS.forEach(k => { snap[k] = app.state[k]; });
@@ -162,7 +162,7 @@ function CoachScreen({ app, st }) {
       if (done.length) undos.current[id] = snap;
       app.setState(s => ({ coachChat: (s.coachChat || []).concat({ id, role: 'assistant', content: j.text || (done.length ? 'Done.' : 'Hmm, I didn’t get that — try rephrasing?'), done }).slice(-60) }));
     } catch (e) {
-      push({ role: 'error', content: navigator.onLine === false ? 'You’re offline — the coach needs internet.' : 'Couldn’t reach the coach. Try again.' });
+      push({ role: 'error', content: navigator.onLine === false ? 'You’re offline — Hercules needs internet.' : 'Couldn’t reach Hercules. Try again.' });
     }
     setBusy(false);
   };
@@ -173,12 +173,12 @@ function CoachScreen({ app, st }) {
 
   return <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'transparent', fontFamily: F.body, color: C.text }}>
     <div style={{ padding: '58px 22px 12px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-      <div><div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · ASK, OR TELL IT WHAT YOU DID</div><div style={T.h1}>Coach</div></div>
+      <div><div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · YOUR AI GYM BRO · ASK HIM ANYTHING</div><div style={T.h1}>Hercules</div></div>
       {chat.length ? <TopLink tone={C.dim} onClick={() => { if (confirm('Clear the conversation?')) app.setState({ coachChat: [] }); }}>CLEAR</TopLink> : null}
     </div>
     <div ref={scroller} style={{ flex: 1, overflow: 'auto', padding: '14px 16px 10px' }}>
       {!chat.length ? <div>
-        <div style={{ ...T.body, color: C.dim, lineHeight: 1.5 }}>I can see your food diary, targets, training, rules and measurements. Tell me what you ate and I’ll log it, or ask why something isn’t moving and I’ll dig into your numbers.</div>
+        <div style={{ ...T.body, color: C.dim, lineHeight: 1.5 }}>Yo, Hercules here 💪 I can see your food, targets, training, rules and measurements. Tell me what you ate and I’ll log it, or ask why something isn’t moving and we’ll dig into the numbers together. Let’s get it.</div>
         <div style={{ ...T.label, margin: '18px 0 8px' }}>TRY</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>{ideas.map(t => <div key={t} role="button" onClick={() => send(t)} style={{ border: '1px solid ' + C.line2, padding: '12px 13px', cursor: 'pointer', font: `500 15px/1.3 ${F.body}` }}>{t}</div>)}</div>
       </div> : null}
@@ -187,17 +187,17 @@ function CoachScreen({ app, st }) {
         : m.role === 'error'
           ? <div key={m.id} style={{ margin: '10px 0', border: '1px solid #6e3638', padding: '11px 12px', font: `400 14px/1.45 ${F.body}`, color: '#e0a89a' }}>{m.content}{m.setup ? <div style={{ ...T.label, marginTop: 8, color: C.dim, lineHeight: 1.6 }}>SET-UP: CREATE AN API KEY AT CONSOLE.ANTHROPIC.COM → ADD IT IN NETLIFY AS ANTHROPIC_API_KEY → REDEPLOY.</div> : null}</div>
           : <div key={m.id} style={{ margin: '10px 0', maxWidth: '92%' }}>
-            <div style={{ ...T.label, color: C.blue, marginBottom: 4 }}>COACH</div>
+            <div style={{ ...T.label, color: C.blue, marginBottom: 4 }}>HERCULES</div>
             <div style={{ font: `400 15px/1.5 ${F.body}`, color: '#d3d7df' }}><Rich text={m.content} /></div>
             {(m.done || []).length ? <div style={{ marginTop: 8, background: C.card, borderLeft: '3px solid ' + (m.undone ? C.faint : C.olive), padding: '9px 11px' }}>
               {m.done.map((d, i) => <div key={i} style={{ ...T.mono, fontSize: 11, lineHeight: 1.5, letterSpacing: '.04em', color: m.undone ? C.faint : C.text, textDecoration: m.undone ? 'line-through' : 'none' }}>✓ {d}</div>)}
               {!m.undone && undos.current[m.id] ? <span role="button" onClick={() => undo(m.id)} style={{ display: 'inline-block', marginTop: 6, ...T.mono, fontSize: 11, color: C.amber, cursor: 'pointer' }}>UNDO</span> : m.undone ? <div style={{ ...T.label, marginTop: 4 }}>UNDONE</div> : null}
             </div> : null}
           </div>)}
-      {busy ? <div style={{ ...T.label, color: C.blue, margin: '12px 0' }}>COACH IS THINKING…</div> : null}
+      {busy ? <div style={{ ...T.label, color: C.blue, margin: '12px 0' }}>HERCULES IS SPOTTING YOU… 🏋️</div> : null}
     </div>
     <div style={{ borderTop: '1px solid ' + C.line, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end', background: '#111419' }}>
-      <textarea value={input} onChange={e => setInput(e.target.value)} rows={Math.min(4, Math.max(1, input.split('\n').length))} placeholder="Log food, or ask anything"
+      <textarea value={input} onChange={e => setInput(e.target.value)} rows={Math.min(4, Math.max(1, input.split('\n').length))} placeholder="Log food, or ask Hercules anything"
         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
         style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', background: C.card, border: '1px solid ' + C.line2, color: C.text, font: `400 16px/1.35 ${F.body}`, padding: '11px 10px', outline: 'none', resize: 'none' }} />
       <Btn tone={C.blue} ink={C.blueInk} disabled={busy || !input.trim()} onClick={() => send(input)} style={{ minHeight: 46, padding: '0 16px', fontSize: 15 }}>Send</Btn>
@@ -383,6 +383,29 @@ function weekStats(app, st, s0) {
     onTarget: logged.filter(x => tg.kcal && Math.abs(x.t.kcal - tg.kcal) <= tg.kcal * 0.1).length, water: days.reduce((a, x) => a + (x.water || 0), 0) / 7, waterDays: days.filter(x => x.water >= goalW).length,
     chDays: ch.length, cleared, missed: Object.entries(missedNames).sort((a, b) => b[1] - a[1]), wStart: wIn[0], wEnd: wIn[wIn.length - 1], wCount: wIn.length, tg, goalW };
 }
+// ── Archives (bottom of Today): every finished week, newest first; tap one to open its report ──
+function ReportArchive({ app, st }) {
+  const [all, setAll] = useState(false);
+  if (!app || !st) return null;
+  const last = lastWeekStart(st), dates = [st.startDate].concat((st.workouts || []).map(w => w.date), Object.keys(st.diary || {})).filter(Boolean).sort();
+  const first = dates[0], weeks = [];
+  if (first) for (let s0 = last; addDaysIso(s0, 6) >= first && weeks.length < 60; s0 = addDaysIso(s0, -7)) weeks.push(s0);
+  const shown = all ? weeks : weeks.slice(0, 4);
+  return <div>
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '8px 0 10px' }}>
+      <span style={T.h2}>Archives</span><span style={T.label}>{weeks.length ? weeks.length + (weeks.length === 1 ? ' WEEKLY REPORT' : ' WEEKLY REPORTS') : 'WEEKLY REPORTS'}</span></div>
+    {!weeks.length ? <div style={{ ...T.body, fontSize: 14, color: C.dim, background: C.card, border: '1px solid ' + C.line, borderRadius: 14, padding: 14 }}>📦 Your first weekly report lands here after your first full week (reports cover Sunday–Saturday).</div> : null}
+    {shown.map((s0, i) => { const R = weekStats(app, st, s0);
+      const bits = [R.ws.length + (R.ws.length === 1 ? ' workout' : ' workouts'), R.chDays ? R.cleared + '/' + R.chDays + ' days cleared' : '', R.logged ? Math.round(R.kcal).toLocaleString() + ' kcal avg' : '', R.prs.length ? '🏆 ' + R.prs.length + ' PR' + (R.prs.length > 1 ? 's' : '') : ''].filter(Boolean);
+      return <div key={s0} role="button" onClick={() => window.SHReport && window.SHReport.open(s0)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', marginBottom: 7, background: C.card, border: '1px solid ' + C.line, borderRadius: 14, cursor: 'pointer' }}>
+        <div style={{ width: 38, height: 38, borderRadius: 11, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: i === 0 ? C.blue : C.card2, color: i === 0 ? C.blueInk : C.dim, font: `700 16px/1 ${F.head}` }}>{i === 0 ? '★' : 'W'}</div>
+        <div style={{ flex: 1, minWidth: 0 }}><div style={T.name}>{weekLabel(s0)}{i === 0 ? <span style={{ ...T.label, color: C.blue, marginLeft: 8 }}>LATEST</span> : null}</div>
+          <div style={{ ...T.label, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bits.join(' · ').toUpperCase()}</div></div>
+        <span style={{ color: C.faint }}>›</span></div>; })}
+    {weeks.length > 4 ? <div role="button" onClick={() => setAll(v => !v)} style={{ ...T.mono, fontSize: 11, color: C.blue, padding: '8px 0', cursor: 'pointer', textAlign: 'center' }}>{all ? 'SHOW FEWER' : 'SHOW ALL ' + weeks.length + ' ›'}</div> : null}
+  </div>;
+}
+window.ReportArchive = ReportArchive;
 function WeeklyReport({ app, st, s0, onClose }) {
   const R = weekStats(app, st, s0), unit = wUnit(st), W = kg => Math.round(st.imperial ? kg * 2.20462 : kg).toLocaleString();
   const pct = (a, b) => b ? Math.round((a - b) / b * 100) : null, vp = pct(R.vol, R.prevVol);
@@ -411,7 +434,7 @@ function WeeklyReport({ app, st, s0, onClose }) {
       {row('Average water', (R.water / 1000).toFixed(2) + ' L · goal hit ' + R.waterDays + '/7', R.waterDays >= 5 ? C.olive : C.text)}
       {(() => { const n = R.dates.map(d => sleepDur((st.sleepLog || {})[d])).filter(x => x != null); return n.length ? <>{h2('Sleep')}{row('Average sleep', durText(Math.round(n.reduce((a, b) => a + b, 0) / n.length)) + ' · ' + n.length + '/7 nights logged')}</> : null; })()}
       {R.wCount >= 2 ? <>{h2('Body')}{row('Weight', (st.imperial ? r1(R.wStart * 2.20462) + ' → ' + r1(R.wEnd * 2.20462) + ' lb' : R.wStart + ' → ' + R.wEnd + ' kg') + ' (' + (R.wEnd - R.wStart >= 0 ? '+' : '') + r1(st.imperial ? (R.wEnd - R.wStart) * 2.20462 : R.wEnd - R.wStart) + ')')}</> : null}
-      <a href="#s12" onClick={onClose} style={{ display: 'block', marginTop: 20, ...T.mono, fontSize: 12, color: C.blue, textDecoration: 'none' }}>ASK COACH ABOUT THIS WEEK ›</a>
+      <a href="#s12" onClick={onClose} style={{ display: 'block', marginTop: 20, ...T.mono, fontSize: 12, color: C.blue, textDecoration: 'none' }}>ASK HERCULES ABOUT THIS WEEK ›</a>
     </div>
   </Sheet>;
 }

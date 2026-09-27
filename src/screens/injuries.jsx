@@ -9,6 +9,24 @@
 // phases: [settle it down, rebuild, back to full]. watch: words in exercise names to flag during workouts.
 const R = (n, dose, how) => ({ n, dose, how });
 const INJ_LIB = [
+  // Kieran's own shoulders — from his MRI arthrograms and what we went through together. Kept free of names, dates of
+  // birth and clinic details because these files are publicly downloadable from the app's web address.
+  { k: 'my-shoulders', mine: true, name: 'My shoulders (Bankart instability)', area: 'Shoulder', time: [6, 12],
+    what: 'Both shoulders have instability from past dislocations — the classic Bankart + Hill-Sachs pattern. Here’s what your MRI arthrograms showed.',
+    detail: [['LEFT · HEALED, RE-INJURED SEPT 2026', 'Healed Bankart fracture (a chip off the front-bottom rim of the socket), a Hill-Sachs dent on the back of the ball, and a minor non-displaced labral tear. Rotator cuff and biceps tendon intact. The September re-injury (lost motion, front pain, unstable) has settled, so overhead pressing, pull-ups and flyes are back in.'],
+      ['RIGHT · THE BIGGER ISSUE', 'A larger Bankart fragment (about 9 × 17 × 24 mm) displaced up to 5 mm that never united, with anterior-inferior labral tearing, a partial IGHL (stabilising ligament) tear and mild joint inflammation. Rotator cuff intact. Non-united fragments like this are what surgeons sometimes fix (e.g. Bankart repair or Latarjet) — that’s the question for your orthopaedic surgeon.']],
+    signs: ['Slipping, clunking or a “dead arm” feeling', 'Pain at the FRONT of the shoulder with movement', 'Nervous / unstable with the arm out to the side and turned back (throwing, high-five, bottom of a deep fly or dip)',
+      'Flare warning signs from last time: can’t lift to shoulder height, can’t move it fast, trouble putting on a shirt or backpack'],
+    phases: [['Flare: sling only for comfort, ice for pain, don’t force range', 'Nothing overhead or behind the back until it calms', 'If motion is lost like in September, get it seen that week — each instability episode can enlarge the Bankart / Hill-Sachs defects', 'Mention the known non-healed anterior labral / Bankart injury to whoever assesses it'],
+      ['Rotator cuff + shoulder-blade work in safe positions (list below)', 'Machines and cables before free weights — more control of the range', 'Stop short of deep stretch at the bottom of presses and flyes', 'Right side gets the most care: it’s the one with the unhealed fragment'],
+      ['Overhead press, pull-ups and flyes are back — strict and controlled, no kipping, no bouncing out of the bottom', 'Warm up with band external rotation + scapular rows every upper day', 'Keep leaving 1–2 reps in the tank on pressing', 'Keep the orthopaedic follow-up for the right shoulder']],
+    avoid: ['Arm out to the side AND turned back under load (the dislocation position)', 'Behind-the-neck press or pulldowns', 'Deep-stretch flyes / pec deck past the line of your body', 'Deep dips, wide-grip bench with flared elbows', 'Kipping pull-ups, snatches, max-effort pressing on the right side'],
+    ok: ['Machine chest / incline press in a controlled range', 'Neutral-grip pulldowns, rows, reverse pec deck', 'Cable lateral raises', 'Legs and core', 'Strict overhead press, pull-ups and high-to-low cable flyes now the left has settled'],
+    rehab: [R('Band external rotation', '3 × 15 / side', 'Elbow tucked with a towel, slow — right side first'), R('Band internal rotation', '3 × 15 / side', 'Same set-up, turn in'),
+      R('Shoulder isometrics', '5 × 10 s each way', 'Push into a wall out / in / forward / sideways — no movement'), R('Scapular row', '3 × 12', 'Squeeze shoulder blades together, pause'),
+      R('Serratus wall slide', '2 × 10', 'Forearms on wall, push away as you slide up'), R('Prone Y and T raises', '2 × 10', 'Thumbs up, bodyweight first'), R('Wall ball stabilisation', '3 × 30 s / side', 'Small circles with a ball on the wall at chest height')],
+    flags: ['It dislocates or looks deformed — don’t force it back in; go to emergency', 'Numbness, tingling, or a cold / pale hand', 'Another slip or dislocation on either side — tell your orthopaedic surgeon (each one can worsen the bone defects)', 'Losing the ability to lift to shoulder height again, like in September'],
+    watch: ['bench', 'fly', 'flye', 'dip', 'overhead press', 'shoulder press', 'pulldown', 'pull-up', 'chin-up', 'snatch', 'push press', 'pec deck', 'arnold', 'upright row'] },
   { k: 'low-back', name: 'Lower back strain', area: 'Back', time: [2, 6],
     what: 'Overloaded muscles or ligaments in the low back, often from lifting, bending or twisting. Scary-sore but usually settles well.',
     signs: ['Ache, tightness or spasm across the low back', 'Worse bending, lifting or sitting a long time', 'No pain, numbness or weakness down the leg past the knee'],
@@ -238,7 +256,8 @@ function injCheer(inj, today) {
   else if ((inj.rehab || []).length) out.push(['🌱', rd ? 'Rehab ' + rd + ' of the last 7 days' : 'Start small today', 'Even one exercise, most days, speeds things up. Pick the easiest one and tick it off.']);
   if (lib) {
     const [lo, hi] = lib.time, wk = day / 7;
-    if (wk <= hi) out.push(['🗓', 'Day ' + day, 'Typical recovery is ' + lo + '–' + hi + ' weeks, so you’re ' + (wk < lo ? 'early in the process — be patient with it.' : 'right on schedule.')]);
+    if (lib.mine) out.push(['🛡', 'Day ' + day + ' of this flare', 'Your shoulders are a long-term thing — the win is fewer, shorter flares. Rehab most days is what builds that.']);
+    else if (wk <= hi) out.push(['🗓', 'Day ' + day, 'Typical recovery is ' + lo + '–' + hi + ' weeks, so you’re ' + (wk < lo ? 'early in the process — be patient with it.' : 'right on schedule.')]);
     else out.push(['🩺', 'Taking longer than typical', 'Day ' + day + ' is past the usual ' + lo + '–' + hi + ' weeks. Worth seeing a physio if you haven’t — a plan made for you helps.']);
   }
   if (!out.length) out.push(['💪', 'You’re doing the right things', 'Check in daily and tick off your rehab — the trend will show up here.']);
@@ -297,7 +316,7 @@ function InjuriesTab({ app, st }) {
       <Field value={q} onChange={setQ} placeholder="🔍  Search (e.g. knee, shoulder, strain)" />
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', margin: '10px -22px 10px', padding: '0 22px' }}>{INJ_AREAS.map(a => <Chip key={a} on={area === a} tone={C.olive} ink={C.oliveInk} onClick={() => setArea(a)}>{a.toUpperCase()}</Chip>)}</div>
       {libList.map(x => <div key={x.k} role="button" onClick={() => setGuide(x)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: '1px solid ' + C.line, cursor: 'pointer' }}>
-        <div style={{ flex: 1, minWidth: 0 }}><div style={T.name}>{x.name}</div><div style={{ ...T.label, marginTop: 3 }}>{x.area.toUpperCase()} · USUALLY {x.time[0]}–{x.time[1]} WEEKS</div></div>
+        <div style={{ flex: 1, minWidth: 0 }}><div style={T.name}>{x.name}</div><div style={{ ...T.label, marginTop: 3, color: x.mine ? C.blue : C.mute }}>{x.mine ? '★ YOURS · FROM YOUR MRI RESULTS' : x.area.toUpperCase() + ' · USUALLY ' + x.time[0] + '–' + x.time[1] + ' WEEKS'}</div></div>
         <span style={{ color: C.faint }}>›</span></div>)}
       {!libList.length ? <Empty>NOTHING MATCHES — ADD IT AS YOUR OWN BELOW</Empty> : null}
       <Btn kind="ghost" tone={C.dim} onClick={() => setAdding({ key: null, name: q || '', area: area === 'All' ? '' : area })} style={{ marginTop: 12 }}>+ SOMETHING ELSE (ADD YOUR OWN)</Btn>
@@ -331,7 +350,8 @@ function GuideBody({ lib, phase }) {
   const bullets = (arr, mark = '•', tone = C.dim) => arr.map((t, i) => <div key={i} style={{ display: 'flex', gap: 8, ...T.body, fontSize: 14, color: C.text, marginBottom: 5 }}><span style={{ color: tone, flex: 'none' }}>{mark}</span><span>{t}</span></div>);
   return <>
     <div style={{ ...T.body, color: C.dim }}>{lib.what}</div>
-    <div style={{ ...T.label, marginTop: 8 }}>USUAL RECOVERY · {lib.time[0]}–{lib.time[1]} WEEKS (MILD ONES FASTER)</div>
+    {(lib.detail || []).map(([h, t]) => <Card key={h} accent={C.blue} style={{ padding: 12, marginTop: 10 }}><div style={{ ...T.label, color: C.blue, marginBottom: 5 }}>{h}</div><div style={{ ...T.body, fontSize: 14 }}>{t}</div></Card>)}
+    <div style={{ ...T.label, marginTop: 8 }}>{lib.mine ? 'LONG-TERM CONDITION · A FLARE USUALLY SETTLES IN ' + lib.time[0] + '–' + lib.time[1] + ' WEEKS' : 'USUAL RECOVERY · ' + lib.time[0] + '–' + lib.time[1] + ' WEEKS (MILD ONES FASTER)'}</div>
     {sec('COMMON SIGNS', bullets(lib.signs))}
     {sec('WHAT TO DO, STAGE BY STAGE', lib.phases.map((p, i) => <div key={i} style={{ marginBottom: 6, border: '1px solid ' + (openP === i ? C.olive : C.line), borderRadius: 12, overflow: 'hidden' }}>
       <div role="button" onClick={() => setOpenP(openP === i ? -1 : i)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 12px', cursor: 'pointer' }}>
