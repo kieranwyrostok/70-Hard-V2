@@ -81,12 +81,6 @@ export function dayNumber(startDate, today) {
 
 export function reminderPayload(r, dev, now) {
   const n = dayNumber(dev.startDate, now.date);
-  // alarms (Habits & reminders → Alarms): 'al:<id>' at the set time, 'al:<id>:2' a nudge 5 min later unless stopped in the app
-  if (String(r.id).startsWith('al:')) {
-    const [, aid, again] = String(r.id).split(':');
-    return { title: (again ? '⏰ Still in bed? ' : '⏰ ') + (r.name || 'Alarm'), body: again ? 'Your ' + hhmm(r.t - 5) + ' alarm · tap to stop it' : 'Alarm · ' + hhmm(r.t) + ' · tap to stop it',
-      tag: 'alarm-' + aid, url: './?alarm=' + encodeURIComponent(aid) + '#s02', sticky: true };
-  }
   if (r.id === 'weekly') return { title: 'Your weekly report is ready 📊', body: 'Workouts, PRs, food, water and rules from last week. Tap to see it.', tag: 'weekly', url: './?report=1#s02' };
   return {
     title: r.name || 'Seventy Hard',

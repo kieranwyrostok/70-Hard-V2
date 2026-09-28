@@ -55,21 +55,6 @@ function chime() {
       o.connect(g); g.connect(audioCtx.destination); o.start(t0 + d); o.stop(t0 + d + 0.42); });
   } catch (e) { /* no audio */ }
 }
-// Alarm tone: a loud beep-beep-beep every 1.3 s until the returned stop() is called.
-function alarmTone() {
-  audioUnlock(); let stopped = false, timer = null;
-  const burst = () => { if (stopped) return;
-    try { const t0 = audioCtx.currentTime + 0.02;
-      [0, 0.18, 0.36].forEach(d => { const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-        o.type = 'square'; o.frequency.value = 988; g.gain.setValueAtTime(0.0001, t0 + d); g.gain.exponentialRampToValueAtTime(0.3, t0 + d + 0.01);
-        g.gain.setValueAtTime(0.3, t0 + d + 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.13);
-        o.connect(g); g.connect(audioCtx.destination); o.start(t0 + d); o.stop(t0 + d + 0.15); });
-    } catch (e) { /* no audio */ }
-    try { navigator.vibrate && navigator.vibrate([150, 80, 150]); } catch (e) { /* no vibration */ }
-    timer = setTimeout(burst, 1300); };
-  burst();
-  return () => { stopped = true; clearTimeout(timer); };
-}
 window.shChime = chime; window.shAudioUnlock = audioUnlock;
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* no-op */ } };
 
