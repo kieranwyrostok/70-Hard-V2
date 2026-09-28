@@ -648,6 +648,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="margin-top:10px;background:#1e232a;border:1px solid #2b3039;padding:13px 14px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4">PHONE NOTIFICATIONS</span><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ pushTone }}">{{ pushStatus }}</span></div><div style="font:400 13px/1.45 Barlow,sans-serif;color:#9ca3b0;margin-top:8px;text-wrap:pretty">{{ pushDetail }}</div><div style="display:flex;gap:7px;margin-top:11px"><div sc-camel-on-click="{{ pushAction }}" style="display:{{ pushBtnVis }};flex:2;background:{{ pushBtnBg }};border:1px solid {{ pushBtnBorder }};padding:13px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ pushBtnFg }}">{{ pushBtn }}</div><div sc-camel-on-click="{{ pushTest }}" style="display:{{ pushTestVis }};flex:1;border:1px solid #4f8dff;padding:13px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">SEND TEST</div></div></div>
 </div>
+<div style="padding:18px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Alarms</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;text-align:right">TOGGLE EACH ONE<br>ON OR OFF</span></div>
+<div style="padding:0 22px"><x-import component-from-global-scope="AlarmsWidget" from="screens.js" dc-props="{{ pailProps }}"></x-import></div>
 <div style="padding:18px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Challenge rules</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;text-align:right">LOCKED TO DAY 70<br>REMINDERS EDITABLE</span></div>
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
 <sc-for list="{{ ruleRows }}" as="r" hint-placeholder-count="9">
@@ -1084,7 +1086,7 @@ function defaultState() {
     selDay: 1, planDay: weekdayIdx(today),
     customEx: {}, removed: {}, editing: false, sel: null, over: {}, exOver: {}, infoKey: null,
     rem: Object.fromEntries(HABITS.map(h => [h.k, { ...DEFREM, t: suggestT(h.k, setup) }])),
-    extras: [],
+    extras: [], alarms: [], alarmStop: {},
     habSel: null, imperial: false, measSel: null, measInfo: null,
     meas: [
       { k: 'weight', name: 'Bodyweight', u: 'kg', start: 80, cur: 80 },
@@ -1361,10 +1363,14 @@ class Component extends DCLogic {
     const s = this.state;
     const sched = s.ruleDefs.filter(h => h.on).map(h => { const r = s.rem[h.k] || DEFREM; return { id: h.k, name: this.hLabel(h).name || 'Rule', on: !!r.on, t: r.t, days: r.days, rule: true }; })
       .concat(s.extras.map(x => ({ id: 'x:' + x.id, name: x.name || 'Habit', on: !!x.on, t: x.t, days: x.days, rule: false })))
-      .concat([{ id: 'weekly', name: 'Weekly report', on: true, t: 540, days: [0, 0, 0, 0, 0, 0, 1], rule: false }]);   // Sundays 9:00
+      .concat([{ id: 'weekly', name: 'Weekly report', on: true, t: 540, days: [0, 0, 0, 0, 0, 0, 1], rule: false }])   // Sundays 9:00
+      // alarms: the alarm itself + a nudge 5 min later ('…:2', treated like a rule so stopping the alarm in the app skips it)
+      .concat((s.alarms || []).flatMap(a => { const base = { name: a.label || 'Alarm', on: !!a.on, days: a.days, rule: false };
+        return [{ ...base, id: 'al:' + a.id, t: a.t }].concat(a.t + 5 < 1440 ? [{ ...base, id: 'al:' + a.id + ':2', t: a.t + 5, rule: true }] : []); }));
+    const stopped = (s.alarms || []).filter(a => (s.alarmStop || {})[a.id] === s.curDate).map(a => 'al:' + a.id + ':2');
     let tz = 'UTC';
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { /* keep UTC */ }
-    return { id: s.push.id, tz, startDate: s.startDate, schedule: sched, done: { date: s.curDate, keys: Object.keys(s.done).filter(k => s.done[k]) } };
+    return { id: s.push.id, tz, startDate: s.startDate, schedule: sched, done: { date: s.curDate, keys: stopped.concat(Object.keys(s.done).filter(k => s.done[k])) } };
   }
   queuePushSync() {
     if (!this.state.push || !this.state.push.on || !window.PushClient) return;

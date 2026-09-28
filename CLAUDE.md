@@ -92,6 +92,10 @@ Canadian-first), food-barcode (Open Food Facts, then USDA), coach + food-photo (
 model via ANTHROPIC_MODEL, default claude-haiku-4-5-20251001), push-* (web-push + Netlify Blobs, cron every 5 min).
 Hercules chats (coach.jsx): `st.coachChat` = current chat; opening Hercules after 10 min idle files it into
 `st.coachChats` [{id,start,last,msgs}] (CHATS side drawer), pruned 21 days after the last message.
+Alarms (coach.jsx `AlarmsWidget` in Habits & reminders, `AlarmHost` own root): `st.alarms` [{id,t,days,on,label}]. iOS can't
+ring a closed web app, so each alarm is pushed as `al:<id>` (+ nudge `al:<id>:2` 5 min later, rule-like: skipped once
+`st.alarmStop[id]` = today) — see pushPayload + shared.mjs reminderPayload. App open → full-screen looping `alarmTone()`
+(ui.jsx) with Stop / Snooze 9; `?alarm=<id>` (from the notification) rings too; bedside mode = Wake Lock + dim clock.
 tips (daily AI suggestions: coach.jsx `tipsMaybe` sends a ~1.8 KB 7-day summary once per day, forced `give_tips` tool,
 max 500 tokens out; state `aiTips`, toggle `aiTipsOn`; card on Today, setting in Habits & reminders).
 Env vars live in Netlify only: ANTHROPIC_API_KEY, USDA_API_KEY, COACH_CODE, ANTHROPIC_MODEL.

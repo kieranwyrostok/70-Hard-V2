@@ -34,7 +34,7 @@ self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data && e.data.text() }; }
   e.waitUntil(self.registration.showNotification(d.title || 'Seventy Hard', {
-    body: d.body || '', tag: d.tag || undefined, renotify: !!d.tag,
+    body: d.body || '', tag: d.tag || undefined, renotify: !!d.tag, requireInteraction: !!d.sticky,   // sticky = alarms (stays until tapped where supported)
     icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: d.url || './#s02' }
   }));
 });

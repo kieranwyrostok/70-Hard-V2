@@ -547,3 +547,125 @@ function WeeklyReport({ app, st, s0, onClose }) {
     </div>
   </Sheet>;
 }
+
+// ── Alarms (Habits & reminders → Alarms) ──
+// st.alarms [{id, t (minutes after midnight), days [Sun..Sat 0/1], on, label}]. An iPhone won't let a web app ring while
+// it's closed, so each alarm is sent as a notification (plus a nudge 5 min later, skipped once you stop it: st.alarmStop
+// {id: date}). If the app is open at that time, AlarmHost rings on a loop full screen. Bedside mode keeps the screen on
+// overnight (Wake Lock) so the full alarm can ring.
+const ALARM_MAX = 8, SNOOZE_MIN = 9;
+const hmOf = t => pad2(Math.floor(t / 60) % 24) + ':' + pad2(t % 60);
+const daysText = d => { const on = (d || []).map(Boolean), n = on.filter(Boolean).length;
+  if (n === 7) return 'EVERY DAY'; if (!n) return 'NO DAYS';
+  if (n === 5 && !on[0] && !on[6]) return 'WEEKDAYS'; if (n === 2 && on[0] && on[6]) return 'WEEKENDS';
+  return WD.filter((_, i) => on[i]).join(' ').toUpperCase(); };
+// next time an alarm rings, as ms from now (null if it has no days)
+const nextRing = (a, now = new Date()) => { for (let k = 0; k < 8; k++) { const d = new Date(now); d.setDate(d.getDate() + k); d.setHours(Math.floor(a.t / 60), a.t % 60, 0, 0);
+  if ((a.days || [])[d.getDay()] && d > now) return d - now; } return null; };
+const inText = ms => { const m = Math.round(ms / 60000), h = Math.floor(m / 60); return 'RINGS IN ' + (h ? h + ' H ' : '') + (m % 60) + ' MIN'; };
+
+function AlarmsWidget({ app, st }) {
+  const list = st.alarms || [], [open, setOpen] = useState(null);
+  useTick(true, 30000);
+  const put = (id, ch) => app.setState(s => ({ alarms: (s.alarms || []).map(a => a.id === id ? { ...a, ...ch } : a) }));
+  const add = () => { audioUnlock(); const id = 'a' + uid();
+    app.setState(s => ({ alarms: (s.alarms || []).concat({ id, t: 420, days: [1, 1, 1, 1, 1, 1, 1], on: true, label: '' }) })); setOpen(id); vib(8); };
+  const del = id => { if (confirm('Delete this alarm?')) { app.setState(s => ({ alarms: (s.alarms || []).filter(a => a.id !== id) })); setOpen(null); } };
+  const pushOn = st.push && st.push.on;
+  const sw = (on, click, label) => <span role="switch" aria-checked={on} aria-label={label} onClick={e => { e.stopPropagation(); click(); }} style={{ width: 52, height: 32, borderRadius: 99, flex: 'none', cursor: 'pointer', position: 'relative',
+    background: on ? C.blue : C.line2, transition: 'background .2s', boxShadow: on ? `0 0 12px -2px ${C.blue}` : 'none' }}>
+    <span style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 26, height: 26, borderRadius: 99, background: '#ffffff', transition: 'left .2s', boxShadow: '0 1px 4px rgba(0,0,0,.35)' }} /></span>;
+  return <div style={{ background: C.card, border: '1px solid ' + C.line, borderRadius: 14, padding: '4px 14px 14px' }}>
+    {list.map(a => { const isOpen = open === a.id, nr = a.on ? nextRing(a) : null;
+      return <div key={a.id} style={{ borderBottom: '1px solid ' + C.line, padding: '10px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <input type="time" value={hmOf(a.t)} aria-label="Alarm time" onChange={e => { const [h, m] = e.target.value.split(':').map(Number); if (!isNaN(h)) put(a.id, { t: (h * 60 + (Math.round((m || 0) / 5) * 5)) % 1440 }); }}
+            style={{ font: `700 38px/1 ${F.head}`, color: a.on ? C.text : C.faint, background: 'transparent', border: 0, padding: 0, width: 150, minHeight: 44, outline: 'none', fontVariantNumeric: 'tabular-nums' }} />
+          <div role="button" onClick={() => setOpen(isOpen ? null : a.id)} style={{ flex: 1, minWidth: 0, cursor: 'pointer', minHeight: 44, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ ...T.name, color: a.on ? C.text : C.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.label || 'Alarm'}</div>
+            <div style={{ ...T.label, marginTop: 3, color: a.on ? C.mute : C.faint }}>{daysText(a.days)}{nr != null ? ' · ' + inText(nr) : a.on ? '' : ' · OFF'} {isOpen ? '▴' : '▾'}</div>
+          </div>
+          {sw(!!a.on, () => { audioUnlock(); put(a.id, { on: !a.on }); vib(6); }, 'Alarm on')}
+        </div>
+        {isOpen ? <div style={{ marginTop: 10 }}>
+          <Field label="NAME" value={a.label} onChange={v => put(a.id, { label: v.slice(0, 40) })} placeholder="e.g. Wake up · Morning workout" />
+          <div style={{ display: 'flex', gap: 5, marginTop: 10 }}>{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((l, i) => { const on = !!(a.days || [])[i];
+            return <span key={i} role="button" aria-pressed={on} aria-label={WD[i]} onClick={() => put(a.id, { days: (a.days || [0, 0, 0, 0, 0, 0, 0]).map((v, j) => j === i ? (v ? 0 : 1) : v) })}
+              style={{ flex: 1, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', ...T.mono, fontSize: 13,
+                background: on ? C.blue : 'transparent', color: on ? C.blueInk : C.dim, border: '1px solid ' + (on ? C.blue : C.line2) }}>{l}</span>; })}</div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <Btn kind="ghost" tone={C.text} onClick={() => window.SHAlarm && window.SHAlarm.test(a)} style={{ flex: 1, minHeight: 42 }}>TEST SOUND</Btn>
+            <Btn kind="ghost" tone={C.red} onClick={() => del(a.id)} style={{ flex: 1, minHeight: 42 }}>DELETE</Btn>
+          </div>
+        </div> : null}
+      </div>; })}
+    {list.length < ALARM_MAX ? <div role="button" onClick={add} style={{ marginTop: 12, padding: '12px 0', textAlign: 'center', borderRadius: 12, border: '1px dashed ' + C.line2, cursor: 'pointer', ...T.mono, fontSize: 12, color: C.blue }}>＋ ADD ALARM</div> : null}
+    {list.length ? <Btn kind="ghost" tone={C.text} onClick={() => window.SHAlarm && window.SHAlarm.bedside()} style={{ marginTop: 8, width: '100%', minHeight: 44 }}>🌙 BEDSIDE MODE · KEEPS SCREEN ON SO IT RINGS</Btn> : null}
+    <div style={{ ...T.label, marginTop: 10, color: pushOn ? C.faint : C.amber, lineHeight: 1.6 }}>
+      {pushOn ? 'APP CLOSED OR PHONE LOCKED: YOU GET A NOTIFICATION (NORMAL NOTIFICATION SOUND, SILENT IN SILENT MODE) + A NUDGE 5 MIN LATER. APP OPEN OR BEDSIDE MODE: IT RINGS UNTIL YOU STOP IT. TIMES SNAP TO 5 MINUTES.'
+        : 'TURN ON PHONE NOTIFICATIONS ABOVE SO ALARMS REACH YOU WHEN THE APP IS CLOSED. WITHOUT THEM, ALARMS ONLY RING WHILE THE APP IS OPEN (OR IN BEDSIDE MODE).'}
+    </div>
+  </div>;
+}
+window.AlarmsWidget = AlarmsWidget;
+
+function AlarmHost() {
+  const [ring, setRing] = useState(null), [snooze, setSnooze] = useState(null), [bed, setBed] = useState(false), [, tick] = useState(0);
+  useEffect(() => {
+    window.SHAlarm = { test: a => setRing({ a, test: true }), bedside: () => setBed(true) };
+    const check = () => { const app = window.__app; if (!app) return;
+      const now = new Date(), m = now.getHours() * 60 + now.getMinutes(), today = isoOf(now);
+      let fired = {}; try { fired = JSON.parse(localStorage.getItem('sh.alarmFired') || '{}') || {}; } catch (e) { /* ignore */ }
+      for (const a of app.state.alarms || []) {
+        if (!a.on || !(a.days || [])[now.getDay()] || fired[a.id] === today) continue;
+        const lag = m - a.t; if (lag < 0 || lag > 2) continue;                       // ring within 2 min of the time (phones throttle timers)
+        fired[a.id] = today; try { localStorage.setItem('sh.alarmFired', JSON.stringify(fired)); } catch (e) { /* ignore */ }
+        setRing({ a }); break;
+      } };
+    const iv = setInterval(check, 5000); check();
+    // opened by tapping an alarm notification (…/?alarm=<id>)
+    const q = /[?&]alarm=([^&#]+)/.exec(location.search);
+    if (q) { setTimeout(() => { const app = window.__app, a = app && (app.state.alarms || []).find(x => x.id === decodeURIComponent(q[1])); if (a) setRing({ a, fromPush: true }); }, 800);
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* ignore */ } }
+    // iPhones only allow sound after a tap: any tap in the app gets the speaker ready for a later alarm
+    const unlock = () => audioUnlock(); document.addEventListener('pointerdown', unlock, true);
+    return () => { clearInterval(iv); document.removeEventListener('pointerdown', unlock, true); };
+  }, []);
+  useEffect(() => { if (!snooze) return; const t = setTimeout(() => { setRing({ a: snooze.a }); setSnooze(null); }, Math.max(0, snooze.until - Date.now())); return () => clearTimeout(t); }, [snooze]);
+  useEffect(() => { if (!ring) return; const stop = alarmTone(); return stop; }, [ring]);
+  // bedside mode: keep the screen awake (Wake Lock) and show a dim clock
+  useEffect(() => { if (!bed) return; let lock = null, off = false;
+    const get = () => { try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { if (off) l.release(); else lock = l; }).catch(() => {}); } catch (e) { /* not supported */ } };
+    const vis = () => { if (!document.hidden) get(); };
+    get(); document.addEventListener('visibilitychange', vis); const iv = setInterval(() => tick(x => x + 1), 1000);
+    return () => { off = true; lock && lock.release().catch(() => {}); document.removeEventListener('visibilitychange', vis); clearInterval(iv); }; }, [bed]);
+  const stop = () => { const r = ring; setRing(null); vib(10);
+    if (r && !r.test && window.__app) window.__app.setState(s => ({ alarmStop: { ...(s.alarmStop || {}), [r.a.id]: s.curDate } })); };
+  const now = new Date(), clock = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+  const app = window.__app, next = app ? (app.state.alarms || []).filter(a => a.on).map(a => ({ a, ms: nextRing(a) })).filter(x => x.ms != null).sort((x, y) => x.ms - y.ms)[0] : null;
+  const layer = (kids, z) => ReactDOM.createPortal(<div style={{ position: 'fixed', inset: 0, zIndex: z, background: '#000000', color: '#ffffff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: F.body, animation: 'fadeIn .25s both' }}>{kids}</div>, document.body);
+  return <>
+    {bed && !ring ? layer(<>
+      <div style={{ font: `700 96px/1 ${F.head}`, color: '#8a93a6', fontVariantNumeric: 'tabular-nums' }}>{clock}</div>
+      <div style={{ ...T.mono, fontSize: 12, color: '#6b7382', marginTop: 14, textAlign: 'center', lineHeight: 1.6 }}>{next ? '⏰ ' + hmOf(next.a.t) + ' · ' + (next.a.label || 'ALARM').toUpperCase() + ' · ' + inText(next.ms) : 'NO ALARMS ON'}<br />KEEP THE APP OPEN AND THE PHONE CHARGING · SOUND ON</div>
+      <span role="button" onClick={() => setBed(false)} style={{ position: 'absolute', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)', ...T.mono, fontSize: 12, color: '#6b7382', padding: '14px 22px', border: '1px solid #30363f', borderRadius: 99, cursor: 'pointer' }}>EXIT BEDSIDE MODE</span>
+    </>, 96) : null}
+    {ring ? layer(<>
+      <div style={{ ...T.mono, fontSize: 13, color: C.blue, letterSpacing: '.2em' }}>⏰ {ring.test ? 'TEST' : 'ALARM'}</div>
+      <div style={{ font: `800 104px/1 ${F.head}`, marginTop: 10, fontVariantNumeric: 'tabular-nums', textShadow: `0 0 30px ${C.blue}` }}>{ring.test ? hmOf(ring.a.t) : clock}</div>
+      <div style={{ font: `600 20px/1.3 ${F.body}`, marginTop: 10, textAlign: 'center' }}>{ring.a.label || 'Time to get up'}</div>
+      {app ? <div style={{ ...T.mono, fontSize: 12, color: '#8f9ab0', marginTop: 8 }}>DAY {app.dayNum()} OF 70 · LET’S GO</div> : null}
+      <div style={{ width: '100%', maxWidth: 360, marginTop: 44, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Btn tone={C.blue} ink={C.blueInk} onClick={stop} style={{ minHeight: 64, fontSize: 22 }}>Stop</Btn>
+        {!ring.test ? <Btn kind="ghost" tone="#ffffff" onClick={() => { setSnooze({ a: ring.a, until: Date.now() + SNOOZE_MIN * 60000 }); setRing(null); vib(10); }} style={{ minHeight: 54 }}>SNOOZE {SNOOZE_MIN} MIN</Btn> : null}
+      </div>
+    </>, 99) : null}
+    {snooze && !ring ? ReactDOM.createPortal(<div role="button" onClick={() => setSnooze(null)} style={{ position: 'fixed', left: 16, right: 16, top: 'calc(env(safe-area-inset-top, 0px) + 8px)', zIndex: 97, background: C.card, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, border: '1px solid ' + C.line2, borderRadius: 14, padding: '10px 14px', ...T.mono, fontSize: 11, color: C.text, cursor: 'pointer' }}>
+      ⏰ SNOOZED · RINGS AGAIN AT {(() => { const d = new Date(snooze.until); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); })()} · TAP TO CANCEL</div>, document.body) : null}
+  </>;
+}
+if (!window.__alarmHost) {
+  window.__alarmHost = document.createElement('div');
+  document.body.appendChild(window.__alarmHost);
+  ReactDOM.createRoot(window.__alarmHost).render(<AlarmHost />);
+}
