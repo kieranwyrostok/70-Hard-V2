@@ -430,6 +430,7 @@ function PhotoDay({ app, n, onClose }) {
             <div style={{ position: 'absolute', left: 5, bottom: 5 }}>{tag(String(j + 2), 'dark')}</div></div>)}
         </div></> : null}
       <div style={{ marginTop: 18 }}>{add}</div>
+      <Btn kind="ghost" tone={C.blue} onClick={() => window.SHCamera && window.SHCamera.open(n)} style={{ marginTop: 8, width: '100%', minHeight: 48 }}>⏱ TIMER CAMERA · HANDS-FREE</Btn>
       <div style={{ ...T.label, marginTop: 8, textAlign: 'center' }}>THE COVER IS THE ONE ON THE GRID AND IN COMPARISONS · EXTRAS JUST LIVE HERE</div>
     </div>
     {view && U[view] ? ReactDOM.createPortal(<div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,.94)', display: 'flex', flexDirection: 'column', animation: 'fadeIn .2s both' }}>
@@ -447,11 +448,85 @@ function PhotoDay({ app, n, onClose }) {
     </div>, document.body) : null}
   </Sheet>;
 }
+// ── Timer camera (Photos → "Timer camera", or a day's folder): live preview, pick a 3–15 s countdown, prop the phone up
+// and step back. Beeps each second, takes the shot, then Keep / Retake. Optional see-through Day 1 photo to line up the
+// same pose. Saved through app.savePhoto (cover if the day has none, otherwise into the day's folder).
+function beepAt(f, len, vol) {
+  try { audioUnlock(); const t0 = audioCtx.currentTime + 0.01, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol || 0.3, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0 + len + 0.02); } catch (e) { /* no audio */ }
+}
+function TimerCamera({ app, day, onClose }) {
+  const vid = useRef(null), stream = useRef(null), timer = useRef(null);
+  const [facing, setFacing] = useState(() => { try { return localStorage.getItem('sh.camFacing') || 'user'; } catch (e) { return 'user'; } });
+  const [secs, setSecs] = useState(() => { try { return +localStorage.getItem('sh.camSecs') || 10; } catch (e) { return 10; } });
+  const [ghost, setGhost] = useState(false), [left, setLeft] = useState(null), [shot, setShot] = useState(null), [err, setErr] = useState(''), [flash, setFlash] = useState(false), [saving, setSaving] = useState(false);
+  const day1 = app.photoUrls && app.photoUrls.d1, mirror = facing === 'user';
+  const stop = () => { if (stream.current) stream.current.getTracks().forEach(t => t.stop()); stream.current = null; };
+  useEffect(() => { let off = false; setErr('');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setErr('This phone/browser can’t open the camera inside the app.'); return; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false })
+      .then(s => { if (off) { s.getTracks().forEach(t => t.stop()); return; } stop(); stream.current = s; if (vid.current) { vid.current.srcObject = s; vid.current.play().catch(() => {}); } })
+      .catch(e => setErr(e && e.name === 'NotAllowedError' ? 'Camera access was blocked. Allow it in Settings → Safari → Camera (or the app’s settings), then try again.' : 'Couldn’t open the camera.'));
+    return () => { off = true; stop(); };
+  }, [facing]);
+  useEffect(() => () => { clearInterval(timer.current); stop(); if (shot) URL.revokeObjectURL(shot.url); }, []);
+  const snap = () => { const v = vid.current; if (!v || !v.videoWidth) return;
+    const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);   // saved un-mirrored (how others see you)
+    setFlash(true); setTimeout(() => setFlash(false), 180); beepAt(1600, 0.25, 0.35); vib(30);
+    c.toBlob(b => { if (b) setShot({ blob: b, url: URL.createObjectURL(b) }); }, 'image/jpeg', 0.92); };
+  const start = () => { audioUnlock(); clearInterval(timer.current); let n = secs; setLeft(n); beepAt(880, 0.12);
+    timer.current = setInterval(() => { n -= 1; if (n <= 0) { clearInterval(timer.current); setLeft(null); snap(); } else { setLeft(n); beepAt(n <= 3 ? 1100 : 880, n <= 3 ? 0.18 : 0.12); } }, 1000); };
+  const cancel = () => { clearInterval(timer.current); setLeft(null); };
+  const retake = () => { if (shot) URL.revokeObjectURL(shot.url); setShot(null); };
+  const keep = async () => { if (!shot) return; setSaving(true); await app.savePhoto(shot.blob, day); setSaving(false); URL.revokeObjectURL(shot.url); setShot(null); vib(12); onClose(true); };
+  const pick = (k, v, set) => { set(v); try { localStorage.setItem(k, String(v)); } catch (e) { /* ignore */ } };
+  const pill = (on, label, click) => <span role="button" onClick={click} style={{ minWidth: 48, minHeight: 40, padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 99, cursor: 'pointer', ...T.mono, fontSize: 12,
+    background: on ? '#ffffff' : 'rgba(0,0,0,.45)', color: on ? '#000000' : '#ffffff', border: '1px solid rgba(255,255,255,.35)' }}>{label}</span>;
+  return ReactDOM.createPortal(<div style={{ position: 'fixed', inset: 0, zIndex: 92, background: '#000000', color: '#ffffff', display: 'flex', flexDirection: 'column', fontFamily: F.body }}>
+    <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 10px) 14px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <TopLink tone="#ffffff" onClick={() => { cancel(); onClose(false); }}>✕ CLOSE</TopLink>
+      <span style={{ ...T.mono, fontSize: 11, color: '#ffffff' }}>DAY {day} · {app.photoUrls && app.photoUrls['d' + day] ? 'GOES IN THE DAY’S FOLDER' : 'BECOMES THE COVER'}</span>
+    </div>
+    <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+      {err ? <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 30, textAlign: 'center', font: `500 15px/1.5 ${F.body}` }}>{err}</div> : null}
+      <video ref={vid} playsInline muted autoPlay style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', transform: mirror ? 'scaleX(-1)' : 'none', display: shot ? 'none' : 'block' }} />
+      {ghost && day1 && !shot ? <img src={day1} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: 0.32, transform: mirror ? 'scaleX(-1)' : 'none', pointerEvents: 'none' }} /> : null}
+      {shot ? <img src={shot.url} alt="Your photo" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} /> : null}
+      {left != null ? <div role="button" onClick={cancel} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <div key={left} style={{ font: `800 180px/1 ${F.head}`, color: '#ffffff', textShadow: '0 0 40px rgba(0,0,0,.8)', animation: 'fadeIn .25s both' }}>{left}</div>
+        <div style={{ ...T.mono, fontSize: 12, color: '#ffffff', marginTop: 10, textShadow: '0 0 10px #000' }}>TAP TO CANCEL</div></div> : null}
+      {flash ? <div style={{ position: 'absolute', inset: 0, background: '#ffffff' }} /> : null}
+    </div>
+    <div style={{ padding: '12px 14px calc(env(safe-area-inset-bottom, 0px) + 14px)' }}>
+      {shot ? <div style={{ display: 'flex', gap: 10 }}>
+        <Btn kind="ghost" tone="#ffffff" onClick={retake} style={{ flex: 1, minHeight: 54 }}>RETAKE</Btn>
+        <Btn tone={C.blue} ink={C.blueInk} disabled={saving} onClick={keep} style={{ flex: 2, minHeight: 54, fontSize: 18 }}>{saving ? 'Saving…' : 'Keep photo'}</Btn>
+      </div> : <>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ ...T.mono, fontSize: 11, color: '#ffffff', marginRight: 4 }}>⏱</span>
+          {[3, 5, 10, 15].map(v => <React.Fragment key={v}>{pill(secs === v, v + 's', () => pick('sh.camSecs', v, setSecs))}</React.Fragment>)}
+        </div>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 8 }}>
+          {pill(false, '⟲ FLIP', () => pick('sh.camFacing', facing === 'user' ? 'environment' : 'user', setFacing))}
+          {day1 && day !== 1 ? pill(ghost, 'DAY 1 OVERLAY', () => setGhost(g => !g)) : null}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+          <span role="button" aria-label={left != null ? 'Cancel timer' : 'Start ' + secs + ' second timer'} onClick={left != null ? cancel : start}
+            style={{ width: 76, height: 76, borderRadius: 99, border: '4px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', opacity: err ? 0.4 : 1 }}>
+            <span style={{ width: left != null ? 28 : 60, height: left != null ? 28 : 60, borderRadius: left != null ? 6 : 99, background: left != null ? C.red : '#ffffff', transition: 'all .2s' }} /></span>
+        </div>
+        <div style={{ ...T.mono, fontSize: 10, color: '#aaaaaa', textAlign: 'center', marginTop: 8 }}>PROP THE PHONE UP · TAP THE BUTTON · STEP BACK</div>
+      </>}
+    </div>
+  </div>, document.body);
+}
 function DayHost() {
-  const [n, setN] = useState(null), [rep, setRep] = useState(null), [ph, setPh] = useState(null);
+  const [n, setN] = useState(null), [rep, setRep] = useState(null), [ph, setPh] = useState(null), [cam, setCam] = useState(null);
   useEffect(() => {
     window.SHDay = { open: d => setN(d) };
     window.SHPhotos = { open: d => setPh(d) };
+    window.SHCamera = { open: d => setCam(d || (window.__app && window.__app.dayNum())) };
     window.SHReport = { open: s0 => setRep(s0 || (window.__app && lastWeekStart(window.__app.state))) };
     // opened from the Sunday notification (…/?report=1)
     if (/[?&]report=1/.test(location.search)) { setTimeout(() => window.__app && setRep(lastWeekStart(window.__app.state)), 900); try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* ignore */ } }
@@ -463,6 +538,7 @@ function DayHost() {
     {n != null ? <DayDetail app={app} st={app.state} n={n} onClose={() => setN(null)} onNav={setN} /> : null}
     {rep ? <WeeklyReport app={app} st={app.state} s0={rep} onClose={() => setRep(null)} /> : null}
     {ph != null ? <PhotoDay app={app} n={ph} onClose={() => setPh(null)} /> : null}
+    {cam != null ? <TimerCamera app={app} day={cam} onClose={() => setCam(null)} /> : null}
   </>;
 }
 if (!window.__dayHost) {

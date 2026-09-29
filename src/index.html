@@ -606,7 +606,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div sc-camel-on-click="{{ p.open }}" style="aspect-ratio:3/4;background:{{ p.bg }};border:1px solid {{ p.border }};display:flex;align-items:flex-end;justify-content:space-between;padding:5px;cursor:pointer"><span style="font:500 9px/1 'IBM Plex Mono',monospace;color:{{ p.fg }}">{{ p.n }}</span><span style="display:{{ p.moreShow }};font:600 9px/1 'IBM Plex Mono',monospace;color:#eef0f4;background:rgba(0,0,0,.55);border-radius:99px;padding:3px 5px">{{ p.more }}</span></div>
 </sc-for>
 </div>
-<div style="padding:18px 22px 24px"><label style="display:block;background:#4f8dff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">{{ captureLabel }}<input type="file" accept="image/*" capture="environment" sc-camel-on-change="{{ addPhoto }}" style="display:none"></label><div style="font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:center;margin-top:8px">FIRST PHOTO = THE DAY'S COVER · MORE GO IN THAT DAY'S FOLDER · TAP A DAY TO OPEN IT</div></div>
+<div style="padding:18px 22px 24px"><label style="display:block;background:#4f8dff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">{{ captureLabel }}<input type="file" accept="image/*" capture="environment" sc-camel-on-change="{{ addPhoto }}" style="display:none"></label><div sc-camel-on-click="{{ openTimerCam }}" style="margin-top:9px;border:1px solid #4f8dff;color:#4f8dff;text-align:center;padding:15px;font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">⏱ Timer camera · hands-free</div><div style="font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382;text-align:center;margin-top:8px">FIRST PHOTO = THE DAY'S COVER · MORE GO IN THAT DAY'S FOLDER · TAP A DAY TO OPEN IT</div></div>
 </div>
 <div class="tabbar" style="display:flex;background:#111419;border-top:1px solid #2b3039;padding:0 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px))">
 <a href="#s02" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-height:48px;text-decoration:none;cursor:pointer" style-hover="background:#1b1f26"><div style="width:28px;height:2px;background:transparent"></div><svg class="tabicon" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#8f9ab0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;opacity:.85;"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0">TODAY</span></a>
@@ -1231,7 +1231,10 @@ class Component extends DCLogic {
   async addPhoto(ev, day) {
     const file = ev.target.files && ev.target.files[0];
     ev.target.value = '';
-    if (!file) return;
+    if (file) await this.savePhoto(file, day);
+  }
+  // saves a picture (file or blob, e.g. from the timer camera) as the day's cover, or into its folder if it has one
+  async savePhoto(file, day) {
     const dn = day || this.dayNum(), cover = !this.photoUrls['d' + dn], key = cover ? 'd' + dn : 'd' + dn + 'x' + Date.now();
     try {
       const blob = await shrinkImage(file, 1400);
@@ -2072,7 +2075,7 @@ class Component extends DCLogic {
       dbSets: selRecD ? String(selRecD.sets) : '—',
       goalL: (goal / 1000).toFixed(1),
       photo1Bg: photoBg(PU.d1), photoNowBg: photoBg(PU['d' + dayNum]),
-      addPhoto: ev => this.addPhoto(ev), captureLabel: PU['d' + dayNum] ? '+ Add another photo · day ' + dayNum : 'Capture day ' + dayNum,
+      addPhoto: ev => this.addPhoto(ev), openTimerCam: () => window.SHCamera && window.SHCamera.open(dayNum), captureLabel: PU['d' + dayNum] ? '+ Add another photo · day ' + dayNum : 'Capture day ' + dayNum,
       exportData: () => this.exportData(), importData: ev => this.importData(ev), restart: () => this.restart(),
       ...(() => { // Sunday: report on the 7 days (Sun–Sat) that just ended
         const t = new Date(this.state.curDate + 'T12:00:00'), s0d = new Date(t); s0d.setDate(t.getDate() - 7);
