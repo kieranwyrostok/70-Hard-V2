@@ -751,6 +751,21 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="flex:1.4;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">BODYWEIGHT</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ wNow }}<span style="font-size:15px;color:#8f9ab0"> {{ wUnit }}</span></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4f8dff;margin-top:4px">{{ wDelta }}</div></div>
 <div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">WAIST : HIP</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ whr }}</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:4px">LIVE FROM TAPE</div></div>
 </div>
+<div style="display:{{ bfShow }};margin-top:9px;background:#1e232a;border:1px solid #2b3039;border-left:3px solid #ffc233;padding:13px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#ffc233">BODY FAT · ESTIMATE</span><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#6b7382">{{ bfProfile }}</span></div>
+<div style="display:flex;align-items:flex-end;gap:14px;margin-top:6px">
+<div style="font:700 40px/1 'Saira Condensed',sans-serif;color:#eef0f4">{{ bfEst }}<span style="font-size:18px;color:#8f9ab0"> %</span></div>
+<div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:{{ bfSinceFg }};padding-bottom:4px">{{ bfSince }}</div>
+</div>
+<div style="font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#8f9ab0;margin-top:6px">{{ bfHow }}</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+<div style="border:1px solid #2b3039;padding:8px"><div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#8f9ab0">LEAN MASS</div><div style="font:700 17px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:5px">{{ bfLean }}</div></div>
+<div style="border:1px solid #2b3039;padding:8px"><div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#8f9ab0">FAT MASS</div><div style="font:700 17px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:5px">{{ bfFat }}</div></div>
+<div style="border:1px solid #2b3039;padding:8px"><div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#8f9ab0">BMI METHOD</div><div style="font:700 17px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:5px">{{ bfBmi }}</div></div>
+</div>
+<div sc-camel-on-click="{{ bfLog }}" style="margin-top:10px;min-height:42px;display:flex;align-items:center;justify-content:center;border:1px solid #3d4450;cursor:pointer;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ffc233">{{ bfLogged }}</div>
+<div style="font:400 10px/1.4 'IBM Plex Mono',monospace;color:#6b7382;margin-top:8px">UPDATES AS YOU LOG NECK, WAIST{{ bfHipsNote }}, WEIGHT. AGE, SEX + HEIGHT FROM SETUP. AN ESTIMATE, NOT A SCAN.</div>
+</div>
 </div>
 <div style="padding:16px 22px 8px;display:grid;grid-template-columns:minmax(0,1fr) 54px 54px 52px;gap:6px;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8f9ab0"><span>SITE</span><span style="text-align:right">DAY 1</span><span style="text-align:right">NOW</span><span style="text-align:right">Δ</span></div>
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:6px">
@@ -1662,6 +1677,18 @@ class Component extends DCLogic {
     const get = k => s.meas.find(m => m.k === k);
     const w = get('weight'), wa = get('waist'), hp = get('hips');
     const wd = w ? cv('kg', w.cur) - cv('kg', w.start) : 0;
+    // Body fat estimate. US Navy tape method (neck, waist, + hips for women, height) is the main number; the BMI-based
+    // Deurenberg formula (weight, height, age, sex) is a second opinion. Both are estimates (±3–4 %), not a scan.
+    const su = s.setup || {}, male = su.sex !== 'F', hcm = su.height || 0, age = su.age || 0, nk = get('neck'), bfm = get('bf');
+    const ok = v => v > 2 && v < 60 && isFinite(v) ? v : null;
+    const navy = (neck, waist, hips) => { if (!hcm || !neck || !waist) return null;
+      const x = male ? waist - neck : waist + (hips || 0) - neck; if (x <= 0 || (!male && !hips)) return null;
+      return ok(male ? 495 / (1.0324 - 0.19077 * Math.log10(x) + 0.15456 * Math.log10(hcm)) - 450
+        : 495 / (1.29579 - 0.35004 * Math.log10(x) + 0.221 * Math.log10(hcm)) - 450); };
+    const bmiBf = kg => hcm && kg && age ? ok(1.2 * kg / (hcm / 100) ** 2 + 0.23 * age - 10.8 * (male ? 1 : 0) - 5.4) : null;
+    const bfNow = navy(nk && nk.cur, wa && wa.cur, hp && hp.cur), bfStart = navy(nk && nk.start, wa && wa.start, hp && hp.start);
+    const bfB = bmiBf(w && w.cur), bfMain = bfNow != null ? bfNow : bfB, kgNow = w ? w.cur : 0;
+    const bfd = bfNow != null && bfStart != null ? bfNow - bfStart : null;
     return {
       ruleRows, extraRows,
       activeRem: all.filter(o => o.on).length,
@@ -1672,6 +1699,18 @@ class Component extends DCLogic {
       wNow: w ? f1(cv('kg', w.cur)) : '—', wUnit: ul('kg'),
       wDelta: w ? (wd < 0 ? '−' : '+') + f1(Math.abs(wd)) + ' ' + ul('kg') + ' SINCE DAY 1' : '',
       whr: wa && hp ? (wa.cur / hp.cur).toFixed(2) : '—',
+      bfShow: bfMain != null ? 'block' : 'none', bfHipsNote: male ? '' : ', HIPS',
+      bfEst: bfMain != null ? bfMain.toFixed(1) : '—',
+      bfHow: bfNow != null ? 'US NAVY TAPE METHOD · NECK, WAIST' + (male ? '' : ', HIPS') + ', HEIGHT' : 'FROM BMI · ADD NECK + WAIST FOR A BETTER ESTIMATE',
+      bfSince: bfd == null ? '' : Math.abs(bfd) < 0.05 ? '±0 % SINCE DAY 1' : (bfd < 0 ? '−' : '+') + Math.abs(bfd).toFixed(1) + ' % SINCE DAY 1',
+      bfSinceFg: bfd != null && bfd < -0.04 ? '#4f8dff' : bfd != null && bfd > 0.04 ? '#ffc233' : '#8f9ab0',
+      bfBmi: bfB != null && bfNow != null ? bfB.toFixed(1) + ' %' : '—',
+      bfLean: bfMain != null && kgNow ? f1(cv('kg', kgNow * (1 - bfMain / 100))) + ' ' + ul('kg') : '—',
+      bfFat: bfMain != null && kgNow ? f1(cv('kg', kgNow * bfMain / 100)) + ' ' + ul('kg') : '—',
+      bfLogged: bfm && (s.measLog.bf || {})[dayNum] != null && Math.abs((s.measLog.bf || {})[dayNum] - Math.round(bfMain * 10) / 10) < 0.05 ? 'SAVED AS TODAY’S BODY FAT ✓' : 'SAVE AS TODAY’S BODY FAT',
+      bfLog: () => { if (bfMain == null || !bfm) return; const v = Math.round(bfMain * 10) / 10;
+        this.setState(st => ({ meas: st.meas.map(o => o.k === 'bf' ? { ...o, cur: v } : o), measLog: { ...st.measLog, bf: { ...(st.measLog.bf || {}), [dayNum]: v } } })); },
+      bfProfile: (male ? 'MALE' : 'FEMALE') + ' · ' + (age || '—') + ' YRS · ' + (hcm ? (imp ? Math.floor(hcm / 2.54 / 12) + '′' + Math.round(hcm / 2.54 % 12) + '″' : hcm + ' CM') : 'NO HEIGHT'),
       unitMetricBg: imp ? 'transparent' : '#4f8dff', unitMetricFg: imp ? '#9ca3b0' : '#081631',
       unitImpBg: imp ? '#4f8dff' : 'transparent', unitImpFg: imp ? '#081631' : '#9ca3b0',
       setMetric: () => this.setState({ imperial: false }), setImperial: () => this.setState({ imperial: true }),
