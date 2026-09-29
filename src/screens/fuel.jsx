@@ -73,6 +73,7 @@ function FuelScreen({ app, st }) {
   const [toast, setToast] = useState(null);
   // Meal sections fold up: tap the meal name to show / hide what was eaten. A section opens by itself when food is added to it.
   const [openSlots, setOpenSlots] = useState({});
+  const [totEdit, setTotEdit] = useState(null), [totTxt, setTotTxt] = useState('');   // meal whose total calories are being typed
   const slotCounts = useRef({});
   const lastCur = useRef(st.curDate);
   useEffect(() => { if (lastCur.current !== st.curDate) { setDate(st.curDate); lastCur.current = st.curDate; } }, [st.curDate]);
@@ -128,6 +129,20 @@ function FuelScreen({ app, st }) {
 
       <div style={{ padding: '14px 22px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {SLOTS.map(([slot, label, share]) => {
+          // tap the "520 / 650 KCAL" line to type a new total for the whole meal: every item is scaled to fit (portion +
+          // calories + macros together); an empty meal gets one quick-add entry with those calories
+          const setMealTotal = v => {
+            v = Math.max(0, Math.round(v)); const cur = day.meals.filter(m => slotKey(m) === slot), have = sumN(cur).kcal;
+            if (cur.length && have > 0) {
+              const k = v / have, sc = x => x == null ? x : Math.round(x * k * 10) / 10;
+              setDay(d => ({ ...d, meals: d.meals.map(m => slotKey(m) !== slot ? m : { ...m, kcal: Math.round(m.kcal * k), p: sc(m.p), c: sc(m.c), f: sc(m.f),
+                ...(m.unit !== 'quick' && m.amount != null ? { amount: Math.round(m.amount * k * 100) / 100 } : {}), ...(m.g != null ? { g: sc(m.g) } : {}) }) }));
+              flash(label.toUpperCase() + ' → ' + v + ' KCAL · ITEMS SCALED ×' + k.toFixed(2));
+            } else if (v > 0) {
+              addEntries([{ id: 'm' + uid(), time: SH.nowHM(), slot, name: 'Quick calories', amount: 1, unit: 'quick', serv: 'quick add', kcal: v, p: 0, c: 0, f: 0 }], label.toUpperCase() + ' → ' + v + ' KCAL');
+            }
+            setTotEdit(null);
+          };
           const items = day.meals.filter(m => slotKey(m) === slot), t = sumN(items), goal = Math.round(tg.kcal * share);
           const ck = date + slot, prevN = slotCounts.current[ck]; slotCounts.current[ck] = items.length;
           if (prevN != null && items.length > prevN && !openSlots[ck]) setTimeout(() => setOpenSlots(o => ({ ...o, [ck]: true })), 0);
@@ -139,7 +154,8 @@ function FuelScreen({ app, st }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, font: `700 18px/1.1 ${F.head}`, letterSpacing: '.08em', textTransform: 'uppercase' }}>{label}
                   {items.length ? <span style={{ ...T.mono, fontSize: 10, color: C.mute, letterSpacing: '.08em', display: 'inline-flex', alignItems: 'center', gap: 5 }}>{items.length} {items.length === 1 ? 'ITEM' : 'ITEMS'}
                     <span style={{ display: 'inline-block', fontSize: 12, color: C.amber, transition: 'transform .3s cubic-bezier(.2,.9,.25,1)', transform: isOpen ? 'rotate(180deg)' : 'none' }}>▾</span></span> : null}</div>
-                <div style={{ ...T.label, marginTop: 4, color: t.kcal > goal * 1.15 ? C.red : C.mute }}>{Math.round(t.kcal)} / {goal} KCAL{items.length ? ' · P ' + r1(t.p) + ' C ' + r1(t.c) + ' F ' + r1(t.f) : ''}</div>
+                <span role="button" aria-label={'Edit ' + label + ' calories'} onClick={e => { e.stopPropagation(); setTotEdit(ck); setTotTxt(String(Math.round(t.kcal) || '')); }}
+                  style={{ ...T.label, display: 'inline-block', marginTop: 4, padding: '4px 0', color: t.kcal > goal * 1.15 ? C.red : C.mute, borderBottom: '1px dotted ' + C.line2, cursor: 'pointer' }}>{Math.round(t.kcal)} / {goal} KCAL ✎{items.length ? ' · P ' + r1(t.p) + ' C ' + r1(t.c) + ' F ' + r1(t.f) : ''}</span>
               </div>
               <span role="button" onClick={() => setMenu({ title: label, actions: [
                 { label: 'Copy ' + label.toLowerCase() + ' from the day before', run: () => { const prev = ((addDaysIso(date, -1) === st.curDate ? { meals: st.meals } : (st.diary || {})[addDaysIso(date, -1)]) || { meals: [] }).meals.filter(m => slotKey(m) === slot);
@@ -151,6 +167,19 @@ function FuelScreen({ app, st }) {
               ] })} style={{ ...T.mono, color: C.dim, padding: '8px 6px', cursor: 'pointer' }}>•••</span>
               <div role="button" onClick={() => setAdding(slot)} style={{ width: 40, height: 40, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.amber, color: C.amberInk, font: `700 24px/1 ${F.mono}`, cursor: 'pointer' }}>+</div>
             </div>
+            {totEdit === ck ? <div style={{ padding: '0 14px 12px', borderTop: '1px solid #272c34' }}>
+              <div style={{ ...T.label, margin: '10px 0 6px' }}>{items.length ? 'NEW TOTAL FOR ' + label.toUpperCase() + ' · ITEMS ARE SCALED TO FIT' : 'CALORIES FOR ' + label.toUpperCase() + ' · ADDED AS QUICK CALORIES'}</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input value={totTxt} onChange={e => setTotTxt(e.target.value)} inputMode="numeric" autoFocus aria-label={label + ' total calories'}
+                  onKeyDown={e => { if (e.key === 'Enter' && num(totTxt) != null) setMealTotal(num(totTxt)); }}
+                  style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', background: C.bg, border: '1px solid ' + C.line2, borderRadius: 10, color: C.text, font: `700 22px/1.2 ${F.head}`, padding: '8px 12px', outline: 'none' }} />
+                <span style={{ ...T.mono, color: C.dim }}>KCAL</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <Btn kind="ghost" tone={C.dim} onClick={() => setTotEdit(null)} style={{ flex: 1, minHeight: 42 }}>CANCEL</Btn>
+                <Btn tone={C.amber} ink={C.amberInk} disabled={num(totTxt) == null} onClick={() => setMealTotal(num(totTxt))} style={{ flex: 2, minHeight: 42, fontSize: 15 }}>Set total</Btn>
+              </div>
+            </div> : null}
             <div style={{ display: 'grid', gridTemplateRows: isOpen ? '1fr' : '0fr', transition: 'grid-template-rows .34s cubic-bezier(.2,.9,.25,1)' }}><div style={{ overflow: 'hidden', minHeight: 0 }}>
             {items.map(m => <SwipeRow key={m.id} bg={C.card} actions={[{ label: 'DELETE', run: () => { delEntry(m.id); flash('REMOVED ' + m.name.toUpperCase()); } }, { label: 'COPY', tone: C.blue, run: () => { addEntries([{ ...m, id: 'm' + uid(), time: SH.nowHM() }], 'ADDED ANOTHER ' + m.name.toUpperCase()); } }]}>
             <div role="button" onClick={() => setEditing(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderTop: '1px solid #272c34', cursor: 'pointer' }}>
