@@ -72,7 +72,7 @@ function Chip({ on, children, onClick, tone = C.blue, ink = C.blueInk, style }) 
 }
 function Seg({ items, value, onChange, tone = C.blue, ink = C.blueInk }) {
   return <div style={{ display: 'flex', border: '1px solid #30363f', borderRadius: 12, overflow: 'hidden', background: '#1a1e24' }}>
-    {items.map(([v, l], i) => <div key={v} role="button" onClick={() => onChange(v)} style={{ flex: 1, textAlign: 'center', padding: '13px 0', cursor: 'pointer', ...T.mono, fontSize: 11, background: value === v ? tone : 'transparent', color: value === v ? ink : C.dim, borderLeft: i ? '1px solid #30363f' : 'none' }}>{l}</div>)}
+    {items.map(([v, l], i) => <div key={v} role="button" onClick={() => onChange(v)} style={{ flex: 1, textAlign: 'center', padding: '13px 0', cursor: 'pointer', ...T.mono, fontSize: 11, ...(items.length >= 5 ? { fontSize: 10, letterSpacing: '.02em', whiteSpace: 'nowrap' } : {}), background: value === v ? tone : 'transparent', color: value === v ? ink : C.dim, borderLeft: i ? '1px solid #30363f' : 'none' }}>{l}</div>)}
   </div>;
 }
 function Card({ children, style, onClick, accent }) {

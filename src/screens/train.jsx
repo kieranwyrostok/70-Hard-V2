@@ -439,6 +439,8 @@ function TrainScreen({ app, st }) {
     </div>;
   } else if (tab === 'injuries') {
     body = <InjuriesTab app={app} st={st} />;
+  } else if (tab === 'peptides') {
+    body = <PeptidesTab app={app} st={st} />;
   } else {
     const list = allExercises(st).filter(e => exMatch(e, q, part, equip)).sort((a, b) => a.name.localeCompare(b.name));
     body = <div style={{ padding: '14px 22px 24px' }}>
@@ -460,7 +462,7 @@ function TrainScreen({ app, st }) {
         <div style={{ ...T.label, marginBottom: 4 }}>DAY {app.dayNum()} · TRAIN</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}><div style={T.h1}>Workout</div>
           {tab === 'history' ? <div role="button" aria-label="All-time stats and records" onClick={() => setAllTime(true)} style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid ' + C.line2, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `400 21px/1 ${F.body}`, cursor: 'pointer' }}>🏆</div> : null}</div>
-        <div style={{ marginTop: 14 }}><Seg items={[['start', 'START'], ['history', 'HISTORY'], ['exercises', 'EXERCISES'], ['injuries', (st.injuries || []).some(i => !i.healed) ? 'INJURY •' : 'INJURY']]} value={tab} onChange={setTab} tone={C.olive} ink={C.oliveInk} /></div>
+        <div style={{ marginTop: 14 }}><Seg items={[['start', 'START'], ['history', 'HISTORY'], ['exercises', 'EXERCISES'], ['injuries', (st.injuries || []).some(i => !i.healed) ? 'INJURY •' : 'INJURY'], ['peptides', (st.peptides || []).some(p => (p.days || [])[dOf(st.curDate).getDay()] && !(p.log || []).some(l => l.date === st.curDate)) ? 'PEPTIDE •' : 'PEPTIDE']]} value={tab} onChange={setTab} tone={C.olive} ink={C.oliveInk} /></div>
       </div>
       {body}
     </div>

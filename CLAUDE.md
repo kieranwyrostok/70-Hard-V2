@@ -49,7 +49,7 @@ learning to edit this himself — explain changes plainly and keep them small an
   Component instance (call `app.setState(...)`) and `st` is its state.
 
 **src/screens/*.jsx** — React 18 (global `React`/`ReactDOM`, no imports). Concatenated in the order
-ui → library → train → injuries → fuel → coach and compiled into one IIFE, so later files use earlier globals.
+ui → library → train → injuries → peptides → fuel → coach and compiled into one IIFE, so later files use earlier globals.
 - ui.jsx: colour tokens `C`, fonts `F`, text styles `T`, Btn/Chip/Seg/Card/Sheet/ActionSheet/Field, charts
   (LineChart/BarChart/Sparkline), `DragList` + `Grip` (pointer-event drag-to-reorder), `aiPost`.
 - Overlays are `Sheet`s rendered through portals with z-index layers (40–95).
@@ -133,6 +133,9 @@ care, train-around lists, rehab exercises, red flags, `watch` words that flag ex
 State `st.injuries` [{id, key, name, area, side, start, note, rehab [{id,n,dose,how}], log {date: {feel 1-10, note, done
 [rehab ids]}}, healed}]. Main page = current injuries once one exists; `injCheer` writes the encouragement. The daily AI
 tips get `current_injuries`.
+**Peptides** (src/screens/peptides.jsx, Train → PEPTIDE tab, `PeptidesTab`): U-100 reconstitution calculator (units = dose ÷
+(vial mcg ÷ water ml) × 100, `SyringeScale` graphic), weekly days (default Monday), dose log, doses left since `vialStart`.
+State `st.peptides` [{id,name,syringe,vialMg,waterMl,doseMcg,days,log [{date,mcg,units}],vialStart}]; tab shows • when due.
 **Hercules** = the AI assistant (tab s12, was "Coach"; internal names coach.jsx / /api/coach / COACH_CODE unchanged).
 Gym-bro personality lives in netlify/functions/coach.mjs `systemPrompt` and tips.mjs `SYSTEM`; safety rules unchanged.
 **Archives** (bottom of Today): `ReportArchive` (coach.jsx) lists every finished Sun–Sat week → `SHReport.open(s0)`.

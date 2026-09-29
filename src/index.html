@@ -1106,7 +1106,7 @@ function defaultState() {
     selDay: 1, planDay: weekdayIdx(today),
     customEx: {}, removed: {}, editing: false, sel: null, over: {}, exOver: {}, infoKey: null,
     rem: Object.fromEntries(HABITS.map(h => [h.k, { ...DEFREM, t: suggestT(h.k, setup) }])),
-    extras: [],
+    extras: [], peptides: [],
     habSel: null, imperial: false, measSel: null, measInfo: null,
     meas: [
       { k: 'weight', name: 'Bodyweight', u: 'kg', start: 80, cur: 80 },
