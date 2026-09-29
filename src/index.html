@@ -748,7 +748,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <a href="#s11" style="flex:1;text-align:center;padding:13px 0;background:#4f8dff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">BODY</a>
 </div>
 <div style="display:flex;gap:9px;margin-top:14px">
-<div style="flex:1.4;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">BODYWEIGHT</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ wNow }}<span style="font-size:15px;color:#8f9ab0"> {{ wUnit }}</span></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4f8dff;margin-top:4px">{{ wDelta }}</div></div>
+<div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">BODYWEIGHT</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ wNow }}<span style="font-size:15px;color:#8f9ab0"> {{ wUnit }}</span></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4f8dff;margin-top:4px">{{ wDelta }}</div></div>
+</div>
+<div style="display:flex;gap:9px;margin-top:9px">
+<div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">SHOULDER : WAIST</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ swr }}</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:{{ swrFg }};margin-top:4px">{{ swrSub }}</div></div>
 <div style="flex:1;background:#1e232a;border:1px solid #2b3039;padding:13px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0">WAIST : HIP</div><div style="font:700 34px/1 'Saira Condensed',sans-serif;color:#eef0f4;margin-top:4px">{{ whr }}</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:4px">LIVE FROM TAPE</div></div>
 </div>
 <div style="display:{{ bfShow }};margin-top:9px;background:#1e232a;border:1px solid #2b3039;border-left:3px solid #ffc233;padding:13px">
@@ -1699,6 +1702,11 @@ class Component extends DCLogic {
       wNow: w ? f1(cv('kg', w.cur)) : '—', wUnit: ul('kg'),
       wDelta: w ? (wd < 0 ? '−' : '+') + f1(Math.abs(wd)) + ' ' + ul('kg') + ' SINCE DAY 1' : '',
       whr: wa && hp ? (wa.cur / hp.cur).toFixed(2) : '—',
+      // shoulder : waist ("V-taper"); ~1.6 is the classic target, higher = wider shoulders for the waist
+      ...(() => { const sh = get('shoulders'); if (!sh || !wa || !wa.cur || !wa.start) return { swr: '—', swrSub: 'ADD SHOULDERS + WAIST', swrFg: '#8f9ab0' };
+        const now = sh.cur / wa.cur, d = now - sh.start / wa.start;
+        return { swr: now.toFixed(2), swrFg: d > 0.004 ? '#4f8dff' : d < -0.004 ? '#ffc233' : '#8f9ab0',
+          swrSub: (Math.abs(d) < 0.005 ? '±0' : (d > 0 ? '+' : '−') + Math.abs(d).toFixed(2)) + ' SINCE DAY 1 · GOAL ≈ 1.6' }; })(),
       bfShow: bfMain != null ? 'block' : 'none', bfHipsNote: male ? '' : ', HIPS',
       bfEst: bfMain != null ? bfMain.toFixed(1) : '—',
       bfHow: bfNow != null ? 'US NAVY TAPE METHOD · NECK, WAIST' + (male ? '' : ', HIPS') + ', HEIGHT' : 'FROM BMI · ADD NECK + WAIST FOR A BETTER ESTIMATE',

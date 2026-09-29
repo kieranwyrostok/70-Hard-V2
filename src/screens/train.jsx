@@ -75,6 +75,14 @@ const kgToLb = kg => kg * 2.20462;
 function wDisp(st, kg) { if (kg == null) return ''; return String(st.imperial ? r1(kgToLb(kg)) : r2(kg)); }
 function wParse(st, v) { const n = num(v); if (n == null) return null; return r2(st.imperial ? n / 2.20462 : n); }
 const wUnit = st => st.imperial ? 'lb' : 'kg';
+// A number box you can type decimals into: while you're typing it shows exactly what you typed ("22.", "0.") and saves
+// the number as it goes; when you leave it, it shows the saved value again. onText gets the raw text (commas → dots).
+function DecInput({ value, onText, ...rest }) {
+  const [txt, setTxt] = useState(null);
+  return <input {...rest} inputMode="decimal" value={txt != null ? txt : value}
+    onFocus={() => setTxt(value == null ? '' : String(value))} onBlur={() => setTxt(null)}
+    onChange={ev => { const t = ev.target.value.replace(',', '.'); setTxt(t); onText(t); }} />;
+}
 function setText(st, type, s) {
   if (!s) return '';
   if (type === 'wr') return (s.w != null ? wDisp(st, s.w) + ' ' + wUnit(st) : '—') + ' × ' + (s.r != null ? s.r : '—');
@@ -631,8 +639,8 @@ function WorkoutEditor({ app, st, aw, upd, onMin, onCancel, onFinish }) {
                   { label: 'Delete set', danger: true, run: () => updEx(e.uid, x => ({ ...x, sets: x.sets.filter((_, j) => j !== i) })) }] })}
                   style={{ background: rowBg, textAlign: 'center', padding: '9px 0', cursor: 'pointer', font: `700 14px/1 ${F.mono}`, color: kindCol }}>{s.kind && s.kind !== 'n' ? s.kind.toUpperCase() : numIdx}</div>
                 <div role="button" onClick={() => prev && updSet(e.uid, i, x => ({ ...x, w: prev.w, r: prev.r, t: prev.t, d: prev.d }))} style={{ background: rowBg, padding: '9px 0', ...T.mono, fontSize: 11, letterSpacing: '.02em', color: C.faint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: prev ? 'pointer' : 'default' }}>{prev ? setText(st, ex.type, prev) : '—'}</div>
-                {ex.type === 'wr' || ex.type === 'dt' ? <input inputMode="decimal" style={inStyle} value={ex.type === 'wr' ? wDisp(st, s.w) : (s.d == null ? '' : s.d)} placeholder={ex.type === 'wr' ? wDisp(st, ph.w) : (ph.d != null ? String(r2(ph.d)) : '')}
-                  onChange={ev => { const v = ev.target.value; updSet(e.uid, i, x => ex.type === 'wr' ? { ...x, w: v === '' ? null : wParse(st, v) } : { ...x, d: num(v) }); }} /> : null}
+                {ex.type === 'wr' || ex.type === 'dt' ? <DecInput style={inStyle} value={ex.type === 'wr' ? wDisp(st, s.w) : (s.d == null ? '' : s.d)} placeholder={ex.type === 'wr' ? wDisp(st, ph.w) : (ph.d != null ? String(r2(ph.d)) : '')}
+                  onText={v => updSet(e.uid, i, x => ex.type === 'wr' ? { ...x, w: v === '' ? null : wParse(st, v) } : { ...x, d: num(v) })} /> : null}
                 {ex.type === 'wr' || ex.type === 'r' ? <input inputMode="numeric" style={inStyle} value={s.r == null ? '' : s.r} placeholder={ph.r != null ? String(ph.r) : ''} onChange={ev => { const v = ev.target.value; updSet(e.uid, i, x => ({ ...x, r: v === '' ? null : Math.max(0, Math.round(num(v) || 0)) })); }} /> : null}
                 {ex.type === 'd' || ex.type === 'dt' ? <input inputMode="numbers-and-punctuation" style={inStyle} value={s.tRaw != null ? s.tRaw : s.t == null ? '' : fmtDur(s.t)} placeholder={ph.t != null ? fmtDur(ph.t) : 'm:ss'}
                   onChange={ev => { const v = ev.target.value; updSet(e.uid, i, x => ({ ...x, tRaw: v, t: parseTime(v) })); }} onBlur={() => updSet(e.uid, i, x => ({ ...x, tRaw: undefined }))} /> : null}
@@ -766,8 +774,8 @@ function TemplateEditor({ app, st, draft, setDraft, onClose }) {
                   { label: 'Normal set', run: () => setSet(e.k, j, { kind: 'n' }) }, { label: 'Warm-up set (W)', run: () => setSet(e.k, j, { kind: 'w' }) },
                   { label: 'Drop set (D)', run: () => setSet(e.k, j, { kind: 'd' }) }, { label: 'Failure set (F)', run: () => setSet(e.k, j, { kind: 'f' }) }] })}
                   style={{ textAlign: 'center', padding: '9px 0', cursor: 'pointer', font: `700 14px/1 ${F.mono}`, color: kindCol(z.kind), background: '#20252c', borderRadius: 8 }}>{z.kind && z.kind !== 'n' ? z.kind.toUpperCase() : numIdx}</div>
-                {ex.type === 'wr' ? <input inputMode="decimal" placeholder="—" value={wDisp(st, z.w)} onChange={ev => setSet(e.k, j, { w: ev.target.value === '' ? null : wParse(st, ev.target.value) })} style={cell} /> : null}
-                {ex.type === 'dt' ? <input inputMode="decimal" placeholder="—" value={z.d == null ? '' : z.d} onChange={ev => setSet(e.k, j, { d: num(ev.target.value) })} style={cell} /> : null}
+                {ex.type === 'wr' ? <DecInput placeholder="—" value={wDisp(st, z.w)} onText={v => setSet(e.k, j, { w: v === '' ? null : wParse(st, v) })} style={cell} /> : null}
+                {ex.type === 'dt' ? <DecInput placeholder="—" value={z.d == null ? '' : z.d} onText={v => setSet(e.k, j, { d: num(v) })} style={cell} /> : null}
                 {ex.type === 'wr' || ex.type === 'r' ? <input inputMode="numeric" placeholder="—" value={z.r == null ? '' : z.r} onChange={ev => setSet(e.k, j, { r: ev.target.value === '' ? null : Math.max(0, Math.round(num(ev.target.value) || 0)) })} style={cell} /> : null}
                 {ex.type === 'd' || ex.type === 'dt' ? <input inputMode="numbers-and-punctuation" placeholder="m:ss" value={z.tRaw != null ? z.tRaw : z.t == null ? '' : fmtDur(z.t)} onChange={ev => setSet(e.k, j, { tRaw: ev.target.value, t: parseTime(ev.target.value) })} onBlur={() => setSet(e.k, j, { tRaw: undefined })} style={cell} /> : null}
                 <span role="button" onClick={() => setEx(e.k, x => ({ ...x, sets: x.sets.length > 1 ? x.sets.filter((_, q) => q !== j) : x.sets }))} style={{ ...T.mono, fontSize: 14, color: e.sets.length > 1 ? C.faint : C.line2, textAlign: 'center', padding: '8px 0', cursor: 'pointer' }}>✕</span>

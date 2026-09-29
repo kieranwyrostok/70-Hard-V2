@@ -105,6 +105,8 @@ from you (up-down) or turns it (sideways), finishes the turn in the flick's dire
 `weightSeries(st)` (day 1 = meas `start` if not logged; lb when `st.imperial`),
 Body tape body-fat card (index.html renderVals `bf*`): US Navy tape formula (neck, waist, +hips for F; height from setup),
 Deurenberg BMI formula as second opinion; lean/fat mass; `bfLog` saves it into the 'bf' measurement for today.
+Body tape tiles: Bodyweight (full row), then Shoulder : Waist (`swr*`, vs day 1, goal ≈ 1.6) and Waist : Hip.
+Workout weight/distance boxes use train.jsx `DecInput` (keeps typed text like "22." while editing; comma → dot).
 `SleepWidget` (state `sleepLog[date] = {bed, wake, q}`, minutes after midnight; shown in DayDetail, weekly report, tips).
 **Custom colours:** localStorage `sh.colors` = {core, secondary, accent}, set in Habits & reminders → App colours
 (`CustomizeWidget`). `window.__SH_PALETTE()` (head script in index.html) returns a hex swap map for the current page;
