@@ -142,7 +142,7 @@ Gym-bro personality lives in netlify/functions/coach.mjs `systemPrompt` and tips
 **Personal injury entry**: `INJ_LIB` 'my-shoulders' (`mine: true`, `detail` cards) holds Kieran's MRI findings — no names,
 dates of birth or clinic details, because public/ files are downloadable from the site.
 **Fuel meals** fold up: tap the meal name to show/hide items; a section opens itself when food is added.
-Tap a meal's "520 / 650 KCAL ✎" line to type a new total (`setMealTotal`, fuel.jsx): items are scaled together
+A meal's ••• menu → "Edit <meal> calories" types a new total (`setMealTotal`, fuel.jsx): items are scaled together
 (amount, g, kcal, macros); an empty meal gets one 'Quick calories' quick-add entry.
 **Lift data check (train.jsx `findOddSets`):** flags sessions/sets that look ~2.2×, ~0.45×, ~10× or ~0.1× your usual
 (unit or decimal mistakes); whole-session fixes only scale sets that land in a believable range (warm-ups stay).

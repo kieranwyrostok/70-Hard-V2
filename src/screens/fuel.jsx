@@ -129,7 +129,7 @@ function FuelScreen({ app, st }) {
 
       <div style={{ padding: '14px 22px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {SLOTS.map(([slot, label, share]) => {
-          // tap the "520 / 650 KCAL" line to type a new total for the whole meal: every item is scaled to fit (portion +
+          // ••• → "Edit <meal> calories" types a new total for the whole meal: every item is scaled to fit (portion +
           // calories + macros together); an empty meal gets one quick-add entry with those calories
           const setMealTotal = v => {
             v = Math.max(0, Math.round(v)); const cur = day.meals.filter(m => slotKey(m) === slot), have = sumN(cur).kcal;
@@ -154,10 +154,10 @@ function FuelScreen({ app, st }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, font: `700 18px/1.1 ${F.head}`, letterSpacing: '.08em', textTransform: 'uppercase' }}>{label}
                   {items.length ? <span style={{ ...T.mono, fontSize: 10, color: C.mute, letterSpacing: '.08em', display: 'inline-flex', alignItems: 'center', gap: 5 }}>{items.length} {items.length === 1 ? 'ITEM' : 'ITEMS'}
                     <span style={{ display: 'inline-block', fontSize: 12, color: C.amber, transition: 'transform .3s cubic-bezier(.2,.9,.25,1)', transform: isOpen ? 'rotate(180deg)' : 'none' }}>▾</span></span> : null}</div>
-                <span role="button" aria-label={'Edit ' + label + ' calories'} onClick={e => { e.stopPropagation(); setTotEdit(ck); setTotTxt(String(Math.round(t.kcal) || '')); }}
-                  style={{ ...T.label, display: 'inline-block', marginTop: 4, padding: '4px 0', color: t.kcal > goal * 1.15 ? C.red : C.mute, borderBottom: '1px dotted ' + C.line2, cursor: 'pointer' }}>{Math.round(t.kcal)} / {goal} KCAL ✎{items.length ? ' · P ' + r1(t.p) + ' C ' + r1(t.c) + ' F ' + r1(t.f) : ''}</span>
+                <div style={{ ...T.label, marginTop: 4, color: t.kcal > goal * 1.15 ? C.red : C.mute }}>{Math.round(t.kcal)} / {goal} KCAL{items.length ? ' · P ' + r1(t.p) + ' C ' + r1(t.c) + ' F ' + r1(t.f) : ''}</div>
               </div>
               <span role="button" onClick={() => setMenu({ title: label, actions: [
+                { label: items.length ? 'Edit ' + label.toLowerCase() + ' calories (' + Math.round(t.kcal) + ' kcal)' : 'Set ' + label.toLowerCase() + ' calories', run: () => { setTotEdit(ck); setTotTxt(String(Math.round(t.kcal) || '')); } },
                 { label: 'Copy ' + label.toLowerCase() + ' from the day before', run: () => { const prev = ((addDaysIso(date, -1) === st.curDate ? { meals: st.meals } : (st.diary || {})[addDaysIso(date, -1)]) || { meals: [] }).meals.filter(m => slotKey(m) === slot);
                   if (!prev.length) { flash('NOTHING LOGGED THERE THE DAY BEFORE'); return; } addEntries(prev.map(m => ({ ...m, id: 'm' + uid(), time: SH.nowHM() })), 'COPIED ' + prev.length + ' ITEMS'); } },
                 items.length ? { label: 'Save as a meal (one-tap next time)', run: () => { const name = prompt('Name this meal', 'My ' + label.toLowerCase()); if (!name) return;
