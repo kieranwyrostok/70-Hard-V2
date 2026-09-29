@@ -743,6 +743,119 @@ function SleepWidget({ app, st }) {
 }
 window.SleepWidget = SleepWidget;
 
+// ── Bodyweight: Today card (log it + mini trend) and the full graph on the Record/stats page ──
+// Uses the same data as the Body tape screen: st.measLog.weight {challengeDay: kg} and the 'weight' entry in st.meas
+// (its `start` counts as day 1 when day 1 wasn't logged). Shown in lb when st.imperial is on; always saved in kg.
+const BW_LB = 2.20462;
+function weightSeries(st) {
+  const m = (st.meas || []).find(x => x.k === 'weight'); if (!m) return [];
+  const lg = ((st.measLog || {}).weight) || {};
+  const out = Object.keys(lg).map(Number).filter(n => n >= 1 && lg[n] > 0).sort((a, b) => a - b).map(n => ({ n, kg: lg[n] }));
+  if (!lg[1] && m.start > 0) out.unshift({ n: 1, kg: m.start });
+  const base = st.startDate || st.curDate;
+  return out.map(p => ({ ...p, iso: addDaysIso(base, p.n - 1) }));
+}
+const bwUnit = st => st.imperial ? 'lb' : 'kg';
+const bwOut = (st, kg) => st.imperial ? kg * BW_LB : kg;
+const bwText = (st, kg) => r1(bwOut(st, kg)).toFixed(1);
+const bwDiff = (st, kg) => { const v = r1(bwOut(st, kg)); return Math.abs(v) < 0.05 ? '±0' : (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1); };
+// logs the weight for the current challenge day and keeps Body tape's "current" in step
+function saveWeight(app, kg) {
+  const n = app.dayNum(); kg = Math.round(kg * 10) / 10;
+  app.setState(s => ({ meas: (s.meas || []).map(m => m.k === 'weight' ? { ...m, cur: kg } : m),
+    measLog: { ...(s.measLog || {}), weight: { ...((s.measLog || {}).weight || {}), [n]: kg } } }));
+}
+function weightStats(st, pts) {
+  if (!pts.length) return null;
+  const first = pts[0], last = pts[pts.length - 1], kgs = pts.map(p => p.kg);
+  const week = pts.filter(p => p.n > last.n - 7), avg7 = week.reduce((a, p) => a + p.kg, 0) / week.length;
+  let rate = null;   // kg per week, from a straight-line fit (needs a week or more of data)
+  if (pts.length >= 3 && last.n - first.n >= 7) {
+    const mx = pts.reduce((a, p) => a + p.n, 0) / pts.length, my = kgs.reduce((a, v) => a + v, 0) / pts.length;
+    const sxy = pts.reduce((a, p) => a + (p.n - mx) * (p.kg - my), 0), sxx = pts.reduce((a, p) => a + (p.n - mx) ** 2, 0);
+    if (sxx) rate = sxy / sxx * 7;
+  }
+  return { first, last, lo: Math.min(...kgs), avg7, rate };
+}
+
+function WeightWidget({ app, st }) {
+  const [edit, setEdit] = useState(false), [val, setVal] = useState(''), [graph, setGraph] = useState(false);
+  if (!app || !st || !(st.meas || []).some(m => m.k === 'weight')) return null;
+  const pts = weightSeries(st), n = app.dayNum(), today = pts.find(p => p.n === n), prev = pts.filter(p => p.n < n).pop(), first = pts[0];
+  const card = { background: C.card, border: '1px solid ' + C.line, borderRadius: 14, padding: 12 };
+  const open = () => { const last = today || prev; setVal(last ? bwText(st, last.kg) : ''); setEdit(true); };
+  const save = () => { const v = parseFloat(String(val).replace(',', '.')); if (!(v > 0)) return; saveWeight(app, st.imperial ? v / BW_LB : v); setEdit(false); vib(10); };
+  const head = <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+    <span style={{ ...T.label, color: C.blue }}>⚖️ WEIGHT · DAY {n}</span>
+    <span role="button" onClick={e => { e.stopPropagation(); setGraph(true); }} style={{ ...T.label, color: C.blue, padding: '6px 0 6px 12px', margin: '-6px 0', cursor: 'pointer' }}>GRAPH ›</span></div>;
+  return <>
+    {edit ? <div style={card}>
+      {head}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10 }}>
+        <input value={val} onChange={e => setVal(e.target.value)} inputMode="decimal" autoFocus placeholder={st.imperial ? 'e.g. 180.4' : 'e.g. 81.8'} aria-label={'Weight in ' + bwUnit(st)}
+          onKeyDown={e => { if (e.key === 'Enter') save(); }}
+          style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', background: C.bg, border: '1px solid ' + C.line2, borderRadius: 10, color: C.text, font: `700 22px/1.2 ${F.head}`, padding: '8px 12px', outline: 'none' }} />
+        <span style={{ ...T.mono, color: C.dim }}>{bwUnit(st).toUpperCase()}</span>
+      </div>
+      <div style={{ ...T.label, marginTop: 6 }}>MORNING, AFTER THE BATHROOM, BEFORE FOOD</div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+        <Btn kind="ghost" tone={C.dim} onClick={() => setEdit(false)} style={{ flex: 1, minHeight: 42 }}>CANCEL</Btn>
+        <Btn tone={C.blue} ink={C.blueInk} disabled={!(parseFloat(String(val).replace(',', '.')) > 0)} onClick={save} style={{ flex: 2, minHeight: 42, fontSize: 15 }}>Save weight</Btn>
+      </div>
+    </div> : <div style={card} role="button" onClick={open}>
+      {head}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginTop: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {today ? <div style={{ font: `700 26px/1 ${F.head}` }}>{bwText(st, today.kg)} <span style={{ fontSize: 14, color: C.dim }}>{bwUnit(st).toUpperCase()}</span></div>
+            : <div style={{ font: `600 16px/1.25 ${F.body}`, color: C.text }}>Log this morning’s weight</div>}
+          <div style={{ ...T.label, marginTop: 5 }}>{today
+            ? (first && first.n !== n ? bwDiff(st, today.kg - first.kg) + ' ' + bwUnit(st).toUpperCase() + ' SINCE DAY 1' : 'STARTING WEIGHT') + (prev ? ' · ' + bwDiff(st, today.kg - prev.kg) + ' VS DAY ' + prev.n : '')
+            : prev ? 'LAST: ' + bwText(st, prev.kg) + ' ' + bwUnit(st).toUpperCase() + ' ON DAY ' + prev.n + ' · TAP TO LOG' : 'TAP TO LOG'}</div>
+        </div>
+        <Sparkline values={pts.slice(-14).map(p => bwOut(st, p.kg))} tone={C.blue} w={104} h={40} />
+      </div>
+    </div>}
+    {graph ? <Sheet z={65} title="Bodyweight" sub={'IN ' + bwUnit(st).toUpperCase()} left={<TopLink onClick={() => setGraph(false)}>‹ BACK</TopLink>}>
+      <div style={{ padding: '14px 18px 30px' }}><WeightStats app={app} st={st} /></div>
+    </Sheet> : null}
+  </>;
+}
+window.WeightWidget = WeightWidget;
+
+function WeightStats({ app, st }) {
+  const [range, setRange] = useState('all');
+  if (!app || !st) return null;
+  const all = weightSeries(st), last = all[all.length - 1];
+  const pts = range === 'all' || !last ? all : all.filter(p => p.n > last.n - (range === '2w' ? 14 : 28));
+  const S = weightStats(st, pts), u = bwUnit(st).toUpperCase();
+  const tile = (l, v, sub, tone) => <div style={{ flex: 1, minWidth: 0, background: C.card, border: '1px solid ' + C.line, borderRadius: 12, padding: '10px 11px' }}>
+    <div style={{ ...T.label, color: tone || C.mute }}>{l}</div><div style={{ font: `700 20px/1.1 ${F.head}`, marginTop: 4, color: C.text }}>{v}</div>{sub ? <div style={{ ...T.label, marginTop: 3 }}>{sub}</div> : null}</div>;
+  return <div>
+    <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+      {[['2w', '2 WEEKS'], ['4w', '4 WEEKS'], ['all', 'ALL']].map(([k, l]) => <span key={k} role="button" aria-pressed={range === k} onClick={() => setRange(k)}
+        style={{ flex: 1, minHeight: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, cursor: 'pointer', ...T.mono, fontSize: 11,
+          background: range === k ? C.blue : 'transparent', color: range === k ? C.blueInk : C.dim, border: '1px solid ' + (range === k ? C.blue : C.line2) }}>{l}</span>)}
+    </div>
+    <div style={{ background: C.card, border: '1px solid ' + C.line, borderRadius: 14, padding: 12 }}>
+      <LineChart points={pts.map(p => ({ x: p.iso, y: r1(bwOut(st, p.kg)) }))} tone={C.blue} fmt={v => r1(v).toFixed(1)} height={180} />
+    </div>
+    {S ? <>
+      <div style={{ display: 'flex', gap: 7, marginTop: 10 }}>
+        {tile('START', bwText(st, S.first.kg), 'DAY ' + S.first.n)}
+        {tile('NOW', bwText(st, S.last.kg), 'DAY ' + S.last.n, C.blue)}
+        {tile('CHANGE', bwDiff(st, S.last.kg - S.first.kg), u)}
+      </div>
+      <div style={{ display: 'flex', gap: 7, marginTop: 7 }}>
+        {tile('7-DAY AVG', bwText(st, S.avg7), u)}
+        {tile('PER WEEK', S.rate == null ? '—' : bwDiff(st, S.rate), S.rate == null ? 'NEEDS 1 WEEK' : u + ' TREND')}
+        {tile('LOWEST', bwText(st, S.lo), u)}
+      </div>
+    </> : null}
+    <div style={{ ...T.label, marginTop: 10, color: C.faint }}>LOG IT ON TODAY (⚖️ WEIGHT) OR BODY TAPE · SAME NUMBERS BOTH PLACES</div>
+  </div>;
+}
+window.WeightStats = WeightStats;
+
 
 // ── App colours: pick the core, secondary and accent colours (Habits & reminders) ──
 const COLOR_PRESETS = [

@@ -100,6 +100,9 @@ Env vars live in Netlify only: ANTHROPIC_API_KEY, USDA_API_KEY, COACH_CODE, ANTH
 tilted axis via glass.mjs `ropeA/B/C` keyframes, 3 stacked slices for thickness, rope shading via `shade()`, moving light strands
 (`ropeFlow`, masked to the lit arc); drag/flick tumbles the whole set toward/away
 from you (up-down) or turns it (sideways), finishes the turn in the flick's direction; flies in from depth on opening Today),
+`WeightWidget` (Today card: log today's weight → `measLog.weight[day]` + meas `cur`, sparkline, GRAPH sheet) and
+`WeightStats` (Record/stats page: LineChart 2W/4W/ALL, start/now/change/7-day avg/weekly trend/lowest), both via
+`weightSeries(st)` (day 1 = meas `start` if not logged; lb when `st.imperial`),
 `SleepWidget` (state `sleepLog[date] = {bed, wake, q}`, minutes after midnight; shown in DayDetail, weekly report, tips).
 **Custom colours:** localStorage `sh.colors` = {core, secondary, accent}, set in Habits & reminders → App colours
 (`CustomizeWidget`). `window.__SH_PALETTE()` (head script in index.html) returns a hex swap map for the current page;
