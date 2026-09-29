@@ -86,6 +86,7 @@ html,body{height:100%;margin:0;overflow:hidden;color:#eef0f4;font-family:Barlow,
 a{color:#4f8dff;text-decoration:none}
 ::-webkit-scrollbar{width:0;height:0}
 input,textarea{font-size:16px!important}
+input.num-big{font-size:24px!important}
 .screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0}
 html[data-screen="s01"] #s01{display:block}html[data-screen="s02"] #s02{display:block}html[data-screen="s03"] #s03{display:block}html[data-screen="s04"] #s04{display:block}html[data-screen="s05"] #s05{display:block}html[data-screen="s06"] #s06{display:block}html[data-screen="s07"] #s07{display:block}html[data-screen="s08"] #s08{display:block}html[data-screen="s09"] #s09{display:block}html[data-screen="s10"] #s10{display:block}html[data-screen="s11"] #s11{display:block}html[data-screen="s12"] #s12{display:block}
 .app-frame{height:100%}
@@ -765,7 +766,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="display:{{ m.editVis }};background:#171a20;border:1px solid #4f8dff;border-top:none;padding:14px">
 
-<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TODAY · DAY {{ dayNum }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ m.dec }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;text-align:center;padding:12px 0;font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ m.cur }}</div><div sc-camel-on-click="{{ m.inc }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div>
+<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TODAY · DAY {{ dayNum }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ m.dec }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><input value="{{ m.curText }}" sc-camel-on-change="{{ m.typeCur }}" sc-camel-on-blur="{{ m.endType }}" class="num-big" inputmode="decimal" enterkeyhint="done" aria-label="Type a value" style="flex:1;min-width:0;width:100%;box-sizing:border-box;text-align:center;padding:12px 0;background:transparent;border:0;outline:none;font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums"><div sc-camel-on-click="{{ m.inc }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div>
 <div style="display:flex;align-items:flex-end;gap:6px;height:56px;margin-top:14px">
 <sc-for list="{{ m.trend }}" as="t" hint-placeholder-count="5"><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:5px"><div style="background:{{ t.tone }};height:{{ t.h }}"></div><div style="font:500 9px/1 'IBM Plex Mono',monospace;color:#8f9ab0;text-align:center">{{ t.day }}</div></div></sc-for>
 </div>
@@ -778,7 +779,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">NAME</div><input value="{{ m.rawName }}" sc-camel-on-change="{{ m.rename }}" placeholder="e.g. Forearm" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;font-weight:600">
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">WHERE TO MEASURE</div><input value="{{ m.where }}" sc-camel-on-change="{{ m.setWhere }}" placeholder="e.g. 2 cm above navel, exhale" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none"></div>
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">NOTES</div><textarea value="{{ m.note }}" sc-camel-on-change="{{ m.setNote }}" placeholder="Goal, context, anything worth remembering" rows="3" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:500 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;resize:none;display:block"></textarea></div>
-<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">DAY 1 BASELINE · {{ m.unit }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px"><div sc-camel-on-click="{{ m.decStart }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;display:flex;align-items:center;justify-content:center;font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4">{{ m.start }}</div><div sc-camel-on-click="{{ m.incStart }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
+<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">DAY 1 BASELINE · {{ m.unit }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px"><div sc-camel-on-click="{{ m.decStart }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><input value="{{ m.startText }}" sc-camel-on-change="{{ m.typeStart }}" sc-camel-on-blur="{{ m.endType }}" class="num-big" inputmode="decimal" enterkeyhint="done" aria-label="Type a value" style="flex:1;min-width:0;width:100%;box-sizing:border-box;text-align:center;padding:12px 0;background:transparent;border:0;outline:none;font:700 24px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums"><div sc-camel-on-click="{{ m.incStart }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 <div style="display:flex;gap:7px;margin-top:14px">
 <div sc-camel-on-click="{{ m.remove }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#ff5a5f;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE SITE</div>
 <div sc-camel-on-click="{{ m.pickInfo }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#4f8dff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
@@ -1003,7 +1004,7 @@ const weekdayIdx = iso => (new Date((iso || todayIso()) + 'T12:00:00').getDay() 
 const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const WDAY = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
 const fmtDate = iso => { const d = new Date(iso + 'T12:00:00'); return pad2(d.getDate()) + ' ' + MON[d.getMonth()]; };
-const TRANSIENT = { cf: null, scanHit: null, pushMsg: '', regDraft: null, lastBatch: null, ruleEdit: null, sel: null, infoKey: null, mealSel: null, habSel: null, measSel: null, measInfo: null, editing: false, dayEdit: false, editTargets: false, lastAdd: null, foodQ: '', noteEditing: false, ruleOpen: null };
+const TRANSIENT = { cf: null, scanHit: null, pushMsg: '', regDraft: null, lastBatch: null, ruleEdit: null, sel: null, infoKey: null, mealSel: null, habSel: null, measSel: null, measInfo: null, measDraft: null, editing: false, dayEdit: false, editTargets: false, lastAdd: null, foodQ: '', noteEditing: false, ruleOpen: null };
 const freshDay = () => ({
   done: {},
   doneAt: {}, waterMl: 0, meals: [], sets: {}, dayNote: '',
@@ -1619,6 +1620,17 @@ class Component extends DCLogic {
       const nv = meas.find(m => m.k === k).cur;
       return { meas, measLog: { ...st.measLog, [k]: { ...(st.measLog[k] || {}), [dayNum]: nv } } };
     });
+    // typing a value (TODAY / DAY 1 boxes): shown as typed while editing, saved in kg/cm as soon as it's a number
+    const setTyped = (k, f) => e => { const txt = e.target.value, v = parseFloat(String(txt).replace(',', '.'));
+      this.setState(st => {
+        const out = { measDraft: { k, f, v: txt } }, m = st.meas.find(o => o.k === k);
+        if (!m || !(v >= 0) || !isFinite(v)) return out;
+        const raw = m.u === 'cm' && imp ? v * 2.54 : m.u === 'kg' && imp ? v / 2.20462 : v, val = imp ? Math.round(raw * 100) / 100 : Math.round(raw * 10) / 10;
+        out.meas = st.meas.map(o => o.k === k ? { ...o, [f]: val } : o);
+        if (f === 'cur') out.measLog = { ...st.measLog, [k]: { ...(st.measLog[k] || {}), [dayNum]: val } };
+        return out;
+      }); };
+    const drafted = (k, f, shown) => s.measDraft && s.measDraft.k === k && s.measDraft.f === f ? s.measDraft.v : shown;
     const WHERE = { weight: 'Morning, after bathroom, before food', bf: 'Scale or 7-site calipers', neck: 'Below the larynx', shoulders: 'Widest point, arms relaxed', chest: 'Nipple line, after exhale', waist: 'Navel line, relaxed', hips: 'Widest point of glutes', armL: 'Mid-bicep, flexed', armR: 'Mid-bicep, flexed', thighL: 'Midpoint hip to knee', thighR: 'Midpoint hip to knee', calf: 'Widest point, standing' };
     const measRows = s.meas.map(m => {
       const infoOpen = s.measInfo === m.k, where = m.where != null ? m.where : (WHERE[m.k] || '');
@@ -1630,15 +1642,18 @@ class Component extends DCLogic {
         delta: Math.abs(d) < 0.05 ? '±0' : (d > 0 ? '+' : '−') + f1(Math.abs(d)),
         deltaFg: Math.abs(d) < 0.05 ? '#6b7382' : d < 0 ? '#4f8dff' : '#ffc233',
         border: open || infoOpen ? '#4f8dff' : '#2b3039', editVis: open ? 'block' : 'none', infoVis: infoOpen ? 'block' : 'none',
-        pick: () => this.setState(st => ({ measSel: st.measSel === m.k ? null : m.k, measInfo: null })),
-        pickInfo: () => this.setState(st => ({ measInfo: st.measInfo === m.k ? null : m.k, measSel: null })),
+        pick: () => this.setState(st => ({ measSel: st.measSel === m.k ? null : m.k, measInfo: null, measDraft: null })),
+        pickInfo: () => this.setState(st => ({ measInfo: st.measInfo === m.k ? null : m.k, measSel: null, measDraft: null })),
+        curText: drafted(m.k, 'cur', f1(cv(m.u, m.cur))), startText: drafted(m.k, 'start', f1(cv(m.u, m.start))),
+        typeCur: setTyped(m.k, 'cur'), typeStart: setTyped(m.k, 'start'),
+        endType: () => this.setState({ measDraft: null }),
         sub: ul(m.u) + (m.note ? ' · ' + m.note : where ? ' · ' + where : ' · TAP NAME TO ADD INFO'),
         where, note: m.note || '',
         setWhere: e => { const v = e.target.value; updM(m.k)(o => ({ ...o, where: v })); },
         setNote: e => { const v = e.target.value; updM(m.k)(o => ({ ...o, note: v })); },
-        decStart: () => updM(m.k)(o => ({ ...o, start: Math.max(0, Math.round((o.start - STEP[o.u]) * 10) / 10) })),
-        incStart: () => updM(m.k)(o => ({ ...o, start: Math.round((o.start + STEP[o.u]) * 10) / 10 })),
-        dec: () => bumpM(m.k, -1), inc: () => bumpM(m.k, 1),
+        decStart: () => { this.setState({ measDraft: null }); updM(m.k)(o => ({ ...o, start: Math.max(0, Math.round((o.start - STEP[o.u]) * 10) / 10) })); },
+        incStart: () => { this.setState({ measDraft: null }); updM(m.k)(o => ({ ...o, start: Math.round((o.start + STEP[o.u]) * 10) / 10 })); },
+        dec: () => { this.setState({ measDraft: null }); bumpM(m.k, -1); }, inc: () => { this.setState({ measDraft: null }); bumpM(m.k, 1); },
         customVis: m.custom ? 'block' : 'none', deleteVis: m.custom ? 'block' : 'none',
         rename: e => { const v = e.target.value; updM(m.k)(o => ({ ...o, name: v })); },
         remove: () => this.setState(st => ({ meas: st.meas.filter(o => o.k !== m.k), measSel: null, measInfo: null })),
