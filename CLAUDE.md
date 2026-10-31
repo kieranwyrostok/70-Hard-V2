@@ -1,6 +1,10 @@
-# Seventy Hard — notes for Claude Code
+# MyGrind (was Seventy Hard) — notes for Claude Code
 
-Installable PWA (iPhone home screen) for a 70-day habit challenge, hosted on Netlify. Owner: Kieran, a student
+Installable PWA (iPhone home screen) for open-ended daily habit tracking (was a 70-day challenge), hosted on Netlify.
+No end date and no 'Day missed' restart (s09 is unreachable; `verdict` is always cleared). Per-habit streaks (`habitStreak`/`STK`
+in renderVals; inactive days skipped, today counts once ticked); headline streak/best = max over habits. Habits are editable
+any time (Habits & reminders → Edit habits reuses `ruleSetup`). Board grid grows in rows of 7; Today bar = next milestone.
+Storage keys keep their old 'seventyhard' names on purpose. Logo source: src/static/icons/logo.svg (PNG sizes via rsvg-convert). Owner: Kieran, a student
 learning to edit this himself — explain changes plainly and keep them small and safe.
 
 ## Build / run
@@ -21,7 +25,7 @@ learning to edit this himself — explain changes plainly and keep them small an
   behind the clock / Dynamic Island (glass.mjs `body::before`, colours --sb1/--sb2 from the head script, darkened until
   white text has ≥4.5:1 contrast). Tested on Kieran's iPhone: 100dvh is already the full screen there, so don't
   add the status-bar height back (it pushes the tab bar off-screen). `--vgap` is kept at 0 as a hook.
-- Today header: date row, big gradient day number (var(--n1)) with a 70-day bar (`topDayPct`, `topToGo`), rules-open pill
+- Today header: date row, big gradient day number (var(--n1)) with a milestone bar (`topDayPct`, `topToGo`), rules-open pill
   (`topPillTone`), streak / best tiles.
 - Tab bars (one per screen, 10 copies) have an SVG line icon above each label (`.tabicon`); the active one glows.
   Section titles get a neon dash (glass.mjs `::after`); `#aurora` also holds twinkling specks (`<b>`).
