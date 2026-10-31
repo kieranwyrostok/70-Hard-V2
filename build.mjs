@@ -43,8 +43,8 @@ const LABEL = CTX === 'branch-deploy' ? 'DEV' : CTX === 'deploy-preview' ? 'PREV
 let page = fs.readFileSync(path.join(SRC, 'index.html'), 'utf8').replaceAll('__APP_VERSION__', (LABEL ? LABEL + ' · ' : '') + version);
 if (LABEL) {
   const nice = LABEL[0] + LABEL.slice(1).toLowerCase();
-  page = page.replace('<meta name="apple-mobile-web-app-title" content="70 Hard">', `<meta name="apple-mobile-web-app-title" content="70 Hard ${nice}">`)
-    .replace('<title>Seventy Hard</title>', `<title>Seventy Hard ${nice}</title>`)
+  page = page.replace('<meta name="apple-mobile-web-app-title" content="MyGrind">', `<meta name="apple-mobile-web-app-title" content="MyGrind ${nice}">`)
+    .replace('<title>MyGrind</title>', `<title>MyGrind ${nice}</title>`)
     .replace('</style>', `body::after{content:'${LABEL}';position:fixed;z-index:99;pointer-events:none;top:calc(env(safe-area-inset-top, 0px) + 4px);right:10px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#231800;background:#f4b544;padding:3px 6px;border-radius:6px}\n</style>`);
   const mf = path.join(OUT, 'manifest.webmanifest'), m = JSON.parse(fs.readFileSync(mf, 'utf8'));
   m.name += ' ' + nice; m.short_name += ' ' + nice;

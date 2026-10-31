@@ -26,7 +26,7 @@ function coachContext(app, st) {
   const t0 = tot(st.meals);
   return {
     now: niceDate(today) + ' ' + SH.nowHM(),
-    challenge: { day: dn, of: 70, start_date: st.startDate },
+    tracking: { day: dn, start_date: st.startDate, open_ended: true },
     profile: st.setup ? { name: st.setup.name, sex: st.setup.sex, age: st.setup.age, height_cm: st.setup.height, start_weight_kg: st.setup.weight, goal: st.setup.goal, units: st.imperial ? 'imperial' : 'metric' } : undefined,
     meal_sections: slotsOf(st).map(([id, name, sh]) => ({ id, name, kcal_goal: Math.round(st.targets.kcal * sh) })),
     targets: { kcal: st.targets.kcal, protein_g: st.targets.p, carbs_g: st.targets.c, fat_g: st.targets.f, water_ml: st.waterGoal },
@@ -298,7 +298,7 @@ function tipsContext(app, st) {
   const top = Object.entries(lifts).filter(([, L]) => L.recent).sort((a, b) => b[1].n - a[1].n).slice(0, 4)
     .map(([name, L]) => ({ exercise: name, best_e1rm_kg_last_4wk: r1(L.recent), best_e1rm_kg_prior_4wk: L.before ? r1(L.before) : null }));
   return {
-    day_of_challenge: app.dayNum ? app.dayNum() : undefined, today: niceDate(today),
+    day_number: app.dayNum ? app.dayNum() : undefined, today: niceDate(today),
     profile: st.setup ? { sex: st.setup.sex, age: st.setup.age, height_cm: st.setup.height, goal: st.setup.goal } : undefined,
     targets: { kcal: st.targets.kcal, protein_g: st.targets.p, carbs_g: st.targets.c, fat_g: st.targets.f, water_l: r1((st.waterGoal || 0) / 1000) },
     rules: (st.ruleDefs || []).filter(r => r.on).map(r => (app.hLabel ? app.hLabel(r).name : r.name) || r.name),
@@ -363,8 +363,8 @@ function DayDetail({ app, st, n, onClose, onNav }) {
     <div style={{ font: `700 21px/1.1 ${F.head}`, marginTop: 4 }}>{v}</div>{sub ? <div style={{ ...T.label, marginTop: 3 }}>{sub}</div> : null}</Card>;
   const section = t => <div style={{ ...T.h2, margin: '22px 0 8px' }}>{t}</div>;
   return <Sheet z={70} title={'Day ' + n} sub={niceDate(date).toUpperCase()} left={<TopLink onClick={onClose}>‹ BOARD</TopLink>}
-    right={<div style={{ display: 'flex' }}>{[[-1, '‹', n > 1], [1, '›', n < 70]].map(([d, l, ok]) => <span key={d} role="button" onClick={() => ok && onNav(n + d)} style={{ font: `600 22px/1 ${F.mono}`, color: ok ? C.blue : C.faint, padding: '6px 12px', cursor: 'pointer' }}>{l}</span>)}</div>}>
-    <div {...swipeNav(() => n < 70 && onNav(n + 1), () => n > 1 && onNav(n - 1))} style={{ padding: '14px 18px 30px', minHeight: '70vh', touchAction: 'pan-y' }}>
+    right={<div style={{ display: 'flex' }}>{[[-1, '‹', n > 1], [1, '›', n < (app.dayNum ? app.dayNum() : n)]].map(([d, l, ok]) => <span key={d} role="button" onClick={() => ok && onNav(n + d)} style={{ font: `600 22px/1 ${F.mono}`, color: ok ? C.blue : C.faint, padding: '6px 12px', cursor: 'pointer' }}>{l}</span>)}</div>}>
+    <div {...swipeNav(() => n < (app.dayNum ? app.dayNum() : n) && onNav(n + 1), () => n > 1 && onNav(n - 1))} style={{ padding: '14px 18px 30px', minHeight: '70vh', touchAction: 'pan-y' }}>
       <div style={{ ...T.mono, fontSize: 12, color: status[1] }}>{status[0]}</div>
       {ahead ? <Empty>THIS DAY HASN’T HAPPENED YET</Empty> : <>
         <div style={{ display: 'flex', gap: 7, marginTop: 12 }}>
@@ -558,7 +558,7 @@ function weekStats(app, st, s0) {
     const n = st.startDate ? Math.round((dOf(d) - dOf(st.startDate)) / 864e5) + 1 : null, h = n ? (st.history || {})[n] : null;
     return { d, n, h, diary, t: diary && diary.meals.length ? sumN(diary.meals) : null, water: diary ? diary.waterMl : h ? h.waterMl || 0 : 0 }; });
   const logged = days.filter(x => x.t), avg = k => logged.length ? logged.reduce((a, x) => a + x.t[k], 0) / logged.length : 0;
-  const ch = days.filter(x => x.n >= 1 && x.n <= 70 && x.d < st.curDate);
+  const ch = days.filter(x => x.n >= 1 && x.d < st.curDate);
   const cleared = ch.filter(x => x.h && (x.h.rules || []).every(k => (x.h.done || {})[k])).length;
   const missedNames = {}; ch.forEach(x => { if (!x.h) missedNames['No check-in'] = (missedNames['No check-in'] || 0) + 1; else (x.h.rules || []).filter(k => !(x.h.done || {})[k]).forEach(k => { const r = (st.ruleDefs || []).find(q => q.k === k); const nm = r ? ((app.hLabel ? app.hLabel(r).name : r.name) || r.name) : k; missedNames[nm] = (missedNames[nm] || 0) + 1; }); });
   const wlog = ((st.measLog || {}).weight) || {}, wIn = days.filter(x => x.n && wlog[x.n] != null).map(x => wlog[x.n]);
@@ -603,7 +603,7 @@ function WeeklyReport({ app, st, s0, onClose }) {
         {tile('WORKOUTS', R.ws.length, R.prevWs.length !== R.ws.length ? (R.ws.length > R.prevWs.length ? '▲ ' : '▼ ') + Math.abs(R.ws.length - R.prevWs.length) + ' VS WEEK BEFORE' : 'SAME AS WEEK BEFORE', C.olive)}
         {tile('PRS', R.prs.length, R.prs.length ? 'NEW BESTS' : 'NONE THIS WEEK', C.amber)}
       </div>
-      {R.chDays ? <>{h2('Challenge')}
+      {R.chDays ? <>{h2('Habits')}
         {row('Days fully cleared', R.cleared + ' of ' + R.chDays, R.cleared === R.chDays ? C.blue : C.text)}
         {R.missed.slice(0, 4).map(([nm, c]) => row('Missed: ' + nm, c + (c === 1 ? ' day' : ' days'), C.red))}</> : null}
       {h2('Training')}

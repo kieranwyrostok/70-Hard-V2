@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>Seventy Hard</title>
+<title>MyGrind</title>
 <meta name="theme-color" content="#15181d">
 <script>
 // Light/dark: index.html is the dark app, light.html the light one (same data). Pick the one that matches the setting.
@@ -74,7 +74,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="70 Hard">
+<meta name="apple-mobile-web-app-title" content="MyGrind">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -154,15 +154,15 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="flex:1;overflow:auto">
 <div style="display:{{ ob0 }};flex-direction:column;min-height:100%;box-sizing:border-box;padding:110px 26px 34px">
-<div style="align-self:flex-start;transform:rotate(-1.4deg);background:repeating-linear-gradient(45deg,#ffc233,#ffc233 7px,#e6a312 7px,#e6a312 14px);color:#231800;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;padding:8px 12px">70 DAYS · YOUR RULES · NO SHORTCUTS</div>
-<div style="font:800 76px/0.84 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4;margin-top:24px">Seventy<br>Hard</div>
-<div style="font:400 17px/1.5 Barlow,sans-serif;color:#9ca3b0;margin-top:16px;text-wrap:pretty">Pick your daily non-negotiables. Show up for seventy days. Every miss is marked, never hidden.</div>
+<div style="align-self:flex-start;transform:rotate(-1.4deg);background:repeating-linear-gradient(45deg,#ffc233,#ffc233 7px,#e6a312 7px,#e6a312 14px);color:#231800;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;padding:8px 12px">YOUR HABITS · EVERY DAY · NO SHORTCUTS</div>
+<div style="font:800 76px/0.84 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4;margin-top:24px">My<br>Grind</div>
+<div style="font:400 17px/1.5 Barlow,sans-serif;color:#9ca3b0;margin-top:16px;text-wrap:pretty">Pick your daily habits, track food and training, and keep each streak alive. Every miss is marked, never hidden.</div>
 <div style="flex:1;min-height:40px"></div>
 <div style="display:flex;flex-direction:column;gap:9px">
 <div sc-camel-on-click="{{ obStart }}" style="background:#eef0f4;color:#15181d;text-align:center;padding:17px;cursor:pointer;font:700 16px/1 'Saira Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase">Get started</div>
 </div>
 <label style="display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:8px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;text-decoration:none">HAVE A BACKUP? <span style="color:#4f8dff;margin-left:6px">RESTORE ›</span><input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
-<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#6b7382;text-align:center;margin-top:4px">SETUP TAKES ~2 MIN · SAVED ON THIS PHONE · EVERYTHING BUT THE RULES STAYS EDITABLE<br>APP VERSION __APP_VERSION__</div>
+<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#6b7382;text-align:center;margin-top:4px">SETUP TAKES ~2 MIN · SAVED ON THIS PHONE · EVERYTHING STAYS EDITABLE<br>APP VERSION __APP_VERSION__</div>
 </div>
 <div style="display:{{ ob1 }};flex-direction:column;padding:18px 22px 24px">
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Who's running it?</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Used for calorie and water estimates. Change any of it later in settings.</div>
@@ -204,7 +204,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">WATER PER DAY · {{ obWaterHint }}</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450;height:50px;background:#1a1e24"><div sc-camel-on-click="{{ obWaterDec }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;font:700 22px/1 'Saira Condensed',sans-serif;color:#eef0f4;font-variant-numeric:tabular-nums">{{ obWaterL }}</div><div sc-camel-on-click="{{ obWaterInc }}" style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 </div>
 <div style="display:{{ ob3 }};flex-direction:column;padding:18px 22px 24px">
-<div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Set your<br>non-negotiables</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Start from these basics. Tap any rule to rewrite it, add ideas below, or create your own. A miss turns that day red — no restart.</div>
+<div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Set your<br>non-negotiables</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Start from these basics. Tap any rule to rewrite it, add ideas below, or create your own. A miss only breaks that habit's streak. You can change these any time.</div>
 <div style="display:flex;flex-direction:column;gap:7px">
 <sc-for list="{{ ruleSetup }}" as="r" hint-placeholder-count="6">
 <div style="display:flex;flex-direction:column">
@@ -261,7 +261,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="display:{{ ob6 }};flex-direction:column;padding:18px 22px 24px">
 <div style="display:{{ obReviewVis }};flex-direction:column">
-<div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Review &amp;<br>lock in</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Tap any line to change it. Once you lock in, the rules are fixed until Day 70 — everything else stays editable.</div>
+<div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">Review &amp;<br>start</div><div style="font:400 15px/1.45 Barlow,sans-serif;color:#9ca3b0;margin:8px 0 20px;text-wrap:pretty">Tap any line to change it. You can change anything later in Habits &amp; reminders.</div>
 <div style="display:flex;flex-direction:column;gap:1px;background:#2b3039;border:1px solid #2b3039">
 <sc-for list="{{ obReview }}" as="r" hint-placeholder-count="5">
 <div sc-camel-on-click="{{ r.go }}" style="display:flex;align-items:center;gap:12px;background:#1e232a;padding:12px 14px;min-height:58px;box-sizing:border-box;cursor:pointer" style-hover="background:#20252c">
@@ -273,10 +273,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="display:{{ obDoneVis }};flex-direction:column;padding-top:40px">
 <div style="width:64px;height:64px;background:#4f8dff;display:flex;align-items:center;justify-content:center;font:800 34px/1 'Saira Condensed',sans-serif;color:#081631">✓</div>
-<div style="font:800 52px/0.9 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4;margin-top:22px">Locked in,<br>{{ obNameUp }}</div>
+<div style="font:800 52px/0.9 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4;margin-top:22px">Let's go,<br>{{ obNameUp }}</div>
 <div style="font:400 16px/1.5 Barlow,sans-serif;color:#9ca3b0;margin-top:12px;text-wrap:pretty">{{ obDoneText }}</div>
 <a href="#s02" style="margin-top:28px;background:#4f8dff;color:#081631;text-align:center;padding:17px;font:700 17px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;text-decoration:none">Open Today ›</a>
-<div sc-camel-on-click="{{ obRestart }}" style="margin-top:8px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:500 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0">RESTART CHALLENGE · RUN SETUP AGAIN</div>
+<div sc-camel-on-click="{{ obRestart }}" style="margin-top:8px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:500 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0">RESET EVERYTHING · RUN SETUP AGAIN</div>
 </div>
 </div>
 </div>
@@ -292,7 +292,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#d3d7df;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:12px">{{ dateLabel }}</div>
 <div style="display:flex;align-items:flex-start;justify-content:space-between">
 <div>
-<div style="display:flex;align-items:baseline;gap:10px;margin-top:2px"><span style="font:800 92px/0.8 'Saira Condensed',sans-serif;letter-spacing:-.01em;background:linear-gradient(135deg,#eef0f4 35%,var(--n1,#4f8dff) 125%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px color-mix(in srgb,var(--n1,#4f8dff) 40%,transparent))">{{ dayNum }}</span><span style="font:700 24px/1 'Saira Condensed',sans-serif;letter-spacing:.08em;color:#8f9ab0">/ 70</span></div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-top:2px"><span style="font:800 92px/0.8 'Saira Condensed',sans-serif;letter-spacing:-.01em;background:linear-gradient(135deg,#eef0f4 35%,var(--n1,#4f8dff) 125%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px color-mix(in srgb,var(--n1,#4f8dff) 40%,transparent))">{{ dayNum }}</span><span style="font:700 24px/1 'Saira Condensed',sans-serif;letter-spacing:.08em;color:#8f9ab0">DAY</span></div>
 <div style="width:150px;height:4px;border-radius:99px;background:#282d36;overflow:hidden;margin-top:12px"><div style="height:100%;width:{{ topDayPct }};border-radius:99px;background:linear-gradient(90deg,var(--n1,#4f8dff),var(--n3,#a8f25c));box-shadow:0 0 10px var(--n1,#4f8dff)"></div></div>
 <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-top:7px">{{ topToGo }}</div>
 </div>
@@ -337,7 +337,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="width:44px;flex:none;text-align:right;padding-top:17px;font:600 12px/1 'IBM Plex Mono',monospace;color:{{ h.timeTone }}">{{ h.time }}</div>
 <div style="width:14px;flex:none;display:flex;flex-direction:column;align-items:center"><div style="width:2px;height:15px;background:{{ h.lineTop }}"></div><div style="width:14px;height:14px;box-sizing:border-box;border-radius:99px;border:2px solid {{ h.tone }};background:{{ h.boxBg }};flex:none"></div><div style="width:2px;flex:1;background:{{ h.lineBottom }}"></div></div>
 <div style="flex:1;min-width:0;margin:4px 0;background:{{ h.bg }};border:1px solid {{ h.border }};border-radius:14px;padding:11px 13px;display:flex;flex-wrap:wrap;align-items:center;gap:0 10px">
-<div style="flex:1;min-width:0"><div style="font:600 15px/1.2 Barlow,system-ui,sans-serif;color:{{ h.textColor }};text-decoration:{{ h.deco }}">{{ h.name }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.spec }}</div></div>
+<div style="flex:1;min-width:0"><div style="font:600 15px/1.2 Barlow,system-ui,sans-serif;color:{{ h.textColor }};text-decoration:{{ h.deco }}">{{ h.name }}</div><div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.streakTxt }}{{ h.spec }}</div></div>
 <div style="display:{{ h.timedShow }};font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:{{ h.tAccent }};border:1px solid {{ h.tAccent }};border-radius:99px;padding:4px 7px;flex:none;font-variant-numeric:tabular-nums">{{ h.timedLabel }}</div>
 <div style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:{{ h.badgeFg }};background:{{ h.badgeBg }};border-radius:99px;padding:5px 8px;flex:none">{{ h.badge }}</div>
 <div sc-camel-on-click="{{ h.tPanel }}" style="display:{{ h.panelShow }};flex-basis:100%;cursor:default;margin-top:10px;padding-top:10px;border-top:1px solid #2b3039">
@@ -357,7 +357,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="padding:0 22px;display:grid;grid-template-columns:1fr 1fr;gap:7px">
 <sc-for list="{{ anyItems }}" as="h" hint-placeholder-count="2">
 <div sc-camel-on-click="{{ h.tap }}" style="grid-column:{{ h.span }};background:{{ h.bg }};border:1px solid {{ h.border }};border-radius:14px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:8px">
-<div style="display:flex;justify-content:space-between;align-items:center"><div style="width:22px;height:22px;box-sizing:border-box;border-radius:7px;border:2px solid {{ h.tone }};background:{{ h.boxBg }};color:#15181d;font:700 12px/18px 'IBM Plex Mono',monospace;text-align:center">{{ h.check }}</div><span style="font:600 9px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ h.tone }}">{{ h.group }}</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div style="width:22px;height:22px;box-sizing:border-box;border-radius:7px;border:2px solid {{ h.tone }};background:{{ h.boxBg }};color:#15181d;font:700 12px/18px 'IBM Plex Mono',monospace;text-align:center">{{ h.check }}</div><span style="font:600 9px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ h.tone }}">{{ h.streakTxt }}{{ h.group }}</span></div>
 <div style="font:600 14px/1.2 Barlow,system-ui,sans-serif;color:{{ h.textColor }};text-decoration:{{ h.deco }}">{{ h.name }}</div>
 <div style="display:{{ h.timedShow }};align-self:flex-start;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:{{ h.tAccent }};border:1px solid {{ h.tAccent }};border-radius:99px;padding:4px 7px">{{ h.timedLabel }}</div>
 <div sc-camel-on-click="{{ h.tPanel }}" style="display:{{ h.panelShow }};cursor:default;margin-top:10px;padding-top:10px;border-top:1px solid #2b3039">
@@ -444,7 +444,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="flex:1;overflow:auto">
 <div style="padding:60px 22px 18px;border-bottom:1px solid #2b3039">
 <div style="font:800 40px/0.95 'Saira Condensed',sans-serif;text-transform:uppercase;color:#eef0f4">The board</div>
-<div style="font:400 14px/1.4 Barlow,sans-serif;color:#9ca3b0;margin-top:5px">{{ startLabel }} · {{ clearedDays }} cleared · {{ missedCount }} missed · {{ leftCount }} to go</div>
+<div style="font:400 14px/1.4 Barlow,sans-serif;color:#9ca3b0;margin-top:5px">{{ startLabel }} · {{ clearedDays }} cleared · {{ missedCount }} missed · day {{ leftCount }}</div>
 <div style="display:flex;margin-top:14px;border:1px solid #30363f">
 <a href="#s05" style="flex:1;text-align:center;padding:13px 0;background:#4f8dff;color:#081631;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;" style-hover="background:#20252c">BOARD</a>
 <a href="#s07" style="flex:1;text-align:center;padding:13px 0;color:#9ca3b0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-decoration:none;border-left:1px solid #30363f" style-hover="background:#20252c">STATS</a>
@@ -652,7 +652,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </div>
 <div style="margin-top:10px;background:#1e232a;border:1px solid #2b3039;padding:13px 14px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4">PHONE NOTIFICATIONS</span><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ pushTone }}">{{ pushStatus }}</span></div><div style="font:400 13px/1.45 Barlow,sans-serif;color:#9ca3b0;margin-top:8px;text-wrap:pretty">{{ pushDetail }}</div><div style="display:flex;gap:7px;margin-top:11px"><div sc-camel-on-click="{{ pushAction }}" style="display:{{ pushBtnVis }};flex:2;background:{{ pushBtnBg }};border:1px solid {{ pushBtnBorder }};padding:13px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ pushBtnFg }}">{{ pushBtn }}</div><div sc-camel-on-click="{{ pushTest }}" style="display:{{ pushTestVis }};flex:1;border:1px solid #4f8dff;padding:13px;text-align:center;cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#4f8dff">SEND TEST</div></div></div>
 </div>
-<div style="padding:18px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Challenge rules</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;text-align:right">LOCKED TO DAY 70<br>REMINDERS EDITABLE</span></div>
+<div style="padding:18px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Habits</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;text-align:right">EDIT HABITS BELOW</span></div>
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
 <sc-for list="{{ ruleRows }}" as="r" hint-placeholder-count="9">
 <div style="display:flex;flex-direction:column">
@@ -665,12 +665,36 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4">REMIND ME</span><div sc-camel-on-click="{{ r.toggleOn }}" style="width:46px;height:26px;border-radius:13px;background:{{ r.swBg }};position:relative;cursor:pointer;flex:none"><div style="position:absolute;top:3px;left:{{ r.knob }};width:20px;height:20px;border-radius:10px;background:#15181d"></div></div></div>
 <div style="margin-top:8px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">TIME · 15 MIN STEPS</div><div style="display:flex;align-items:stretch;border:1px solid #3d4450"><div sc-camel-on-click="{{ r.decT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-right:1px solid #3d4450" style-hover="color:#4f8dff">−</div><div style="flex:1;text-align:center;padding:12px 0;font:700 24px/1 'Saira Condensed',sans-serif;color:{{ r.timeFg }};font-variant-numeric:tabular-nums">{{ r.time }}</div><div sc-camel-on-click="{{ r.incT }}" style="width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:600 18px/1 'IBM Plex Mono',monospace;color:#9ca3b0;border-left:1px solid #3d4450" style-hover="color:#4f8dff">+</div></div></div>
 <div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">REPEAT</div><div style="display:flex;gap:5px"><sc-for list="{{ r.dayChips }}" as="d" hint-placeholder-count="7"><div sc-camel-on-click="{{ d.toggle }}" style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ d.bg }};border:1px solid {{ d.border }};font:600 12px/1 'IBM Plex Mono',monospace;color:{{ d.fg }}">{{ d.label }}</div></sc-for></div></div>
-<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:12px">RULE IS LOCKED UNTIL DAY 70 — ONLY THE REMINDER CHANGES</div>
+<div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:12px">TO RENAME OR DELETE THIS HABIT, USE EDIT HABITS BELOW</div>
 <div sc-camel-on-click="{{ r.pick }}" style="margin-top:10px;text-align:center;padding:14px;cursor:pointer;border:1px solid #4f8dff;color:#4f8dff;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
 </div>
 </div>
 </sc-for>
 </div>
+<div style="padding:0 22px 8px"><div style="padding:22px 0 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Edit habits</span><span style="font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#8f9ab0;text-align:right">STREAKS KEEP<br>THEIR HISTORY</span></div><div style="display:flex;flex-direction:column;gap:7px">
+<sc-for list="{{ ruleSetup }}" as="r" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column">
+<div style="display:flex;align-items:stretch;background:#1e232a;border:1px solid {{ r.border }};border-left:3px solid {{ r.tone }};opacity:{{ r.op }}">
+<div sc-camel-on-click="{{ r.edit }}" style="flex:1;min-width:0;padding:12px 14px;min-height:56px;box-sizing:border-box;cursor:pointer" style-hover="background:#20252c">
+<div style="font:600 15px/1.2 Barlow,sans-serif;color:#eef0f4;text-decoration:underline dotted #4f5766;text-underline-offset:5px">{{ r.name }}</div>
+<div style="font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8f9ab0;margin-top:4px">{{ r.spec }}</div>
+</div>
+<div sc-camel-on-click="{{ r.toggle }}" style="width:72px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><div style="width:46px;height:26px;border-radius:13px;background:{{ r.swBg }};position:relative"><div style="position:absolute;top:3px;left:{{ r.knob }};width:20px;height:20px;border-radius:10px;background:#15181d"></div></div></div>
+</div>
+<div style="display:{{ r.editVis }};background:#171a20;border:1px solid #4f8dff;border-top:none;padding:14px">
+<div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">RULE</div><input value="{{ r.rawName }}" sc-camel-on-change="{{ r.rename }}" placeholder="e.g. No sugar" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:600 15px/1.35 Barlow,sans-serif;padding:12px;outline:none">
+<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">DETAIL · WHAT COUNTS AS DONE</div><input value="{{ r.rawSpec }}" sc-camel-on-change="{{ r.respec }}" placeholder="e.g. 45 min, one outdoors" style="width:100%;box-sizing:border-box;background:#1e232a;border:1px solid #3d4450;color:#eef0f4;font:600 15px/1.35 Barlow,sans-serif;padding:12px;outline:none;font-weight:500"></div>
+<div style="margin-top:12px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">RING</div><div style="display:flex;gap:6px"><sc-for list="{{ r.groups }}" as="g" hint-placeholder-count="3"><div sc-camel-on-click="{{ g.pick }}" style="flex:1;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ g.bg }};border:1px solid {{ g.border }};font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:{{ g.fg }}">{{ g.label }}</div></sc-for></div></div>
+<div style="display:flex;gap:7px;margin-top:14px">
+<div sc-camel-on-click="{{ r.remove }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;border:1px solid #522a22;color:#ff5a5f;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em">DELETE</div>
+<div sc-camel-on-click="{{ r.edit }}" style="flex:1;text-align:center;padding:14px;cursor:pointer;background:#4f8dff;color:#081631;font:700 14px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase">Done</div>
+</div>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display:{{ ideasVis }};margin-top:16px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8f9ab0;margin-bottom:7px">IDEAS · TAP TO ADD</div><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ruleIdeas }}" as="i" hint-placeholder-count="6"><div sc-camel-on-click="{{ i.add }}" style="min-height:40px;display:flex;align-items:center;padding:0 12px;cursor:pointer;border:1px solid #3d4450;font:500 13px/1 Barlow,sans-serif;color:#eef0f4" style-hover="border-color:#4f8dff;color:#4f8dff">+ {{ i.name }}</div></sc-for></div></div>
+<div sc-camel-on-click="{{ addRule }}" style="margin-top:12px;border:1px dashed #3d4450;padding:15px;text-align:center;cursor:pointer;font:500 13px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0" style-hover="border-color:#4f8dff;color:#4f8dff">+ CREATE CUSTOM RULE</div></div>
 <div style="padding:18px 22px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 15px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#eef0f4">Extra habits</span><span style="font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8f9ab0;text-align:right">DON’T AFFECT<br>THE STREAK</span></div>
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
 <sc-for list="{{ extraRows }}" as="x" hint-placeholder-count="2">
@@ -715,8 +739,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 <div style="padding:0 22px;display:flex;flex-direction:column;gap:7px">
 <div sc-camel-on-click="{{ exportData }}" style="border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4;cursor:pointer">EXPORT BACKUP (.JSON)</div>
 <label style="display:block;border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#eef0f4;cursor:pointer">RESTORE FROM BACKUP<input type="file" accept="application/json,.json" sc-camel-on-change="{{ importData }}" style="display:none"></label>
-<a href="#s01" style="display:block;border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;text-decoration:none">VIEW CHALLENGE RULES</a>
-<div sc-camel-on-click="{{ restart }}" style="border:1px solid #6e3638;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ff5a5f;cursor:pointer">RESTART CHALLENGE</div>
+<a href="#s01" style="display:block;border:1px solid #3d4450;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#9ca3b0;text-decoration:none">VIEW SETUP</a>
+<div sc-camel-on-click="{{ restart }}" style="border:1px solid #6e3638;padding:14px;text-align:center;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ff5a5f;cursor:pointer">RESET ALL DATA</div>
 <div style="padding:6px 0 0;text-align:center;font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#6b7382">APP VERSION __APP_VERSION__</div>
 </div>
 <div style="height:24px"></div>
@@ -1065,18 +1089,14 @@ function rollover(s) {
   if (!s.curDate || s.curDate === today) return s;
   const history = { ...s.history };
   const dn = dayDiff(s.startDate, s.curDate) + 1;
-  let verdict = null;
-  if (dn >= 1 && dn <= 70) {
-    history[dn] = snapshot(s);
-    const miss = history[dn].rules.filter(k => !history[dn].done[k]);
-    if (miss.length) verdict = dn;
-  }
+  // No end date and no "day missed" restart: each day is archived; missed habits just break that habit's streak.
+  if (dn >= 1) history[dn] = snapshot(s);
   const todayN = dayDiff(s.startDate, today) + 1;
-  for (let n = dn + 1; n < Math.min(todayN, 71); n++) {
-    if (!history[n]) { history[n] = { date: addDays(s.startDate, n - 1), skipped: true, rules: s.ruleDefs.filter(h => h.on).map(h => h.k), done: {}, doneAt: {}, waterMl: 0, kcal: 0, p: 0, meals: 0, sets: 0, note: '', ex: {} }; verdict = verdict || n; }
+  for (let n = Math.max(1, dn + 1); n < todayN; n++) {
+    if (!history[n]) history[n] = { date: addDays(s.startDate, n - 1), skipped: true, rules: s.ruleDefs.filter(h => h.on).map(h => h.k), done: {}, doneAt: {}, waterMl: 0, kcal: 0, p: 0, meals: 0, sets: 0, note: '', ex: {} };
   }
   const diary = { ...(s.diary || {}), [s.curDate]: { meals: s.meals || [], waterMl: s.waterMl || 0 } };
-  return { ...s, ...freshDay(), history, diary, curDate: today, planDay: weekdayIdx(today), selDay: Math.min(70, Math.max(1, todayN)), verdict: verdict || s.verdict || null };
+  return { ...s, ...freshDay(), history, diary, curDate: today, planDay: weekdayIdx(today), selDay: Math.max(1, todayN), verdict: null };
 }
 const OLD_HABITS = [
   { k: 'strength', name: 'Strength session', spec: 'LOWER / PULL · 45 MIN', g: 'BODY' }, { k: 'stretch', name: 'Stretching', spec: '30 MIN · MOBILITY FLOW', g: 'BODY' },
@@ -1199,8 +1219,8 @@ class Component extends DCLogic {
     window.__app = this;
     this.save();
     PhotoDB.all().then(all => { Object.keys(all).forEach(k => { this.photoUrls[k] = URL.createObjectURL(all[k]); }); this.forceUpdate(); }).catch(() => {});
-    if (this.state.verdict) window.__goto && window.__goto('s09');
-    else if (!this.state.setup.done) window.__goto && window.__goto('s01');
+    if (this.state.verdict) this.setState({ verdict: null });
+    if (!this.state.setup.done) window.__goto && window.__goto('s01');
   }
   componentWillUnmount() { clearInterval(this._tick); clearInterval(this._roll); document.removeEventListener('visibilitychange', this._vis); }
   setState(u, cb) { super.setState(u, cb); this.save(); }
@@ -1217,13 +1237,12 @@ class Component extends DCLogic {
     const next = rollover(this.state);
     if (next !== this.state) {
       this.setState(next);
-      if (next.verdict && next.curDate !== before) window.__goto && window.__goto('s09');
     } else this.forceUpdate();
   }
   dayNum() {
     const s = this.state;
     if (!s.startDate) return 1;
-    return Math.min(70, Math.max(1, dayDiff(s.startDate, s.curDate) + 1));
+    return Math.max(1, dayDiff(s.startDate, s.curDate) + 1);
   }
   // Photos: the first photo of a day is its cover ('d' + day — the one shown on the grid and compared with day 1).
   // Any more that day go in the day's folder as 'd' + day + 'x' + time. Tap a day on the Photos grid to open it.
@@ -1277,14 +1296,14 @@ class Component extends DCLogic {
     if (!file) return;
     file.text().then(t => {
       const j = JSON.parse(t);
-      if (!j || !j.state || !j.state.rules) throw new Error('Not a Seventy Hard backup');
+      if (!j || !j.state || !j.state.rules) throw new Error('Not a MyGrind backup');
       if (!confirm('Replace everything on this phone with the backup from ' + (j.exported || 'file').slice(0, 10) + '?')) return;
       this.setState(rollover({ ...defaultState(), ...j.state, ...TRANSIENT }));
       window.__goto && window.__goto('s02');
     }).catch(e => alert('Import failed: ' + e.message));
   }
   restart() {
-    if (!confirm('Restart the challenge? This wipes all days, meals and logs on this phone (export a backup first if you want one).')) return;
+    if (!confirm('Reset MyGrind? This wipes all days, meals and logs on this phone (export a backup first if you want one).')) return;
     PhotoDB.clear().catch(() => {});
     Object.values(this.photoUrls).forEach(u => URL.revokeObjectURL(u));
     this.photoUrls = {};
@@ -1552,7 +1571,7 @@ class Component extends DCLogic {
           rem: { ...st.rem, ...Object.fromEntries(st.ruleDefs.map(r => { const v = st.rem[r.k] || DEFREM; return [r.k, { ...v, on: st.setup.remindersOn && r.k !== 'meals', t: suggestT(r.k, st.setup) }]; })) }
         }));
       },
-      obNextLabel: step === 6 ? 'Lock in 70 days' : step === 3 ? 'Continue · ' + ACT.length + ' rules' : 'Continue',
+      obNextLabel: step === 6 ? 'Start tracking' : step === 3 ? 'Continue · ' + ACT.length + ' habits' : 'Continue',
       obName: o.name, setObName: e => { const v = e.target.value; up({ name: v }); },
       obUnits: [[false, 'METRIC · CM KG'], [true, 'IMPERIAL · IN LB']].map(([v, l]) => ({ label: l, ...pick(v, imp), pick: () => this.setState({ imperial: v }) })),
       obSexes: [['M', 'MALE'], ['F', 'FEMALE'], ['X', 'SKIP']].map(([v, l]) => ({ label: l, ...pick(v, o.sex), pick: () => up({ sex: v }) })),
@@ -1742,10 +1761,22 @@ class Component extends DCLogic {
       if (k) MISSED[n] = k;
     }
     const goal = this.state.waterGoal;
+    // Per-habit streaks: consecutive days that habit was done. Days it wasn't active are skipped, not counted as misses.
+    // Today only adds to the streak once it's ticked; an unticked today doesn't break it yet.
+    const habitStreak = k => {
+      let cur = d[k] ? 1 : 0;
+      for (let n = dayNum - 1; n >= 1; n--) { const r = H[n]; if (!r) break; if (!r.skipped && !(r.rules || []).includes(k)) continue; if (r.done && r.done[k]) cur++; else break; }
+      let best = 0, run = 0;
+      for (let n = 1; n < dayNum; n++) { const r = H[n]; if (r && !r.skipped && !(r.rules || []).includes(k)) continue; run = r && r.done && r.done[k] ? run + 1 : 0; best = Math.max(best, run); }
+      if (d[k]) best = Math.max(best, cur);
+      return { cur, best: Math.max(best, cur) };
+    };
+    const STK = Object.fromEntries(ACT.map(h => [h.k, habitStreak(h.k)]));
 
     const habits = ACT.map(h => {
-      const on = !!d[h.k];
+      const on = !!d[h.k], sk = STK[h.k];
       return {
+        streakTxt: sk.cur > 0 ? '🔥 ' + sk.cur + ' · ' : '', streakCur: sk.cur, streakBest: sk.best,
         ...h, ...this.hLabel(h), name: this.hLabel(h).name || 'Untitled rule', group: h.g,
         tone: on ? TONE[h.g] : '#3d4450',
         bg: on ? '#1b1f26' : '#1e232a',
@@ -1833,10 +1864,10 @@ class Component extends DCLogic {
     const rg = i => rings[i] || { r: 1, sw: 0, c: 0, off: 0, tone: 'none', display: 'none' };
     const pastMiss = Object.keys(MISSED).map(Number).filter(n => n < dayNum).sort((a, b) => a - b);
     const lastMiss = pastMiss.length ? pastMiss[pastMiss.length - 1] : 0;
-    let bestRun = 0, run = 0;
-    for (let n = 1; n < dayNum; n++) { run = MISSED[n] ? 0 : run + 1; bestRun = Math.max(bestRun, run); }
-    const streak = dayNum - 1 - lastMiss;
-    const locked = this.state.setup.done, defs = this.state.ruleDefs;
+    // Headline streak = the longest current habit streak; best = the longest any habit has ever run.
+    const stkVals = Object.values(STK);
+    const streak = stkVals.reduce((a, x) => Math.max(a, x.cur), 0), bestRun = stkVals.reduce((a, x) => Math.max(a, x.best), 0);
+    const locked = false, defs = this.state.ruleDefs;
     const updR = (k, fn) => this.setState(s => ({ ruleDefs: s.ruleDefs.map(r => r.k === k ? fn(r) : r) }));
     const ruleSetup = defs.map(x => {
       const on = x.on, open = this.state.ruleEdit === x.k && !locked, L = this.hLabel(x);
@@ -1987,7 +2018,7 @@ class Component extends DCLogic {
     const receiptVis = t.endedAt && !t.running && t.endedDay === pd ? 'block' : 'none';
 
     const gridSel = this.state.selDay;
-    const grid = Array.from({ length: 70 }, (_, i) => {
+    const grid = Array.from({ length: Math.max(70, Math.ceil(dayNum / 7) * 7) }, (_, i) => {
       const n = i + 1;
       const past = n < dayNum, today = n === dayNum, isSel = n === gridSel;
       return {
@@ -2121,15 +2152,17 @@ class Component extends DCLogic {
           pushAction: () => this.pushAction(), pushTest: () => this.pushTest()
         };
       })(),
-      best: Math.max(bestRun, streak), doneCount, leftCount: 70 - dayNum, streak,
+      best: Math.max(bestRun, streak), doneCount, leftCount: dayNum, streak,
       ruleCount: ACT.length, ruleSetup, ruleIdeas, ideasVis: ideas.length && !locked ? 'block' : 'none',
       addRule: () => { if (!locked) { const k = 'u' + Date.now(); this.setState(s => ({ ruleDefs: [...s.ruleDefs, { k, name: '', spec: '', g: 'MIND', on: true }], ruleEdit: k })); } }, rings, rg0: rg(0), rg1: rg(1), rg2: rg(2),
       ringCount: rings.length, ringWord: rings.length === 1 ? 'RING' : 'RINGS', ringSummary: rings.map(x => x.label).join('  /  '),
       missedCount: pastMiss.length, clearedDays: dayNum - 1 - pastMiss.length, pastDays: dayNum - 1,
       missedList: pastMiss.length ? pastMiss.map(n => 'DAY ' + n).join(' · ') : 'NONE YET',
       ...td_todayCards,
-      remainLabel: open === 0 ? 'DAY CLEARED' : open + ' RULES OPEN',
-      topDayPct: Math.max(2, Math.min(100, dayNum / 70 * 100)).toFixed(1) + '%', topToGo: dayNum >= 70 ? 'FINAL DAY' : (70 - dayNum) + ' DAYS TO GO',
+      remainLabel: open === 0 ? 'DAY CLEARED' : open + (open === 1 ? ' HABIT OPEN' : ' HABITS OPEN'),
+      ...(() => { const MS = [7, 14, 30, 50, 75, 100, 150, 200, 250, 300, 365, 500, 750, 1000]; let nx = MS.find(m => m > dayNum) || Math.ceil((dayNum + 1) / 500) * 500;
+        const pv = [0].concat(MS).filter(m => m < nx).pop() || 0, left = nx - dayNum;
+        return { topDayPct: Math.max(2, Math.min(100, (dayNum - pv) / (nx - pv) * 100)).toFixed(1) + '%', topToGo: left + (left === 1 ? ' DAY' : ' DAYS') + ' TO DAY ' + nx }; })(),
       topPillTone: open === 0 ? '#a8f25c' : '#ffc233',
       orders: ORDERS[Math.min(open, 9)].replace('{{n}}', dayNum + 1),
       habits,

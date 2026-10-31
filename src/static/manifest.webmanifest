@@ -1,6 +1,6 @@
 {
-  "name": "Seventy Hard",
-  "short_name": "70 Hard",
+  "name": "MyGrind",
+  "short_name": "MyGrind",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -8,7 +8,7 @@
   "orientation": "portrait",
   "background_color": "#15181d",
   "theme_color": "#15181d",
-  "description": "70-day habit challenge: daily rules, food log, training split, board and stats.",
+  "description": "Daily habit tracker: habits with streaks, food log, training split, board and stats.",
   "icons": [
     {
       "src": "icons/icon-192.png",

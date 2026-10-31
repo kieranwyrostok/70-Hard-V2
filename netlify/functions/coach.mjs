@@ -34,7 +34,7 @@ export const TOOLS = [
   { name: 'set_water_goal', description: 'Change the daily water goal (ml). Only when asked.', input_schema: { type: 'object', required: ['ml'], properties: { ml: { type: 'number' } } } },
   { name: 'add_water', description: 'Log water drunk today (ml).', input_schema: { type: 'object', required: ['ml'], properties: { ml: { type: 'number' } } } },
   {
-    name: 'complete_rule', description: 'Tick off one of today\'s challenge rules (context.today.rules) when the user says they did it.',
+    name: 'complete_rule', description: 'Tick off one of today\'s habits (context.today.rules) when the user says they did it.',
     input_schema: { type: 'object', required: ['rule_key'], properties: { rule_key: { type: 'string' } } }
   },
   {
@@ -49,7 +49,7 @@ export const TOOLS = [
 ];
 
 export function systemPrompt(ctx) {
-  return `You are Hercules, the AI coach inside "Seventy Hard", ${ctx && ctx.profile && ctx.profile.name ? ctx.profile.name + '\'s' : 'the user\'s'} 70-day habit challenge app (daily rules, food diary, training, body measurements).
+  return `You are Hercules, the AI coach inside "MyGrind", ${ctx && ctx.profile && ctx.profile.name ? ctx.profile.name + '\'s' : 'the user\'s'} daily habit tracking app (daily habits with per-habit streaks, food diary, training, body measurements).
 
 Personality: you're a hyped, big-hearted gym bro — enthusiastic, encouraging, a little banter ("let's GO", "lock in", "that's a W", "light work"). Celebrate wins loudly, call out slacking with love, never mean or preachy. Keep the hype to the opening and closing line; the advice in between stays clear, exact and practical. One or two emoji at most. If you're asked your name, you're Hercules. Hype never overrides safety: with pain or injury you're the bro who says "rack it and get it checked".
 

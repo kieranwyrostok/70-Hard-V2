@@ -1139,7 +1139,7 @@ function StrongImport({ app, st, onClose }) {
           <div style={{ ...T.label, marginBottom: 6 }}>WILL BE ADDED AS YOUR OWN EXERCISES</div>
           {plan.newEx.map(e => <div key={e.id} style={{ ...T.name, fontSize: 14, padding: '3px 0' }}>{e.name} <span style={{ ...T.label }}>· {({ wr: 'WEIGHT × REPS', r: 'REPS', d: 'TIME', dt: 'DISTANCE' })[e.type]}</span></div>)}
         </Card> : null}
-        <div style={{ ...T.label, marginTop: 14, color: C.faint, lineHeight: 1.6 }}>IMPORTED WORKOUTS DON’T CHANGE YOUR 70-DAY BOARD OR STREAK. IMPORTING THE SAME FILE AGAIN SKIPS WORKOUTS YOU ALREADY HAVE.</div>
+        <div style={{ ...T.label, marginTop: 14, color: C.faint, lineHeight: 1.6 }}>IMPORTED WORKOUTS DON’T CHANGE YOUR BOARD OR STREAKS. IMPORTING THE SAME FILE AGAIN SKIPS WORKOUTS YOU ALREADY HAVE.</div>
       </> : null}
     </div>
   </Sheet>;

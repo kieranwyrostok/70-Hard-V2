@@ -10,7 +10,7 @@ export default async (req, context) => {
   const dev = await s.get(DEV_PREFIX + b.id, { type: 'json' });
   if (!dev || !dev.sub) return Response.json({ error: 'not subscribed' }, { status: 404 });
   try {
-    await sendPush(dev.sub, { title: 'Seventy Hard', body: 'Notifications are working. Reminders will arrive at their set times.', tag: 'test', url: './#s10' }, context && context.site && context.site.url);
+    await sendPush(dev.sub, { title: 'MyGrind', body: 'Notifications are working. Reminders will arrive at their set times.', tag: 'test', url: './#s10' }, context && context.site && context.site.url);
     return Response.json({ ok: true });
   } catch (e) {
     if (e && (e.statusCode === 404 || e.statusCode === 410)) await s.delete(DEV_PREFIX + b.id);

@@ -1,4 +1,4 @@
-// Shared helpers for the Seventy Hard server functions.
+// Shared helpers for the MyGrind server functions.
 import webpush from 'web-push';
 import { getStore } from '@netlify/blobs';
 
@@ -76,14 +76,14 @@ export const hhmm = t => pad(Math.floor(t / 60) % 24) + ':' + pad(t % 60);
 export function dayNumber(startDate, today) {
   if (!startDate) return null;
   const d = Math.round((new Date(today + 'T12:00:00Z') - new Date(startDate + 'T12:00:00Z')) / 864e5) + 1;
-  return d >= 1 && d <= 70 ? d : null;
+  return d >= 1 ? d : null;
 }
 
 export function reminderPayload(r, dev, now) {
   const n = dayNumber(dev.startDate, now.date);
   if (r.id === 'weekly') return { title: 'Your weekly report is ready 📊', body: 'Workouts, PRs, food, water and rules from last week. Tap to see it.', tag: 'weekly', url: './?report=1#s02' };
   return {
-    title: r.name || 'Seventy Hard',
+    title: r.name || 'MyGrind',
     body: r.rule
       ? (n ? `Day ${n} · ` : '') + 'Not cleared yet — ' + hhmm(r.t)
       : 'Reminder · ' + hhmm(r.t),
